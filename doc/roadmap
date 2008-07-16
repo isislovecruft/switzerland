@@ -1,0 +1,73 @@
+decoder ring:
+one item per line
+- to do
++ done
+x not doing
+[pde|slucy|jered] in progress by that person
+
+====================================
+version 0:
+Alice:
+
++ collect packets
+? discard packets after timeout (we currently keep 2 copies, one in Python and
+  the other in FastCollector's mmap()ed buffer.  Later we should just keep the latter.
++ hash packets (ignore fields that change)
++ detect firewalls and mask out variant fields from hashes
++ connect to server
++ aggregate hashes into messages
++ send hash messages to server (should contain: other IP, time of the last 
+  packet in the messsage)
++ detect TCP fragmentation and warn 
++ detect large segment offloading and bail
++ detect TCP checksum offloading? (actually, we're ignoring checksums for now)
++ call ntp client to sync times
++ respond to news of dropped packets with context messages
+? understand drop and forge messages from switzerland
+
+Switzerland:
+
++ accept client connections
++ form null circle (everyone part of same circle)
++ receive hashes from clients
++ store incoming hashes in data structure
++ discard/mark as dropped hashes which time out
++ reconcile hashes, report drops and forgeries
++ ask for context for forged packet from Alice
++ log context replies from Alice
+
+====================================
+version 1:
+
+Alice:
+- connect to server over ssl socket
+- spot wrong checksums, average throughput, average send/arrival time, and
+  report this metadata
+
+Both:
+- When context is available for forgeries, run a diffing alogrithm to say when
+  only one or two fields in a packet have been modified
+
+Switzerland:
+
+- establish a secret key for the hashing algorithm
+- form real circles
+- log flow metadata statistics
+
+
+====================================
+sometime:
+Alice:
+- detect active flows
+- send hashes and flow info for firewalled addresses
+- accept "not in circle" messages for flows and stop sending hashes
+- run packetfilter in promiscuous mode to reconcile firewall ambiguity?
+- reassemble fragmented TCP packets
+- RST radar
+- handle multiple clients behind a single NAT reasonably
+
+Switzerland:
+- collect flow information from clients
+- correlate flow metadata and hashes to work around firewalls
+- send "not in circle" messages if flows inconsistent at the outset
+

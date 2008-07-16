@@ -1,0 +1,4 @@
+#!/usr/bin/env python2.5
+
+from switzerland.client import Alice
+Alice.main()

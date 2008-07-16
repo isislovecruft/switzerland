@@ -1,0 +1,9 @@
+Many of these test cases require pairs of PCAP files to operate.  We haven't
+included most of those PCAPs, because we haven't audited them for privacy
+problems yet.  You can however make your own paired pcap playback tests.  Use
+TestPings.py as a model.
+
+Other test cases:
+
+ProtocolTest.py -- ensure that the client and server are able to send basic
+messages back and forth as expected

@@ -1,0 +1,44 @@
+Switzerland probably contains many bugs.  Here are some important ones:
+
+Usability:
+
+ - control-c doesn't always exit the application properly (this is a thread management issue)
+
+ - the clients don't log packets that have been messed with to log files yet.
+
+Security against adversaries:
+
+ - we don't use SSL yet
+
+ - Switzerland doesn't send HMAC keys to Alice and Bob yet
+
+ - until we do both of the above, adversaries who could be bothered could find
+   a way to modify packets such that the hash fragments matched anyway, so
+   Switzerland wouldn't notice
+
+Semantics:
+
+ - If an network modifies a flow from the very first packet, we currently won't
+   realise that we're seeing both ends of the flow.  This is because the
+   "flow matchmakers" in Switzerland.py are currently (src_ip, dst_ip,
+   hash_of_opening_packet_with_some_fields_masked).  Those criteria are good
+   for penetrating firewalls, but if we have a very weird NAT or network that
+   changes a field we wouldn't dream of masking (like the IP DO_NOT_FRAGMENT
+   flag, which we've seen modified by Netgear MR814v2 wireless routers, for
+   instance), we won't handle it well.  We should try to spot when this is
+   occuring and tell the user.  We should also try some other matchmaking
+   strategies in cases where the existing algorithm isn't working.
+
+ - We need to be more consistent in our responses to crazy NATs
+
+Performance:
+
+ - The current matchmaking and reconciliation algortihms are designed to work
+   well for large flows.  Large numbers of tiny flows, such as those seen
+   during port scans, have not been optimized at all.  We don't know how many
+   simultaneous port scans the current client and server can handle.
+ 
+ - FastCollector / PacketListener currently exchange packets through an mmaped
+   array. Alternative implementations are possible, and will store more packets
+   per byte of RAM than we currently do (currently, small packets take up as
+   much space as large packets).

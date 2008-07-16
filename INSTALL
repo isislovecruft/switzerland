@@ -1,0 +1,27 @@
+Installation requirements:
+
+For Switzerland server:
+
+python2.5
+scapy
+
+For Alice, the Switzerland client:
+
+python2.5
+libpcap
+dnet
+pypcap
+scapy (we should make this optional)
+ntp 
+bonus points for psyco
+
+Either a pre-compiled copy of the client packet capture binary (we supply one
+for OS X and Windows) or a C compiler and libpcap.
+
+On UNIX systems, you can build and install switzerland by running:
+
+make install
+
+as root.  To be root on Mac OS X, try:
+
+sudo make install
