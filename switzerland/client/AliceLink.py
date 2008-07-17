@@ -167,7 +167,6 @@ class AliceLink(Protocol.Protocol):
       sys.exit(0)
 
     out_filenames = remembered
-    id, msgs = data
 
     for filename, (timestamp, context) in zip(out_filenames, msgs):
       if filename:
