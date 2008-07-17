@@ -6,7 +6,7 @@ Usability:
 
  - the clients don't log packets that have been messed with to log files yet.
 
-Security against adversaries:
+Security against network adversaries:
 
  - we don't use SSL yet
 
@@ -15,6 +15,14 @@ Security against adversaries:
  - until we do both of the above, adversaries who could be bothered could find
    a way to modify packets such that the hash fragments matched anyway, so
    Switzerland wouldn't notice
+
+Other security issues:
+
+ - It is possible for the switzerland client to quit in such a way that it does
+   not shred & delete the temporary file used for packet capture.  This would
+   leave copies of raw captured packets on the system's hard disk.  (On unsual
+   copy-on-write or versioning filesystems, this might be the case even if we
+   call shred.  We won't fix that.)
 
 Semantics:
 
