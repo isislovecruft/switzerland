@@ -32,7 +32,9 @@ class AliceConfig:
         force_public_ip=False, 
         force_private_ip=False,
         pcap_playback=None,
-        pcap_datalink=0
+        pcap_datalink=0,
+        logfile=default_logfile,
+        pcap_logdir=default_pcap_logdir
         ):
         self.host = host
         self.port = port 
@@ -54,8 +56,8 @@ class AliceConfig:
         self.pcap_datalink = pcap_datalink
         self.allow_uncertain_time = False
         self.debug_monotonicity = True
-        self.pcap_logdir = default_pcap_logdir
-        self.logfile = default_logfile
+        self.pcap_logdir = pcap_logdir
+        self.logfile = logfile
         self.quiet = False
 
         if getopt:

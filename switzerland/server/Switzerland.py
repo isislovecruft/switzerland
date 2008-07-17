@@ -239,7 +239,7 @@ class SwitzerlandMasterServer:
       link.send_message(msg, args, **keywords)
       return True
     except:
-      errlog.Error("Error sending %s message to %s:\n%s\nArgs: %s" % 
+      errlog.error("Error sending %s message to %s:\n%s\nArgs: %s" % 
                    (msg, `link.peer`, traceback.format_exc(), args))
       link.close()
       link.free_resources()

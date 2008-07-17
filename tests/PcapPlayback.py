@@ -56,7 +56,7 @@ class PcapPlayback(unittest.TestCase):
             do_cleaning=False, seriousness=seriousness_threshold,\
             filter_packets=False, keep_archives=keep_archives,\
             force_public_ip=public_ip1, pcap_playback=filename1,\
-            force_private_ip=ip_in_pcap1))
+            force_private_ip=ip_in_pcap1, logfile=None, pcap_logdir=None))
 
     if not force_public_ip2:
       public_ip2 = ip_in_pcap2
@@ -68,7 +68,8 @@ class PcapPlayback(unittest.TestCase):
                    do_cleaning=False, seriousness=seriousness_threshold, skew=skew_pcap2,\
                    filter_packets=False, keep_archives=keep_archives,\
                    force_public_ip=public_ip2, pcap_playback=filename2,\
-                   force_private_ip=ip_in_pcap2))
+                   force_private_ip=ip_in_pcap2, logfile=None, \
+                   pcap_logdir=None))
     time.sleep(2)
     # if we have a negative playback_offset, switch the order of events
     if playback_offset < 0.0:

@@ -92,5 +92,5 @@ _smsg("igcognito", [["list", "of", "ips"]], expects_ack=True)
 
 _smsg("forged-in", ["flow id", [("timestamp", "hash")]], expects_reply=True)
 _smsg("forged-out", ["flow id", [["context"]]], expects_reply=True, assert_len=2)
-_smsg("forged-details", ["flow id", ("forgery", [("timestamp", "context")])], expects_reply=True)
+_smsg("forged-details", ["flow id", ("forgery", [("timestamp", "context")])], is_reply=True)
 # vim: et ts=2

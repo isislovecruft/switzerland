@@ -79,12 +79,12 @@ class Alice:
         log.removeHandler(startup_handler)
         log = rootlogger
 
-        if self.config.logfile != "-":
+        if self.config.logfile not in ("-", None)  :
             fileout = logging.FileHandler(self.config.logfile)
             rootlogger.addHandler(fileout)
             log.error("Logging events to " + self.config.logfile)
 
-        if self.config.pcap_logdir != "-":
+        if self.config.pcap_logdir not in ("-", None):
             self.pcap_logger = PcapLogger(self.config.pcap_logdir)
         else:
             self.pcap_logger = None
