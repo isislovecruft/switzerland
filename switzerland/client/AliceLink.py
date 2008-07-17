@@ -129,10 +129,10 @@ class AliceLink(Protocol.Protocol):
   def handle_forged_in(self, args, seq_no):
     """ Send context about forged packets whose batches have exactly
         the newest_timestamps specified in timestamps. """
-    log.warn("Heard about %d modified inbound packets" % len(args[1]))
     self.flow_manager.lock.acquire()
     try:
       flow_id, packets_wanted = args
+      log.warn("Heard about %d modified inbound packets in flow #%d" % (len(args[1]), flow_id))
       flow = self.lookup_flow_by_id(flow_id, "modified-in")
       contexts = {}
       out_filenames = []

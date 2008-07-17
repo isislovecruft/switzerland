@@ -160,7 +160,7 @@ class FlowManager:
         self.unique_id += 1
         if flow.in_circle: # only report flows in circle to switzerland
             self.new_flows.append(flow)
-            log.info("New active flow #%d %s" % (flow.id, flow.__str__()))
+            log.info("Now testing flow #%d %s" % (flow.id, flow.__str__()))
             log.debug("(flow opens with hash: %s\npacket data: %s" % \
                 (hexlify(opening_hash), hexlify(packet.data)))
             log.debug("masked from: %s)" % hexlify(packet.original_data))

@@ -29,7 +29,7 @@ class Protocol(threading.Thread):
     self.accounting = accounting
     self.log = log
     if private_ip:
-      print "Forcing private IP to %s" % private_ip
+      print "Setting private IP to %s" % private_ip
       self.private_ip = private_ip
     else:
       self.private_ip = local_ip.get_local_ip()

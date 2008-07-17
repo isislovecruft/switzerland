@@ -83,7 +83,7 @@ class PcapLogger():
       path1 = self.pcap_dir + "/" + filename1 
       path2 = self.pcap_dir + "/" + filename2 
       n +=1
-    log.info(ts + " forged packets detected in flow %d, recording in %s\n" %(id, filename1))
+    log.info("Recording inbound modified packet & context in %s\n" %(id, path1))
 
     return (path1,path2)
     
