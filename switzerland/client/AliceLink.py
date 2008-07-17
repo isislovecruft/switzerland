@@ -156,6 +156,7 @@ class AliceLink(Protocol.Protocol):
     A "forged-details" message is the followup to for forged-in; it shows 
     us Alice's side of the story.
     """
+    print "forged-details:",  args
     meta, data = args
     in_reply_to, remembered = meta
 
