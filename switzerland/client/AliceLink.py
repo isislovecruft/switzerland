@@ -160,7 +160,7 @@ class AliceLink(Protocol.Protocol):
     meta = args[0]
     in_reply_to, remembered = meta
     id = args[1]
-    data = args[2]
+    msgs = args[2]
 
     if in_reply_to != "fi-context":
       self.protocol_error("reply %d should not be a forged-details message\n" % reply_seq_no)
