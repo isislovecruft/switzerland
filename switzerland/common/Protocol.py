@@ -170,8 +170,7 @@ class Protocol(threading.Thread):
       if m.is_reply:
         arguments = [reply_seq_no] + arguments
       else:
-        assert reply_seq_no == None, \
-        "Shouldn't have a reply_seq_no for a message that isn't a reply"
+        assert reply_seq_no == None, "Shouldn't have a reply_seq_no for a message (%s) that isn't a reply" % msg_type
 
       # Elaborate argument checking cont'd
       try:
