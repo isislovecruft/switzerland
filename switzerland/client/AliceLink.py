@@ -107,13 +107,14 @@ class AliceLink(Protocol.Protocol):
 
   def handle_forged_out(self, args, seq_no):
     """ Send context surrounding a forged hash """
-    log.warn("Heard about modified outbound packets: %s" % `args[0]`)
     if self.flow_manager == None:
       # we're in a test case
       return
     self.flow_manager.lock.acquire()
     try:
       flow_id, forgeries = args
+      log.warn("Heard about %d modified outbound packets in flow #%d" % 
+               (len(forgeries), flow_id))
       flow = self.lookup_flow_by_id(flow_id, "modified-out")
       contexts = {}
       for wanted in forgeries:
@@ -156,7 +157,6 @@ class AliceLink(Protocol.Protocol):
     A "forged-details" message is the followup to for forged-in; it shows 
     us Alice's side of the story.
     """
-    print "forged-details:",  args
     meta = args[0]
     in_reply_to, remembered = meta
     id = args[1]
