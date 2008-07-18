@@ -2,9 +2,11 @@ Switzerland probably contains many bugs.  Here are some important ones:
 
 Usability:
 
- - control-c doesn't always exit the application properly (this is a thread management issue)
+ - control-c doesn't always exit the application properly (this is a thread
+   management issue, and has been largely but maybe not entirely fixed)
 
- - the clients don't log packets that have been messed with to log files yet.
+ - the algorithms for determining what alice was sending that might have been
+   received in a modified form by bob are not very good right now.
 
 Security against network adversaries:
 
