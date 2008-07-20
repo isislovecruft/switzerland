@@ -18,8 +18,16 @@ archives = {}
 log = logging.getLogger('alice.flow_manager')
 logging.disable(logging.DEBUG)
 
+
+class Peer():
+    "This class holds all the information we store on a per-peer basis"
+    def __init__(self, firewalled, key="XXX"):
+        self.firewalled = firewalled
+        self.traceroute = None # XXX implement
+        self.key = key
+
 class FlowManager:
-    """ FlowManager tracks active Flows """
+    "FlowManager tracks active Flows (and also the Peers who are in our circle"
 
     def __init__(self, config, parent=None):
         self.flows = { }
@@ -61,7 +69,7 @@ class FlowManager:
                 assert s.inet_ntoa(p) != self.parent.link.private_ip
                 assert s.inet_ntoa(p) != self.parent.link.public_ip
 
-                self.peers[p] = firewalled
+                self.peers[p] = Peer(firewalled)
                 note += new
                 if firewalled: note += '*'
                 note += ", "
@@ -75,7 +83,7 @@ class FlowManager:
         "Here to let a packet know if its peer is firewalled"
         self.lock.acquire()
         try:
-          return self.peers[peer]
+          return self.peers[peer].firewalled
         finally:
           self.lock.release()
 
