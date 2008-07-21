@@ -2,9 +2,6 @@ Switzerland probably contains many bugs.  Here are some important ones:
 
 Usability:
 
- - the algorithms for determining what alice was sending that might have been
-   received in a modified form by bob are not very good right now.
- 
  - we currently depend on scapy for writing records of packets to PCAP
    logfiles.  This is bad and unecessary and potentially insecure and we should
    write our own simple PCAP logging code.
@@ -28,7 +25,8 @@ Other security issues:
    not shred & delete the temporary file used for packet capture.  This would
    leave copies of raw captured packets on the system's hard disk.  (On unsual
    copy-on-write or versioning filesystems, this might be the case even if we
-   call shred.  We won't fix that.) [PROBABLY FIXED]
+   call shred.  We won't fix that.) [MOSTLY FIXED, but we should probably catch
+   a few signals and handle those]
 
 Semantics:
 
