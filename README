@@ -13,7 +13,12 @@ and misbehave a bit for early versions of the code), but you can run your
 own servers elsewhere if you wish.
 
 Included below are some important FAQs about Firewalls, Privacy and Security
-below.
+below.  Once you have finished reading those and installed switzerland, you can
+run it like this:
+
+sudo switzerland-client -s switzerland.eff.org
+
+(you can also run your own switzerland server and specify it with the -s flag)
 
 ----------------------------------------------------------------------
 Does Swizterland Work with NAT ("Network Address Translation") Firewalls?
