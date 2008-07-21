@@ -60,6 +60,8 @@ class PacketListener(threading.Thread):
         self.parent = parent
         self._zcat_pipe = None
         self._zcat = None
+        self.tmpfile = None
+        self.cleanup_lock = threading.RLock()
         self.latest = 0
         self.max_timewarp = 0
         self._skew = parent.config.skew
@@ -74,7 +76,6 @@ class PacketListener(threading.Thread):
           self.sniffer_thread = os.path.sep.join(['FastCollector.exe'])
         else:
           self.sniffer_thread = os.path.sep.join(['FastCollector'])
-        self.tmpfile = None
         if parent.config.pcap_playback:
           self.live = False
           self.target = self.filename_magic(parent.config.pcap_playback)
@@ -239,7 +240,7 @@ class PacketListener(threading.Thread):
         try:
           self.read_packets()
         except:    # sniffer error; clean up on the way out
-          if self.tmpfile: self.cleanup()
+          self.cleanup()
           raise
           # The obvious thing to do here would be to set the quit event
           # and then "raise".  But if there's a context switch in between
@@ -395,7 +396,7 @@ class PacketListener(threading.Thread):
       if dummy:
         return
       #if double_check:
-      #  assert packet.ipid == ipid, "%s != %s" % (`packet.ipid`, `ipid`)
+      #  assert packet.ip_id == ip_id, "%s != %s" % (`packet.ip_id`, `ip_id`)
       if packet.is_fragment(): #skip fragmented packets
           if not self.frag_warn:
               log.warn("We saw fragments! This may result in false drop reports.")
@@ -459,6 +460,11 @@ class PacketListener(threading.Thread):
         return True
 
     def cleanup(self):
+      # Alice may call this code too, so avoid deadlocks
+      self.cleanup_lock.acquire()
+      try:
+        if not self.tmpfile:
+          return
         self.mem.close()
         self.file.close()
         try:
@@ -480,6 +486,8 @@ class PacketListener(threading.Thread):
             pass
           else:
             raise
+      finally:
+        self.cleanup_lock.release()
           
 
 if __name__ == "__main__":
@@ -487,7 +495,7 @@ if __name__ == "__main__":
   class DummyFlowManager:
     def __init__(self):
         self.queue = []
-        self.ipids = {}
+        self.ip_ids = {}
     def handle_packet(self, packet):
         self.queue.append(packet)
   class DummyAlice:

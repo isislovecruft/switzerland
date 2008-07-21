@@ -116,10 +116,16 @@ class AliceLink(Protocol.Protocol):
       log.warn("Heard about %d modified outbound packets in flow #%d" % 
                (len(forgeries), flow_id))
       flow = self.lookup_flow_by_id(flow_id, "modified-out")
+      self.nat_firewall_warnings(flow)
       contexts = {}
       for wanted in forgeries:
         hash = wanted[0] # hash of forged packet (first thing in wanted)
-        contexts[hash] = flow.get_fo_context(wanted[1])
+        ctxt = flow.get_fo_context(wanted[1], self.parent)
+        if ctxt:
+          contexts[hash] = ctxt
+        else:
+          log.error("No modified-out context for %s" % hexlify(hash))
+          contexts[hash] = None
       self.send_message("fo-context", [contexts], reply_seq_no=seq_no)
       
     finally:
@@ -132,8 +138,13 @@ class AliceLink(Protocol.Protocol):
     self.flow_manager.lock.acquire()
     try:
       flow_id, packets_wanted = args
-      log.warn("Heard about %d modified inbound packets in flow #%d" % (len(args[1]), flow_id))
+      log.warn("Heard about %d modified inbound packets in flow #%d" % 
+               (len(args[1]), flow_id))
       flow = self.lookup_flow_by_id(flow_id, "modified-in")
+      if not flow or self.nat_firewall_warnings(flow) == -1:
+        # errors have already been reported
+        return
+
       contexts = {}
       out_filenames = []
       for ts,hash in packets_wanted:
@@ -145,12 +156,46 @@ class AliceLink(Protocol.Protocol):
           fn = self.parent.pcap_logger.log_forged_in(context, flow_id)
           out_filenames.append(fn)
 
-      self.send_message("fi-context", [contexts], reply_seq_no=seq_no, data_for_reply=out_filenames)
+      self.send_message("fi-context", [contexts], reply_seq_no=seq_no,\
+                        data_for_reply=out_filenames)
     except:
       log.error("exception in handle_forged_in:")
       log.error(traceback.format_exc())
     finally:
       self.flow_manager.lock.release()
+
+  def nat_firewall_warnings(self, flow):
+    """
+    Warn the user if they are seeing reports of modified packets when there
+    are NAT firewalls along the path, since those NATs are mischievous.
+    Return -1 if we encounter & report a fatal error along the way.
+    """
+
+    if flow.inbound:
+      them = flow.src_ip
+    else:
+      them = flow.dest_ip
+    them_p = s.inet_ntoa(them)
+    try:
+      peer_firewalled = self.flow_manager.is_peer_firewalled(them)
+    except:
+      msg = "Can no longer find " + them_p + " in peer records ("
+      msg += `self.flow_manager.peers` + ")"
+      log.error(msg)
+      self.send_message("error-cont", [msg])
+      return -1
+    if not (peer_firewalled or self.firewalled):
+      return
+    msg = "(Note that "
+    if self.firewalled: 
+      msg += "you are behind a NAT firewall"
+      if peer_firewalled: 
+        msg += " and "
+    if peer_firewalled:
+      msg += "this other machine (at %s) is behind a NAT firewall" % them_p
+    msg += ", so it is likely that these modifications are being made "
+    msg += "by firewalls, not ISPs)"
+    log.warn(msg)
 
   def handle_forged_details(self, args, reply_seq_no):
     """
@@ -170,7 +215,10 @@ class AliceLink(Protocol.Protocol):
 
     for filename, (timestamp, context) in zip(out_filenames, msgs):
       if filename:
-        self.parent.pcap_logger.log_forged_out(context, filename)
+        if context:
+          self.parent.pcap_logger.log_forged_out(context, filename)
+        else:
+          log.error("no outbound context to write to " + filename) 
 
   def dummy_handle_forged_in(self, args, seq_no):
     "This variant of handle_forged_in is only used for testing"
@@ -216,20 +264,20 @@ class AliceLink(Protocol.Protocol):
     log.info("Final private/public IPs are: %s %s", `self.private_ip`, `self.public_ip`)
     self.now_ready()
 
-  def debug_ipid(self, args):
-    ipid = args[0]
+  def debug_ip_id(self, args):
+    ip_id = args[0]
     print "\n\n\n\n"
-    print "Debugging IPID", hexlify(ipid)
-    print "IPID table:", self.flow_manager.ipids
-    #if ipid in self.flow_manager.scapy_ipids:
-    #  print "IPID is in the scapy table:",self.flow_manager.scapy_ipids[ipid]
+    print "Debugging ip_id", hexlify(ip_id)
+    print "ip_id table:", self.flow_manager.ip_ids
+    #if ip_id in self.flow_manager.scapy_ip_ids:
+    #  print "ip_id is in the scapy table:",self.flow_manager.scapy_ip_ids[ip_id]
     
     #else:
-    #  print "IPID is not in scapy table"
+    #  print "ip_id is not in scapy table"
     try:
-      print "Found:", hexlify(self.flow_manager.ipids[ipid])
+      print "Found:", hexlify(self.flow_manager.ip_ids[ip_id])
     except:
-      print "Unable to find IPID in flow_manager.ipids!!!"
+      print "Unable to find ip_id in flow_manager.ip_ids!!!"
     print "\n\n\n\n"
 
   def now_ready(self):

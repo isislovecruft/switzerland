@@ -675,12 +675,12 @@ class SwitzerlandMasterServer:
        
 
   hook_callback = None # overwite if desired
-  def hook_handle(self, link, args, reply_seq_no):
+  def hook_handle(self, link, args, seq_no, reply_seq_no):
     "You can copy this method over some other handler method for debugging."
-    self.debug_note("Hook handle w/ %s, %s" % (args, reply_seq_no))
+    self.debug_note("Hook handle w/ %s, %s, %s" % (args, seq_no, reply_seq_no))
     if self.hook_callback:
       # this is a function that can be inserted by test cases
-      self.hook_callback(self, link, args, reply_seq_no)
+      self.hook_callback(self, link, args, seq_no, reply_seq_no)
 
   def judgement_day(self):
     """

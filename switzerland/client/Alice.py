@@ -141,6 +141,10 @@ def main():
         # This wasn't helping:
         while not me.quit_event.isSet():
             me.quit_event.wait(5)
+        # if the quit came from anywhere other than PacketListener,
+        # we'll need to call its cleanup function to shred and delete the
+        # packet capture tempfile
+        me.listener.cleanup()
     except s.error,e:
         log.error("socket error: %s", `e`)
         if me != None:

@@ -7,7 +7,6 @@ import random
 import time
 import socket as s
 
-
 sys.path.append("..")  # hack
 
 from switzerland.common import local_ip
@@ -204,7 +203,7 @@ class ProtocolTestCase(unittest.TestCase):
     forgeries = zip(timestamps, forgeries)
     rec = self.random_reconciliator(server_thread1, server_thread2)
     frogs = (forgeries, rec)
-    def callback(master, link, args, reply_seq_no):
+    def callback(master, link, args, seq_no, reply_seq_no):
       self.assertEqual(master, self.server)
       self.assertEqual(link, server_thread1)
       meta = args[0]
@@ -215,7 +214,7 @@ class ProtocolTestCase(unittest.TestCase):
       self.assertEqual(remembered, frogs)
       self.callback_count += 1
       # okay, we've finished testing, now call the real method:
-      master.real_fi_handler(link, args, reply_seq_no)
+      master.real_fi_handler(link, args, seq_no, reply_seq_no)
     self.server.hook_callback = callback
     client1.send_message("ping")
 

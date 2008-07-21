@@ -2,11 +2,15 @@ Switzerland probably contains many bugs.  Here are some important ones:
 
 Usability:
 
- - control-c doesn't always exit the application properly (this is a thread
-   management issue, and has been largely but maybe not entirely fixed)
-
  - the algorithms for determining what alice was sending that might have been
    received in a modified form by bob are not very good right now.
+ 
+ - we currently depend on scapy for writing records of packets to PCAP
+   logfiles.  This is bad and unecessary and potentially insecure and we should
+   write our own simple PCAP logging code.
+
+ - control-c mightn't always exit the application properly (this is a thread
+   management issue, and has been largely but maybe not entirely fixed)
 
 Security against network adversaries:
 
@@ -24,7 +28,7 @@ Other security issues:
    not shred & delete the temporary file used for packet capture.  This would
    leave copies of raw captured packets on the system's hard disk.  (On unsual
    copy-on-write or versioning filesystems, this might be the case even if we
-   call shred.  We won't fix that.)
+   call shred.  We won't fix that.) [PROBABLY FIXED]
 
 Semantics:
 

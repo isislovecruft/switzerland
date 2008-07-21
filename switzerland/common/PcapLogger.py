@@ -83,7 +83,7 @@ class PcapLogger():
       path1 = self.pcap_dir + "/" + filename1 
       path2 = self.pcap_dir + "/" + filename2 
       n +=1
-    log.info("Recording inbound modified packet & context in %s\n" %(id, path1))
+    log.info("Recording inbound modified packets & context in %s\n" % path1)
 
     return (path1,path2)
     

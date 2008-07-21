@@ -1,9 +1,14 @@
-from switzerland.client import PacketQueue
-from switzerland.common.Flow import Flow
 import types
-from switzerland.common import Protocol
 import socket as s
 from binascii import hexlify
+import logging
+
+from switzerland.client import PacketQueue
+from switzerland.common.Flow import Flow
+from switzerland.client.Packet import Packet
+from switzerland.common import Protocol
+
+log = logging.getLogger("alice.flow")
 
 class AliceFlow(Flow):
     """ AliceFlow includes a PacketQueue for holding batches. """
@@ -43,13 +48,30 @@ class AliceFlow(Flow):
         """
         min_match, max_match = None, None
 
-        # need at least one packet of context (first elt of context is forged hash)
+        # need at least one packet of context 
+        # (first elt of context is forged hash)
         if not context or len(context)<2:
             return None
+        t_ts, t_hash, t_data = context[0]
+        target_packet = Packet(t_ts, t_data, alice, has_ll=True)
+        wanted_ip_id = target_packet.ip_id
+        log.info("Target IP ID is " + hexlify(wanted_ip_id))
+        wanted_seq = target_packet.tcp_seq
+        # This ensures that we won't falsely match all non-TCP packets 
+        if wanted_seq == None: 
+            wanted_seq = -1
+            log.info("No target TCP sequence number")
+        else:
+            log.info("Target TCP seq is " + `wanted_seq`)
 
         # these hashes surround our candidate source packets for forgeries
         # (leave out the forged hash itself which is context[0])    
         wanted_hashes = {}
+
+        # XXX we could also use construct "wanted_ip_ids" here, but that
+        # would require us to pass the ip_ids back from switizerland, or to
+        # construct a Packet() for each data, which could get expensive
+        # until we have controls on how large context can grow.
         for ts,hash,data in context[1:]:
             wanted_hashes[hash] = 1
 
@@ -64,7 +86,9 @@ class AliceFlow(Flow):
             for j in xrange(len(batch)):
                 p = batch[j]
                 # packet matches context
-                if p.hash in wanted_hashes:
+                if p.ip_id == wanted_ip_id or p.tcp_seq == wanted_seq or \
+                              p.hash in wanted_hashes:
+                    matches.append((p.timestamp, p.hash, p.original_data))
                     if min_match == None:
                         min_match = (i, j)
                     max_match = (i, j)
@@ -79,8 +103,11 @@ class AliceFlow(Flow):
                     # keep elements after the max hash
                     # (this way doesn't rely on timestamps or assume that
                     # there's only one occurrence of each hash)
-                    
-        return matches[:-after_max] # slice off after_max elts from the right
+
+        if after_max >= 1:
+            # slice off after_max elts from the right
+            matches = matches[:-after_max] 
+        return matches
 
     def get_fi_context(self, ts, hash):
         """ return fi-context for desired hash and timestamp """

@@ -42,7 +42,7 @@ class FlowManager:
         self.peers = {}
         self.parent = parent
 
-        self.ipids = {}        # for debugging
+        self.ip_ids = {}        # for debugging
 
     def farewell(self, old_peer):
         "A peer has left. Remove any outstanding flows with it."
