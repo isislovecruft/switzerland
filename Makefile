@@ -12,7 +12,7 @@ MODULEDEST=$(BASE)/lib/$(PYVER)/site-packages/switzerland
 
 install: client
 	# Make the directories for all our Python modules
-	test -d $(MODULEDEST) || mkdir $(MODULEDEST)
+	test -d $(MODULEDEST) || mkdir -p $(MODULEDEST)
 	test -d $(MODULEDEST)/server || mkdir $(MODULEDEST)/server
 	chmod 755 $(MODULEDEST)/server
 	test -d $(MODULEDEST)/client || mkdir $(MODULEDEST)/client
