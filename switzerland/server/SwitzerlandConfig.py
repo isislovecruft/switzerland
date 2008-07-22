@@ -64,7 +64,7 @@ class SwitzerlandConfig:
         print
         print "  -h, --help                 print usage info"
         print "  -p, --port <port number>   port to listen on"
-print '  -L, --logfile <file>       Write a copy of the output to <file>. "-" for none'
+        print '  -L, --logfile <file>       Write a copy of the output to <file>. "-" for none'
         print "                             (defaults to " + default_logfile + ")"
         print "  -P, --pcap-logs <dir>      Sets the directory to which PCAPs of modified"
         print '                             packets will be written. "-" for none.'
