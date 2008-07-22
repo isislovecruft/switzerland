@@ -85,12 +85,20 @@ class SwitzerlandLink(Protocol.Protocol):
     except:
       self.protocol_error("Invalid peer host:\n %s" % util.screensafe(args[0]))
 
-    if len(ips) == 2: # alice may specify a public ip she wishes to assume
+    if len(ips) == 2 and self.parent.config.allow_fake_ips: 
+      # alice may specify a public ip she wishes to assume
       peer_host = ips[1]
       self.parent.faking_ip(self, peer_host)
       self.fake_ip(peer_host)
       self.alice_firewalled = ips[0] != ips[1]
-    else: # but by default, she'll believe switzerland
+    else: 
+      if len(ips) == 2:
+        # Fake IPs are intended for testing.  Perhaps in the future we'll
+        # allow them for clients coming in through Tor, but there are security
+        # issues to consider with that
+        log.error("DENYING REQUEST FOR A FAKE IP!")
+        self.send_message("error-cont", ["Denying request for a fake IP"])
+      # but by default, she'll believe switzerland
       peer_host = s.gethostbyname(peers_public_host)
       self.alice_firewalled = peer_host != self.peers_private_ip
 

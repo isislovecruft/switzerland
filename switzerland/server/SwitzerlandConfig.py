@@ -22,7 +22,8 @@ class SwitzerlandConfig:
         keep_reconciliators=False,
         logging=True,
         logfile=default_logfile,
-        pcap_logdir=default_pcap_logdir
+        pcap_logdir=default_pcap_logdir,
+        allow_fake_ips=False
         ):
         self.port = port
         self.sloppy = sloppy # Yes if we expect clients to send us flows that
@@ -35,6 +36,7 @@ class SwitzerlandConfig:
         self.logging = logging
         self.pcap_logdir = pcap_logdir
         self.logfile = logfile
+        self.allow_fake_ips=allow_fake_ips
 
 
         if getopt:

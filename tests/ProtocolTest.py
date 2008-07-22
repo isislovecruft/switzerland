@@ -26,7 +26,7 @@ class ProtocolTestCase(unittest.TestCase):
       print "Can't run testFlowManagement without a non-localhost interface"
       return 0  
     self.port = random.randint(17000,18000)
-    self.server = Switzerland.SwitzerlandMasterServer(SwitzerlandConfig(port=self.port, keep_threads=True, logging=False))
+    self.server = Switzerland.SwitzerlandMasterServer(SwitzerlandConfig(port=self.port, keep_threads=True, logging=False, allow_fake_ips=True))
     util.ThreadLauncher(self.server.accept_connections).start()
     self.lh_config = AliceConfig(host="localhost", port=self.port)
     self.net_config = AliceConfig(host=self.ip, port=self.port)

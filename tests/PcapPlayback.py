@@ -29,7 +29,7 @@ class PcapPlayback(unittest.TestCase):
   
   def setUp(self):
     self.port = random.randint(17000,18000)
-    self.server = Switzerland.SwitzerlandMasterServer(SwitzerlandConfig(port=self.port, keep_threads=True, keep_reconciliators=True, seriousness=seriousness_threshold))
+    self.server = Switzerland.SwitzerlandMasterServer(SwitzerlandConfig(port=self.port, keep_threads=True, keep_reconciliators=True, seriousness=seriousness_threshold, allow_fake_ips=True))
     util.ThreadLauncher(self.server.accept_connections).start()
 
   def tearDown(self):
