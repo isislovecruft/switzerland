@@ -150,7 +150,7 @@ class Packet:
             if normalise_tcp_options: self.process_tcp_options()
 
         # check for and remove ethernet trailer
-        total_length = struct.unpack(">H", self.data[2:4])[0]
+        total_length = struct.unpack(">H", self.data[2:4].tostring())[0]
         if total_length < 46 and len(self.data) == 46:
             del self.data[total_length:]
 
