@@ -1,5 +1,6 @@
 import getopt
 import sys
+import platform
 
 from switzerland.common import Protocol
 
