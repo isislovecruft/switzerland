@@ -58,6 +58,8 @@ class SwitzerlandMasterServer:
   def __init__(self, config):
     self.config = config
     self.socket = s.socket(s.AF_INET, s.SOCK_STREAM)
+    # This ensures we don't need to wait for a timeout every time this
+    # process exits and then starts and tries to bind to this port again
     self.socket.setsockopt(s.SOL_SOCKET, s.SO_REUSEADDR, 1L)
     self.socket.bind(("",self.config.port))
     self.socket.listen(5)
@@ -76,7 +78,7 @@ class SwitzerlandMasterServer:
         
     self.bughunt = {}
     if self.config.logging:
-      self.log = PcapLogger()
+      self.log = PcapLogger(self.config.pcap_logdir)
 
     task = util.ThreadLauncher(self.flow_printer)
     task.setDaemon(True)

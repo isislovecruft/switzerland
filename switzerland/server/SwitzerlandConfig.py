@@ -3,6 +3,14 @@ import sys
 
 from switzerland.common import Protocol
 
+if platform.system() != "Windows":
+  default_pcap_logdir = "/var/log/switzerland-pcaps"
+  default_logfile = "/var/log/switzerland-server.log"
+else:
+  default_pcap_logdir = "c:\switzerland\pcaplogs"
+  default_logfile = "c:\switzerland\serverlog"
+
+
 class SwitzerlandConfig:
     def __init__(self,
         getopt=False,
@@ -11,7 +19,9 @@ class SwitzerlandConfig:
         seriousness=0,
         keep_threads=False,
         keep_reconciliators=False,
-        logging=True
+        logging=True,
+        logfile=default_logfile,
+        pcap_logdir=default_pcap_logdir
         ):
         self.port = port
         self.sloppy = sloppy # Yes if we expect clients to send us flows that
@@ -22,6 +32,9 @@ class SwitzerlandConfig:
         self.keep_reconciliators = keep_reconciliators
         self.seriousness_threshold = seriousness
         self.logging = logging
+        self.pcap_logdir = pcap_logdir
+        self.logfile = logfile
+
 
         if getopt:
             self.get_options()
@@ -29,7 +42,7 @@ class SwitzerlandConfig:
     def get_options(self):
         try:
             (opts, args) = \
-                getopt.gnu_getopt(sys.argv[1:], 'p:h', \
+                getopt.gnu_getopt(sys.argv[1:], 'p:hL:P:', \
                 ['port=', 'help'])
         except:
             self.usage()
@@ -39,6 +52,11 @@ class SwitzerlandConfig:
                 self.port = int(opt[1])
             elif opt[0] == '-h' or opt[0] == 'help':
                 self.usage()
+            elif opt[0] == '-L' or opt[0] == 'logfile':
+                 self.logfile = opt[1]
+            elif opt[0] == '-P' or opt[0] == 'pcap-logs':
+                 self.pcap_logdir = opt[1]
+
 
     def usage(self):
         print "%s [OPTIONS]" % sys.argv[0]
@@ -46,5 +64,11 @@ class SwitzerlandConfig:
         print
         print "  -h, --help                 print usage info"
         print "  -p, --port <port number>   port to listen on"
+print '  -L, --logfile <file>       Write a copy of the output to <file>. "-" for none'
+        print "                             (defaults to " + default_logfile + ")"
+        print "  -P, --pcap-logs <dir>      Sets the directory to which PCAPs of modified"
+        print '                             packets will be written. "-" for none.'
+        print "                             (defaults to " + default_pcap_logdir + ")"
+
         sys.exit(0)
 

@@ -3,14 +3,44 @@ import time
 import os
 import os.path
 import threading
-import scapy  # pcapy wasn't up to writing our pcap files
 import types
 import logging
+import struct
 
 log = logging.getLogger()
 
 class LoggerError(Exception):
   pass
+
+
+class PcapWriter():
+  "Write some packets to a pcap file"
+  def __init__(self, path):
+
+    magic = 0xa1b2c3d4L
+    majv = 2
+    minv = 4
+    timewarp = 0
+    sigfigs = 0 # Get this from the reconciliator?  Tricky because there 
+                # are significant figures relative to real time and 
+                # significant figures relative to other packes. we really
+                # should ask each client's NTP for the clock jitter...
+    snaplen = 1600
+    linktype = 1  # XXX FIXME
+
+    hdr = struct.pack("@IHHIIII", magic, majv, minv, timewarp, sigfigs,
+                                                           snaplen, linktype)
+    self.file = open(path, "w")
+    self.file.write(hdr)
+
+  def write(self, packet, timestamp):
+     sec = int(timestamp)
+     usec = int((timestamp - sec)*1000000)
+     length = len(packet)
+     pkthdr = struct.pack("@IIII", sec, usec, length, length)
+     self.file.write(pkthdr)
+     self.file.write(packet)
+
 
 class PcapLogger():
   """
@@ -20,15 +50,14 @@ class PcapLogger():
   """
   
   # XXXXXX fix this default before release
-  def __init__(self, log_dir="/tmp/switzerland"):
+  def __init__(self, log_dir):
     self.lock = threading.RLock()
     self.make_or_check_directory(log_dir, "log dir")
     ts = self.timestamp()
-    self.filebase = log_dir + "/switz-" + ts 
-    self.pcap_dir = self.filebase + ".pcaps"
+    self.log_dir = log_dir     
     # XXX do not expect this to be secure if log_dir is world writeable
     # on a multi-user system
-    self.make_or_check_directory(self.pcap_dir, "pcap log dir")
+    self.make_or_check_directory(self.log_dir, "pcap log dir")
  
   def make_or_check_directory(self, path, alias="directory"):
     alias += " "
@@ -50,10 +79,10 @@ class PcapLogger():
   def log_forged_in(self, context, id):
     self.lock.acquire()
     try:
-      in_path, out_path = self.__gen_filenames(context, id)
-      pcap = scapy.PcapWriter(in_path, gz=0)
+      in_path, out_path = self.__gen_filenames(context)
+      pcap = PcapWriter(in_path)
       self.log_to_pcap(context, pcap)
-      pcap.f.close() 
+      pcap.file.close() 
     finally:
       self.lock.release()
     return out_path
@@ -61,27 +90,27 @@ class PcapLogger():
   def log_forged_out(self, context, out_path):
     self.lock.acquire()
     try:
-      pcap = scapy.PcapWriter(out_path, gz=0)
+      pcap = PcapWriter(out_path)
       self.log_to_pcap(context, pcap)
-      pcap.f.close() 
+      pcap.file.close() 
     finally:
       self.lock.release()
 
-  def __gen_filenames(self, context, id):
+  def __gen_filenames(self, context):
     "Determine the filenames for the inbound and outbound logs"
 
     ts = self.timestamp(context[0][0])
     filename1 = ts + "-in.pcap"
     filename2 = ts + "-out.pcap"
-    path1 = self.pcap_dir + "/" + filename1
-    path2 = self.pcap_dir + "/" + filename2
+    path1 = self.log_dir + os.path.sep + filename1
+    path2 = self.log_dir + os.path.sep + filename2
     n = 0
     while os.path.exists(path1):
       # This inbound filename has already been used; find another
       filename1 = ts + "-"  + `n` + "-in.pcap"
       filename2 = ts + "-"  + `n` + "-out.pcap"
-      path1 = self.pcap_dir + "/" + filename1 
-      path2 = self.pcap_dir + "/" + filename2 
+      path1 = self.log_dir + os.path.sep + filename1 
+      path2 = self.log_dir + os.path.sep + filename2 
       n +=1
     log.info("Recording inbound modified packets & context in %s\n" % path1)
 
@@ -95,21 +124,16 @@ class PcapLogger():
       if type(packet) != types.StringType:
         raise LoggerError, "Packet data %s is not a string!\n" % packet
 
-      #int(timestamp) # like an assertion
-
-      # This cannot be efficient :)
-      # PPP is just an arbitrary link layer protocol to use here
-      #p = scapy.Ether(dst="00:1d:7e:13:14:15", src="00:1d:7e:44:55:66", type=scapy.ETH_P_IP)
-      p = scapy.Ether(packet)
-      #p.add_payload(packet)
-      p.time = timestamp
       try:
-        pcap_log.write(p)
+        pcap_log.write(packet,timestamp)
       except:
         log.error("Tripped on %s", `pcap_log`)
         raise
-      pcap_log.f.flush()
+      pcap_log.file.flush()
 
 if __name__ == "__main__":
-  l = Logger()
-  l.forged_packet([(2,"yjfoisjfoidsjfseehayee"), (3,"yejsidofjsoidhooyee")])
+  l = PcapLogger("/var/log/switzerland/")
+  logging.basicConfig()
+  log = logging.getLogger()
+  log.setLevel(logging.DEBUG)
+  l.log_forged_in([(2,"0x0x", "yjfoisjfoidsjfseehayee"), (3,"0y0y", "yejsidofjsoidhooyee")], 1)
