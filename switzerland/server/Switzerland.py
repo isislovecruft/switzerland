@@ -204,6 +204,7 @@ class SwitzerlandMasterServer:
     ip, port = link.peer
     self.peer_lock.acquire()
     self.debug_note("Closing link with client "+`ip` +" "+ `port`, link)
+    # 1. Remove this link from our peer structures
     try:
       try:
         del self.peer_ips[ip][port]
@@ -214,11 +215,24 @@ class SwitzerlandMasterServer:
         self.debug_note("Error in link_closed", link)
         errlog.info("%s", `self.peer_ips`)
         raise
-      if not self.config.keep_threads:
-        self.threads.remove(link)
-
     finally:
       self.peer_lock.release()
+
+    # 2. Remove all of its active flows
+    link.flow_lock.acquire()
+    try:
+      for f_tuple, rec in link.flow_table.values():
+        self.remove_flow_from_matchmaker(rec)
+    finally:
+      link.flow_lock.release()
+      # XXX we don't want new flows being added after this, but failing
+      # to release the lock would seem to be a very poor way of 
+      # guaranteeing that
+
+    # 3. Remove the thread
+    if not self.config.keep_threads:
+      self.threads.remove(link)
+
 
   def send_farewells(self, leaving_ip):
     """
@@ -374,7 +388,9 @@ class SwitzerlandMasterServer:
       del link.flow_table[alice_id]
     finally:
       link.flow_lock.release()
+    self.remove_flow_from_matchmaker(rec)
 
+  def remove_flow_from_matchmaker(self, rec)
     self.global_flow_lock.acquire()
     # The other link will still have a reference to the Flows and
     # Reconciliator, so it won't matter if its gone from the flow_matchmaker
@@ -385,8 +401,7 @@ class SwitzerlandMasterServer:
         # to avoid garbage collection difficulties?
         del self.flow_matchmaker[rec.m_tuple]
       except KeyError:
-        if self.flow_matchmaker != {}:
-          pass
+        pass
     finally:
       self.global_flow_lock.release()
 
