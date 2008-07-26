@@ -63,9 +63,9 @@ class PcapLogger():
     alias += " "
     try:
       os.mkdir(path, 0755)
-    except OSError:
+    except OSError, e:
       assert not os.path.islink(path), alias + path + " should not be a symlink!"
-      assert os.path.isdir(path), alias + path + "is not a directory"
+      assert os.path.isdir(path), "cannot create " + alias + path + ":\n"+`e`
 
   def new_flow(self, flow, id):
     log.info("New bidirectional flow %d : %s\n" % (id,`flow`))
