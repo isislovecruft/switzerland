@@ -390,7 +390,7 @@ class SwitzerlandMasterServer:
       link.flow_lock.release()
     self.remove_flow_from_matchmaker(rec)
 
-  def remove_flow_from_matchmaker(self, rec)
+  def remove_flow_from_matchmaker(self, rec):
     self.global_flow_lock.acquire()
     # The other link will still have a reference to the Flows and
     # Reconciliator, so it won't matter if its gone from the flow_matchmaker
