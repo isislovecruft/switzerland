@@ -18,7 +18,7 @@ TIMESTAMP = -1
 drop_timeout = 30 # packet was dropped if not seen in this time
 #max_clock_skew = 3.0 # max clock error + transmission time in seconds
 
-mark_everything_forged = False # for testing fi/fo context messages easily
+mark_everything_forged = False # for testing fi/fo context messages easily     
 crazy_debugging = False
 hash_archival = False
 hash_event_archival = hash_archival and False
@@ -74,7 +74,12 @@ class Reconciliator:
     self.m_tuple = m_tuple
     self.newest_information_from_a = 0
     self.newest_information_from_b = 0
+    # XXX there is some silly redudancy here, because we don't calculate
+    # which side (sending / receiving) is calling this constructor, so we
+    # don't know which view of the flow we have until add_link is called
     self.flow=flow
+    self.src_flow = None
+    self.dest_flow = None
     self.ready = False
     self.respond_to_forgeries = True  # used by Swtizerland.py
 
@@ -109,7 +114,7 @@ class Reconciliator:
       archives = cPickle.load("archives.pickle")
 
 
-  def add_link(self, link, id):
+  def add_link(self, link, id, f_tuple):
     "Figure out whether this link is alice or bob, and remember it"
     self.lock.acquire()
     try:
@@ -117,10 +122,12 @@ class Reconciliator:
 
       if ip == self.m_tuple[0]:
         self.src_links.append((link, id))
+        self.src_flow = f_tuple
         if len(self.src_links) != 1:
           link.debug_note("Duplicate src_links: %s" % `self.src_links`)
       elif ip == self.m_tuple[1]:
         self.dest_links.append((link, id))
+        self.dest_flow = f_tuple
         if len(self.dest_links) != 1:
           link.debug_note("Duplicate dest_links: %s" % `self.dest_links`)
       else:
@@ -143,6 +150,44 @@ class Reconciliator:
   def leftovers(self):
     "Return a pair of the number of unreconciled packets in this flow"
     return (len(self.sent_packets), len(self.recd_packets))
+
+  def prettyprint(self):
+    """
+    Looks something like this:
+
+GLOBAL FLOW TABLE:                             okay  drop mod/frg pend t/rx prot
+111.222.233.244:12345 > 244.233.222.211:78901 343004 10000 100001 1000/2331 icmp
+(192.168.1.100:54343)   (192.168.33.212:2333) opening_hash: 
+                      <                       
+    """
+    pub_src,pub_dest = map(s.inet_ntoa, self.m_tuple[0:2])
+    o_hash = self.m_tuple[2]
+    # the other side is the only reliable indicator of each side's
+    # public port number
+    pub_src += ":" + `util.bin2int(self.dest_flow[1])`
+    pub_dest += ":" + `util.bin2int(self.src_flow[3])`
+
+    line1 = pub_src + " -> " + pub_dest
+
+    # 19 = len("192.168.1.100:65535") -- this should be okay unless
+    # the private addresses & ports are rather unusual
+    priv_src = priv_dest = ""
+    if self.src_links[0][0].alice_firewalled:
+      priv_src = rec.src_links[0][0].peers_private_ip
+      priv_src += ":" + `util.bin2int(self.src_flow[1])`
+    if self.dest_links[0][0].alice_firewalled: # here, alice means bob :)
+      priv_dest = rec.dest_links[0][0].peers_private_ip
+      priv_dest += ":" + `util.bin2int(self.dest_flow[3])`
+
+    line2 = "(%19s)    (%19s)" % (priv_src, priv_dest)
+
+    line1 += "%6g %5g %6g %4g/%4g " % (self.okay_packets, self.dropped_packets,\
+      self.forged_packets, len(self.sent_packets), len(self.recd_packets))
+    line1 += util.prot_name(util.bin2int(self.flow[4]))
+    return line1 + "\n" + line2
+
+  __str__ = prettyprint
+
 
   def final_judgement(self):
     """ flag newest information from alice and bob at infinity

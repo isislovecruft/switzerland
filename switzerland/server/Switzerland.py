@@ -46,7 +46,7 @@ ipids_in_matchmaker = False
 #   SwitzerlandLink.  Perhaps that will need to change at some point.
 
 logging.basicConfig(level=logging.DEBUG,
-                    format="[%(name)s]: %(message)s")
+                    format="%(message)s")
 log = errlog = logging.getLogger('switzerland')
 
 # remember that this does not have sufficient entropy for any cryptographic
@@ -438,14 +438,14 @@ class SwitzerlandMasterServer:
  
         self.debug_note("Creating flow: %s" % `print_flow_tuple(f)`)
         rec = Reconciliator.Reconciliator(f,m_tuple)
-        rec.add_link(link, id)         # it'll figure out which side we are
+        rec.add_link(link, id, f)        # it'll figure out which side we are
 
         self.flow_matchmaker[m_tuple] = rec
         self.debug_note("Matchmaker is now %s" %
                         `self.flow_matchmaker`, seriousness=-2)
       else:
         rec = self.flow_matchmaker[m_tuple]
-        if rec.add_link(link, id):
+        if rec.add_link(link, id, f):
           # we have two sides to this flow now
           if self.config.logging: 
             self.log.new_flow(print_flow_tuple(f_tuple), rec.id)
@@ -720,7 +720,61 @@ class SwitzerlandMasterServer:
     "Run this in a thread.  Print the global flow table from time to time"
     while True:
       time.sleep(21)
-      self.print_flow_matchmaker(print_mms)
+      #self.print_flow_matchmaker(print_mms)
+      self.prettyprint_flows()
+
+  def prettyprint_flows(self, print_mms=True):
+    """
+    Pretty print the global flow tables.  Return a tuple for testing:
+    (total flow pairs, total reconciled packets, total leftovers)
+    """
+
+    errlog.info("CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot")
+    self.global_flow_lock.acquire()
+    flows = {}
+    for rec in self.flow_matchmaker.values():
+      if rec.ready:
+        flows[rec.flow] = rec
+    plist = []
+    total_leftovers = 0
+    total_okay = 0
+    total_dropped = 0
+    total_forged = 0
+    try:
+      n = 0
+      for mm, rec in self.flow_matchmaker.items():
+        if rec.flow in flows:
+          f = rec.flow
+          reclist = [(f, rec)]  # list will be of length 1 or 2
+          mirror = (f[2], f[3], f[0], f[1], f[4])
+          if mirror in flows: 
+            reclist.append((mirror, flows[mirror]))
+          else:
+            errlog.info("No mirror for %s", `mm`)
+
+          for flow,rec in reclist:
+            rec.lock.acquire()
+            try:
+              leftovers = rec.leftovers()
+              total_leftovers += leftovers[0] + leftovers[1]
+              okay = rec.okay_packets
+              forged = rec.forged_packets
+              total_forged += forged
+              dropped = rec.dropped_packets
+              total_dropped += dropped
+              total_okay += okay
+              info = rec.prettyprint()
+              plist.append(info)
+              del flows[flow]
+            finally:
+              rec.lock.release()
+          n += 1
+      for line in plist:
+        errlog.info(line)
+    finally:
+      self.global_flow_lock.release()
+    return (n, total_okay, total_leftovers, total_forged, total_dropped)
+
 
   def print_flow_matchmaker(self, print_mms=True):
     """

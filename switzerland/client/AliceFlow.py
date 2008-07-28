@@ -42,7 +42,7 @@ class AliceFlow(Flow):
         x = self
         return (x.id, x.opening_hash, (x.src_ip, x.src_port, x.dest_ip, x.dest_port, x.proto)) 
 
-    def get_fo_context(self, context):
+    def get_fo_context(self, context, alice):
         """ get packets bracketed by hashes from context = [("timestamp", "hash", "data")]
             XXX this is pretty stupid currently
         """

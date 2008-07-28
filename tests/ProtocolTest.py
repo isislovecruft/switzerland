@@ -173,8 +173,8 @@ class ProtocolTestCase(unittest.TestCase):
     #b_from_a = SwitzerlandFlow(True, f[0],f[1],f[2],f[3],f[4], 0)
     rec = Reconciliator(f, (f[0], f[2], "a" * Protocol.hash_length))
     dummy_id = 0
-    rec.add_link(link1, dummy_id)
-    rec.add_link(link2, dummy_id)
+    rec.add_link(link1, dummy_id, f)
+    rec.add_link(link2, dummy_id, f)
     return rec
 
   def testForgedReplies(self):
