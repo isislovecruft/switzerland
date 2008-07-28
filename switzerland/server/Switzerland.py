@@ -528,6 +528,8 @@ class SwitzerlandMasterServer:
         forgeries = rec.recd_by_bob(timestamp, hashes)
     except Reconciliator.Dangling:
       link.send_message("dangling-flow", [flow_id])
+      log.warn("Flow %s is dangling" % print_flow_tuple(flow))
+      return
     finally:
       rec.lock.release()
     if forgeries:
