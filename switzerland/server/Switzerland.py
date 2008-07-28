@@ -729,7 +729,7 @@ class SwitzerlandMasterServer:
     (total flow pairs, total reconciled packets, total leftovers)
     """
 
-    errlog.info("CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot")
+    errlog.info("\nCURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot")
     self.global_flow_lock.acquire()
     flows = {}
     for rec in self.flow_matchmaker.values():

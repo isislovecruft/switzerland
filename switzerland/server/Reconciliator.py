@@ -155,7 +155,7 @@ class Reconciliator:
     """
     Looks something like this:
 
-GLOBAL FLOW TABLE:                             okay  drop mod/frg pend t/rx prot
+CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
 111.222.233.244:12345 > 244.233.222.211:78901 343004 10000 100001 1000/2331 icmp
 (192.168.1.100:54343)   (192.168.33.212:2333) opening_hash: 
                       <                       
@@ -167,21 +167,21 @@ GLOBAL FLOW TABLE:                             okay  drop mod/frg pend t/rx prot
     pub_src += ":" + `util.bin2int(self.dest_flow[1])`
     pub_dest += ":" + `util.bin2int(self.src_flow[3])`
 
-    line1 = pub_src + " -> " + pub_dest
+    line1 = "%21s" % pub_src + " > " + "%21s" % pub_dest
 
     # 19 = len("192.168.1.100:65535") -- this should be okay unless
     # the private addresses & ports are rather unusual
-    priv_src = priv_dest = ""
+    priv_src = priv_dest = "   not firewalled    "
     if self.src_links[0][0].alice_firewalled:
-      priv_src = rec.src_links[0][0].peers_private_ip
+      priv_src = self.src_links[0][0].peers_private_ip
       priv_src += ":" + `util.bin2int(self.src_flow[1])`
     if self.dest_links[0][0].alice_firewalled: # here, alice means bob :)
-      priv_dest = rec.dest_links[0][0].peers_private_ip
+      priv_dest = self.dest_links[0][0].peers_private_ip
       priv_dest += ":" + `util.bin2int(self.dest_flow[3])`
 
-    line2 = "(%19s)    (%19s)" % (priv_src, priv_dest)
+    line2 = "(%19s)   (%19s)" % (priv_src, priv_dest)
 
-    line1 += "%6g %5g %6g %4g/%4g " % (self.okay_packets, self.dropped_packets,\
+    line1+= " %6g %5g %6g %4g/%4g " % (self.okay_packets, self.dropped_packets,\
       self.forged_packets, len(self.sent_packets), len(self.recd_packets))
     line1 += util.prot_name(util.bin2int(self.flow[4]))
     return line1 + "\n" + line2
