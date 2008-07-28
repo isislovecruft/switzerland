@@ -456,7 +456,7 @@ class Protocol(threading.Thread):
 # cerealized messages.
 
 # XXX This is completely insane.  Rewrite it using struct.
-protocol_version = 1
+protocol_version = 2
 supported_protocol_versions = [protocol_version]
 # easier than calling chr() for four separate bytes
 binary_version=unhexlify("%04x" % protocol_version)

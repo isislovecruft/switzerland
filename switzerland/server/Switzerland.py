@@ -526,6 +526,8 @@ class SwitzerlandMasterServer:
           self.debug_note("%d dropped packets!" % len(drops))
       else:
         forgeries = rec.recd_by_bob(timestamp, hashes)
+    except Reconciliator.Dangling:
+      link.send_message("dangling-flow", [flow_id])
     finally:
       rec.lock.release()
     if forgeries:
@@ -714,7 +716,7 @@ class SwitzerlandMasterServer:
       
   def print_global_flow_table(self):
     "(An obsolete name.)"
-    return self.print_flow_matchmaker()
+    return self.prettyprint_flows()
 
   def flow_printer(self, print_mms=True):
     "Run this in a thread.  Print the global flow table from time to time"
@@ -774,67 +776,6 @@ class SwitzerlandMasterServer:
     finally:
       self.global_flow_lock.release()
     return (n, total_okay, total_leftovers, total_forged, total_dropped)
-
-
-  def print_flow_matchmaker(self, print_mms=True):
-    """
-    Pretty print the global flow tables.  Return a tuple for testing:
-    (total flow pairs, total reconciled packets, total leftovers)
-    """
-
-    # XXXXXX clean up this code ; also make the output it produces more
-    # self explanatory!
-
-    errlog.info("CURRENT FLOW TABLE:")
-    self.global_flow_lock.acquire()
-    flows = {}
-    for rec in self.flow_matchmaker.values():
-      flows[rec.flow] = rec
-    plist = []
-    total_leftovers = 0
-    total_okay = 0
-    total_dropped = 0
-    total_forged = 0
-    try:
-      n = 0
-      for mm, rec in self.flow_matchmaker.items():
-        if rec.flow in flows:
-          f = rec.flow
-          reclist = [(f, rec)]  # list will be of length 1 or 2
-          mirror = (f[2], f[3], f[0], f[1], f[4])
-          if mirror in flows: 
-            reclist.append((mirror, flows[mirror]))
-          else:
-            errlog.info("No mirror for %s", `mm`)
-
-          for flow,rec in reclist:
-            rec.lock.acquire()
-            try:
-              leftovers = rec.leftovers()
-              total_leftovers += leftovers[0] + leftovers[1]
-              okay = rec.okay_packets
-              forged = rec.forged_packets
-              total_forged += forged
-              dropped = rec.dropped_packets
-              total_dropped += dropped
-              total_okay += okay
-              info = "%d %s ok:%d forge:%d drop:%d / %s" % (n, print_flow_tuple(rec.flow), okay, forged, dropped, `leftovers`)
-              if print_mms:
-                i1 = s.inet_ntoa(rec.m_tuple[0])
-                i2 = s.inet_ntoa(rec.m_tuple[1])
-                i3 = binascii.hexlify(rec.m_tuple[2])
-                info += "\n  %s" % `(i1, i2, i3)`
-                plist.append(info)
-              del flows[flow]
-            finally:
-              rec.lock.release()
-          n += 1
-      for line in plist:
-        errlog.info(line)
-    finally:
-      self.global_flow_lock.release()
-    return (n, total_okay, total_leftovers, total_forged, total_dropped)
-
 
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."

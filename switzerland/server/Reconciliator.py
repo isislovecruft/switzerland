@@ -5,18 +5,22 @@ from threading import RLock
 import socket as s
 import logging
 from binascii import hexlify
+import time
 
 from switzerland.common import Protocol
 from switzerland.common import util
 from switzerland.common.Flow import print_flow_tuple
-
 
 id_num = 0
 id_lock = RLock()
 TIMESTAMP = -1
 
 drop_timeout = 30 # packet was dropped if not seen in this time
-#max_clock_skew = 3.0 # max clock error + transmission time in seconds
+clock_safety_margin = 2.0 
+
+dangling_timeout = 12.0 # if this much time has elapsed since one side of a
+                        # Reconciliator has shown up, the other side is probably
+                        # never going to show up
 
 mark_everything_forged = False # for testing fi/fo context messages easily     
 crazy_debugging = False
@@ -35,6 +39,9 @@ if hash_archival:
   forged_history = []
   bob_flows_by_hash = {}
   events_by_hash = {}
+
+class Dangling(Exception):
+  pass
 
 def makebatch(timestamp, hashes, alice, rec):
   """
@@ -82,6 +89,7 @@ class Reconciliator:
     self.dest_flow = None
     self.ready = False
     self.respond_to_forgeries = True  # used by Swtizerland.py
+    self.birthday = time.time()
 
     # These two structures are lists of batches:
     # we might have stored them like this:
@@ -137,7 +145,7 @@ class Reconciliator:
         
         skew1 = max([l.get_clock_dispersion() for l,id in self.src_links])
         skew2 = max([l.get_clock_dispersion() for l,id in self.dest_links])
-        self.max_clock_skew = (skew1 + skew2) + 2.0  # assume 2s in transit
+        self.max_clock_skew = (skew1 + skew2) + clock_safety_margin
         self.ready = True
         log.debug("We now have both sides of flow %s", print_flow_tuple(self.flow))
         return True # have both sides
@@ -167,11 +175,11 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     pub_src += ":" + `util.bin2int(self.dest_flow[1])`
     pub_dest += ":" + `util.bin2int(self.src_flow[3])`
 
-    line1 = "%21s" % pub_src + " > " + "%21s" % pub_dest
+    line1 = pub_src.center(21) + " > " + pub_dest.center(21)
 
     # 19 = len("192.168.1.100:65535") -- this should be okay unless
     # the private addresses & ports are rather unusual
-    priv_src = priv_dest = "   not firewalled    "
+    priv_src = priv_dest = "not firewalled".center(19)
     if self.src_links[0][0].alice_firewalled:
       priv_src = self.src_links[0][0].peers_private_ip
       priv_src += ":" + `util.bin2int(self.src_flow[1])`
@@ -206,9 +214,11 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     return (forged, dropped)
 
   def alice_sent_flow_status(self, timestamp):
-    """ called when alice reports status for a flow (e.g. that it was idle)
-        this way we can know that alice didn't send a packet that bob received even
-        if alice doesn't send more packets afterwards """
+    """ 
+    called when alice reports status for a flow (e.g. that it was idle)
+    this way we can know that alice didn't send a packet that bob received 
+    even if alice doesn't send more packets afterwards
+    """
     self.lock.acquire()
     assert not self.finalized, 'not expecting finalized'
     try:
@@ -242,6 +252,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
   def sent_by_alice(self, timestamp, hashes):
     self.lock.acquire()
     try:
+      self.check_dangling()
       assert not self.finalized, 'not expecting finalized'
       assert timestamp >= self.newest_information_from_a, \
         'expecting timestamp to be monotonically increasing %f < %f' % \
@@ -272,6 +283,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     "Very similar to sent_by_alice, but confusing if it's factorised."
     self.lock.acquire()
     try:
+      self.check_dangling()
       assert not self.finalized, 'not expecting finalized'
       assert timestamp >= self.newest_information_from_b, \
         'expecting timestamp to be monotonically increasing %f < %f' % \
@@ -291,6 +303,22 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     finally:
       self.lock.release()
     return forged
+
+  def check_dangling(self):
+    """
+    A reconciliator is said to be dangling if for some reason it Alice and Bob
+    never get matched (ie self.ready is never True).  Typical causes might be
+    modifications to the opening packet that change opening_hash; Alice and Bob
+    seeing a different packet as the first packet in the flow (most likely if
+    the flow is older than their circle membership), or a flow between Alice
+    and someone other than Bob behind Bob's firewall.  Raise an Exception if
+    we're deemed to be dangling.
+    """
+    if self.ready:
+      return
+    if time.time() > self.birthday + dangling_timeout:
+      raise Dangling
+
 
   def __discard_from_new_batch(self, new_batch, other_dict, other_batches):
     "We have a new batch, now remove everything in it that matches."

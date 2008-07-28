@@ -80,7 +80,6 @@ _amsg("rst-radar", [[("list", "of"), ("packet", "pairs")]])
   
 # Switzerland -> Alice
 
-
 _smsg("debug-ipid", ["ipid"])
 _smsg("public-ip", ["your public ip"], is_reply=True)
 _smsg("new-members", [[("ip1", "firewalled", "key"), ("ip2", "firewalled", "key")]], expects_ack=True)
@@ -93,4 +92,10 @@ _smsg("igcognito", [["list", "of", "ips"]], expects_ack=True)
 _smsg("forged-in", ["flow id", [("timestamp", "hash")]], expects_reply=True)
 _smsg("forged-out", ["flow id", [["context"]]], expects_reply=True, assert_len=2)
 _smsg("forged-details", ["flow id", [("timestamp", "context")]], is_reply=True)
+
+# the other side isn't reporting this flow in a way that allows us to match them
+_smsg("dangling-flow", ["flow id"])
+
+# the other side isn't reporting this flow in a way that allows us to match them
+_smsg("flow-status", ["string"])
 # vim: et ts=2
