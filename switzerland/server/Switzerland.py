@@ -529,7 +529,11 @@ class SwitzerlandMasterServer:
     except Reconciliator.Dangling:
       link.send_message("dangling-flow", [flow_id])
       log.warn("Flow %s is dangling" % `print_flow_tuple(rec.flow)`)
-      link.flow_table[flow_id] = None
+      link.flow_lock.acquire()
+      try:
+        link.flow_table[flow_id] = None
+      finally:
+        link.flow_lock.release()
       return
     finally:
       rec.lock.release()
@@ -679,7 +683,6 @@ class SwitzerlandMasterServer:
     assert len(filenames) == len(forgeries), "Pcap logs do not match forgeries"
 
     # Alice's handle_forged_out should preserve the order of the forgeries
-
     for forgery,filename in zip(forgeries, filenames):
       timestamp, hash = forgery
       context = data[hash]
@@ -733,19 +736,21 @@ class SwitzerlandMasterServer:
     Pretty print the global flow tables.  Return a tuple for testing:
     (total flow pairs, total reconciled packets, total leftovers)
     """
+    # XXX this function is too large and ugly and too complicated.  Fix it.
 
     errlog.info("\nCURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot")
     self.global_flow_lock.acquire()
-    flows = {}
-    for rec in self.flow_matchmaker.values():
-      if rec.ready:
-        flows[rec.flow] = rec
-    plist = []
-    total_leftovers = 0
-    total_okay = 0
-    total_dropped = 0
-    total_forged = 0
     try:
+      flows = {}
+      for rec in self.flow_matchmaker.values():
+        if rec.ready:
+          flows[rec.flow] = rec
+      plist = []         # server side list of summaries
+      notifications = {} # maps link -> list of flow summaries
+      total_leftovers = 0
+      total_okay = 0
+      total_dropped = 0
+      total_forged = 0
       n = 0
       for mm, rec in self.flow_matchmaker.items():
         if rec.flow in flows:
@@ -760,22 +765,23 @@ class SwitzerlandMasterServer:
           for flow,rec in reclist:
             rec.lock.acquire()
             try:
-              leftovers = rec.leftovers()
-              total_leftovers += leftovers[0] + leftovers[1]
-              okay = rec.okay_packets
-              forged = rec.forged_packets
-              total_forged += forged
-              dropped = rec.dropped_packets
-              total_dropped += dropped
-              total_okay += okay
-              info = rec.prettyprint()
-              plist.append(info)
+              total_leftovers += sum(rec.leftovers())
+              total_forged += rec.forged_packets
+              total_dropped += rec.dropped_packets
+              total_okay += rec.okay_packets
+              summary = rec.prettyprint()
+              plist.append(summary)
+              for link,id in rec.src_links + rec.dest_links:
+                notifications.setdefault(link, []).append(summary)
               del flows[flow]
             finally:
               rec.lock.release()
           n += 1
-      for line in plist:
-        errlog.info(line)
+      for summary in plist:
+        errlog.info(summary)
+      if self.config.send_flow_status_updates:
+        for link, summaries in notifications.items():
+          self.send_other_message(link,"flow-status", ["\n".join(summaries)])
     finally:
       self.global_flow_lock.release()
     return (n, total_okay, total_leftovers, total_forged, total_dropped)
