@@ -117,7 +117,7 @@ reconstruct the contents of your packets from what you send to switzerland.
 However, when it detects forged packets, the switzerland server may ask your
 computer for full copies of packets sent around the same time as the forgery
 was received.  Therefore it is likely that running switzerland will result
-in portions of your unencrpyted communications being logged at a server.
+in portions of your unencrypted communications being logged at a server.
 
 In this release, traffic between switzerland clients and the server is
 unencrypted, so it's possible for an eavesdropper to see information about
@@ -138,7 +138,7 @@ the underlying traffic.
 
 But many NAT firewalls, especially home wireless routers, make other
 undocumented modifications to the traffic travelling through them, beyond
-the minimum required to be a NAT firewall.  As a result, swizterland clients
+the minimum required to be a NAT firewall.  As a result, switzerland clients
 that are behind firewalls or talking to machines that are behind firewalls
 will often detect and report these modifications to traffic.
 
@@ -213,7 +213,7 @@ switzerland/             : source code
     local_ip.py          : detect IP address / network interfaces
     util.py              : miscellaneous
   lib/                   : third-party libraries
-    tweaked_cerializer.py: modified version of python cerealizer
+    tweaked_cerealizer.py: modified version of python cerealizer
   server/                : server code
     Reconciliator.py     : test whether two views of a flow agree
     Switzerland.py       : main server file
