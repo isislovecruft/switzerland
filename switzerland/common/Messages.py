@@ -94,7 +94,7 @@ _smsg("forged-out", ["flow id", [["context"]]], expects_reply=True, assert_len=2
 _smsg("forged-details", ["flow id", [("timestamp", "context")]], is_reply=True)
 
 # the other side isn't reporting this flow in a way that allows us to match them
-_smsg("dangling-flow", ["flow id"])
+_smsg("dangling-flow", ["flow id", "opening hash"])
 
 # the other side isn't reporting this flow in a way that allows us to match them
 _smsg("flow-status", ["string"])
