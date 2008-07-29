@@ -156,7 +156,7 @@ class Packet:
         # too)
         self.data[10:12] = zerozero
 
-        self.ip_payload = self.ip_self.ip_payload()
+        self.ip_payload = self.ip_payload_start()
         if self.data[9] == '\x06': # This is TCP.  Clear the checksum field
             # zero the TCP checksum
             self.data[self.ip_payload+16:self.ip_payload+18] = zerozero
@@ -168,7 +168,7 @@ class Packet:
         if total_length < 46 and len(self.data) == 46:
             del self.data[total_length:]
 
-    def ip_self.ip_payload(self):
+    def ip_payload_start(self):
         return ((ord(self.data[0]))&15) << 2
 
     def decode_flow_info(self):
