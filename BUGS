@@ -34,6 +34,10 @@ Other security issues:
 
 Semantics:
 
+ - The firewall penetration code needs to know about transport layer protocols.
+   It currently works for TCP, UDP, SCTP and port-less protocols, but not for
+   some other protocols like RDP.  Fixes should go in Packet.py!
+
  - If an network modifies a flow from the very first packet, we currently won't
    realise that we're seeing both ends of the flow.  This is because the
    "flow matchmakers" in Switzerland.py are currently (src_ip, dst_ip,

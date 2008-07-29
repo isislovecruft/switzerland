@@ -9,6 +9,8 @@ import logging
 
 from switzerland.common import Protocol
 
+track_ip_ids = True
+
 # XXX Some control variables, to exclude certain kinds of underlying packet
 # variations from the hash of the packet.  These were implemented before
 # we understood the true scope of crazy behaviour by existing NATs.  There
@@ -36,6 +38,15 @@ log = logging.getLogger('alice.packet')
 
 zero = "\x00"
 zerozero = array("c","\x00\x00")
+
+PROT_TCP = '\x06'
+PROT_UDP = '\x11'
+PROT_SCTP = '\x84'
+PROT_DCCP = '\x21'
+# RDP has its ports in a different place
+zero_protocols = [PROT_TCP,PROT_UDP,PROT_SCTP,PROT_DCCP]
+
+# XXX XXX some other protocols will 
 
 # This short snippet to calculate header length from pcap_datalink was captured
 # from pcap.pyx in the pycap project.
@@ -143,9 +154,9 @@ class Packet:
         self.data[10:12] = zerozero
 
         if self.data[9] == '\x06': # This is TCP.  Clear the checksum field
-            self.tcp_start = self.ip_payload_start()
+            self.ip_payload = self.ip_payload_start()
             # zero the TCP checksum
-            self.data[self.tcp_start+16:self.tcp_start+18] = zerozero
+            self.data[self.ip_payload+16:self.ip_payload+18] = zerozero
             # do perverse things to the options:
             if normalise_tcp_options: self.process_tcp_options()
 
@@ -168,7 +179,7 @@ class Packet:
         self.dest_ip = self.data[16:20].tostring()
         payload_start = self.ip_payload_start()
         self.ip_id = self.data[4:6].tostring()
-        self.alice.fm.ip_ids[self.ip_id] = "Pending"
+        if track_ip_ids: self.alice.fm.ip_ids[self.ip_id] = "Pending"
         if self.proto == '\x06' or self.proto == '\x11': # TCP or UDP
             self.source_port = self.data[payload_start:payload_start+2].tostring()
             self.dest_port = self.data[payload_start+2:payload_start+4].tostring()
@@ -192,11 +203,11 @@ class Packet:
         reordering-invariant.
       """
       # >>2 means rotate right by 4, then multiply by 4-byte chunks
-      tcp_header_length = ((ord(self.data[self.tcp_start+12]) & 0xF0)>>4) * 4
+      tcp_header_length = ((ord(self.data[self.ip_payload+12]) & 0xF0)>>4) * 4
       if tcp_header_length > 20:
         # This packet contains TCP options
-        pos = self.tcp_start+20  # start of TCP options
-        while pos < self.tcp_start + tcp_header_length:
+        pos = self.ip_payload+20  # start of TCP options
+        while pos < self.ip_payload + tcp_header_length:
           kind = ord(self.data[pos])
           if kind == 0:  # EOL
             break
@@ -232,11 +243,14 @@ class Packet:
         """ get flow information from header"""
         return self._flow_addr
 
+    # XXX add RDP here but note it has different port locations in the header
     def zero_source_port(self):
-        self.data[self.tcp_start+0:self.tcp_start+2] = zerozero
+        if self.data[9] in zero_protocols:
+            self.data[self.ip_payload+0:self.ip_payload+2] = zerozero
 
     def zero_dest_port(self):
-        self.data[self.tcp_start+2:self.tcp_start+4] = zerozero
+        if self.data[9] in zero_protocols: 
+            self.data[self.ip_payload+2:self.ip_payload+4] = zerozero
 
     def get_hash(self):
         """ get hash of packet (SHA-1) """
@@ -244,45 +258,39 @@ class Packet:
         if self.hash:
             return self.hash
 
-        if self.data[9] == '\x06':             # TCP
+        if self.source_ip == self.private_ip:
+          outbound = True
+        else:
+          outbound = False
+          assert self.dest_ip == self.private_ip, "neither of " +\
+          `(s.inet_ntoa(self.source_ip), s.inet_ntoa(self.dest_ip))` +\
+          "is " + self.private_ip
 
-          if self.source_ip == self.private_ip:
-            outbound = True
-          else:
-            outbound = False
-            assert self.dest_ip == self.private_ip, "neither of " +\
-            `(s.inet_ntoa(self.source_ip), s.inet_ntoa(self.dest_ip))` +\
-            "is " + self.private_ip
-
-          if self.alice.link.firewalled:
+        if self.alice.link.firewalled:
             # zero our port number, rewrite our ip
             pub_ip = array("c", s.inet_aton(self.alice.link.public_ip))
             if outbound:
-              self.zero_source_port()
-              # overwrite source ip
-              self.data[12:16] = pub_ip
+                self.zero_source_port()
+                # overwrite source ip
+                self.data[12:16] = pub_ip
             else:
-              self.zero_dest_port()
-              # overwrite dest ip
-              self.data[16:20] = pub_ip 
+                self.zero_dest_port()
+                # overwrite dest ip
+                self.data[16:20] = pub_ip 
 
             if zero_ip_id: self.data[4:6] = zerozero
 
-          if self.peer_firewalled:
+        if self.peer_firewalled:
             self.data[4:6] = zerozero
             # zero their port number
             if outbound:
-              self.zero_dest_port()
+                self.zero_dest_port()
             else:
-              self.zero_source_port()
-
-        elif self.data[9] == '\x11':
-          # XXX do the same with udp!
-          pass
+                self.zero_source_port()
 
         m = hmac.new(self.key,self.data,hashlib.sha1)
         self.hash = m.digest()[:Protocol.hash_length-2] + self.ip_id
-        self.alice.fm.ip_ids[self.ip_id] = self.hash[:-2]
+        if track_ip_ids: self.alice.fm.ip_ids[self.ip_id] = self.hash[:-2]
 
         return self.hash
 
