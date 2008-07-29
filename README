@@ -185,7 +185,7 @@ own servers elsewhere if you wish.
 3.2. svn repository
 
 switzerland's public ssh repository is available at
-svn+ssh://switzerland.sf.net/
+https://switzerland.svn.sourceforge.net/svnroot/switzerland
 
 3.3. Tree organization
 
