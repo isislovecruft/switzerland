@@ -6,10 +6,6 @@ Switzerland probably contains many bugs.  Here are some important ones:
 
 Usability:
 
- - we currently depend on scapy for writing records of packets to PCAP
-   logfiles.  This is bad and unecessary and potentially insecure and we should
-   write our own simple PCAP logging code.
-
  - control-c mightn't always exit the application properly (this is a thread
    management issue, and has been largely but maybe not entirely fixed)
 
@@ -39,21 +35,21 @@ Semantics:
    some other protocols like RDP.  Fixes should go in Packet.py!
 
  - If an network modifies a flow from the very first packet, we currently won't
-   realise that we're seeing both ends of the flow.  This is because the
-   "flow matchmakers" in Switzerland.py are currently (src_ip, dst_ip,
+   realise that we're seeing both ends of the flow.  This is because the "flow
+   matchmakers" in Switzerland.py are currently (src_ip, dst_ip,
    hash_of_opening_packet_with_some_fields_masked).  Those criteria are good
    for penetrating firewalls, but if we have a very weird NAT or network that
    changes a field we wouldn't dream of masking (like the IP DO_NOT_FRAGMENT
    flag, which we've seen modified by Netgear MR814v2 wireless routers, for
-   instance), we won't handle it well.  We should try to spot when this is
-   occuring and tell the user.  We should also try some other matchmaking
-   strategies in cases where the existing algorithm isn't working.
+   instance), we won't handle it well.  We now tell the user when this
+   occurs, but we should really try some other matchmaking strategies in cases
+   where the existing algorithm isn't working.
 
  - We need to be more consistent in our responses to crazy NATs
 
 Performance:
 
- - The current matchmaking and reconciliation algortihms are designed to work
+ - The current matchmaking and reconciliation algorithms are designed to work
    well for large flows.  Large numbers of tiny flows, such as those seen
    during port scans, have not been optimized at all.  We don't know how many
    simultaneous port scans the current client and server can handle.
