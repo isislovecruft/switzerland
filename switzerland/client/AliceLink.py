@@ -268,7 +268,7 @@ class AliceLink(Protocol.Protocol):
     "Switzerland has failed to matchmake our view of this flow with out peers"
     msg = "Switzerland is unable to test flow #%d.  " % args[0]
     msg += "Reasons for this may include:\n"
-    msg += " - Modifications to the first packet in the flow (hash 0x%s)\n" %
+    msg += " - Modifications to the first packet in the flow (hash 0x%s)\n" % \
            hexlify(args[1])
     # XXX we could make the inclusion of some of these lines conditional on
     # whether the peer is actually firewalled
