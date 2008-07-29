@@ -44,7 +44,10 @@ PROT_UDP = '\x11'
 PROT_SCTP = '\x84'
 PROT_DCCP = '\x21'
 # RDP has its ports in a different place
-zero_protocols = [PROT_TCP,PROT_UDP,PROT_SCTP,PROT_DCCP]
+
+# These are protocols that have 2 byte source and dest ports at the beginning
+# of the payload
+std_port_protocols = [PROT_TCP,PROT_UDP,PROT_SCTP,PROT_DCCP]
 
 # XXX XXX some other protocols will 
 
@@ -153,8 +156,8 @@ class Packet:
         # too)
         self.data[10:12] = zerozero
 
+        self.ip_payload = self.ip_self.ip_payload()
         if self.data[9] == '\x06': # This is TCP.  Clear the checksum field
-            self.ip_payload = self.ip_payload_start()
             # zero the TCP checksum
             self.data[self.ip_payload+16:self.ip_payload+18] = zerozero
             # do perverse things to the options:
@@ -165,7 +168,7 @@ class Packet:
         if total_length < 46 and len(self.data) == 46:
             del self.data[total_length:]
 
-    def ip_payload_start(self):
+    def ip_self.ip_payload(self):
         return ((ord(self.data[0]))&15) << 2
 
     def decode_flow_info(self):
@@ -177,12 +180,12 @@ class Packet:
         self.proto = self.data[9]
         self.source_ip = self.data[12:16].tostring()
         self.dest_ip = self.data[16:20].tostring()
-        payload_start = self.ip_payload_start()
         self.ip_id = self.data[4:6].tostring()
         if track_ip_ids: self.alice.fm.ip_ids[self.ip_id] = "Pending"
-        if self.proto == '\x06' or self.proto == '\x11': # TCP or UDP
-            self.source_port = self.data[payload_start:payload_start+2].tostring()
-            self.dest_port = self.data[payload_start+2:payload_start+4].tostring()
+        if self.proto in std_port_protocols: # TCP or UDP
+            pl = self.ip_payload
+            self.source_port = self.data[pl:pl+2].tostring()
+            self.dest_port = self.data[pl+2:pl+4].tostring()
         else: # portless protocol
             self.source_port = '\xff\xff'
             self.dest_port = '\xff\xff'
@@ -245,11 +248,11 @@ class Packet:
 
     # XXX add RDP here but note it has different port locations in the header
     def zero_source_port(self):
-        if self.data[9] in zero_protocols:
+        if self.data[9] in std_port_protocols:
             self.data[self.ip_payload+0:self.ip_payload+2] = zerozero
 
     def zero_dest_port(self):
-        if self.data[9] in zero_protocols: 
+        if self.data[9] in std_port_protocols: 
             self.data[self.ip_payload+2:self.ip_payload+4] = zerozero
 
     def get_hash(self):
