@@ -223,8 +223,10 @@ class SwitzerlandMasterServer:
     # 2. Remove all of its active flows
     link.flow_lock.acquire()
     try:
-      for f_tuple, rec in link.flow_table.values():
-        self.remove_flow_from_matchmaker(rec)
+      for entry in link.flow_table.values():
+        if entry != None:
+          f_tuple, rec = entry
+          self.remove_flow_from_matchmaker(rec)
     finally:
       link.flow_lock.release()
       # XXX we don't want new flows being added after this, but failing

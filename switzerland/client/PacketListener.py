@@ -145,7 +145,7 @@ class PacketListener(threading.Thread):
             mode = '-i' # interactive
             if not self.live:
               mode = '-f'
-            print "Launching packet collector:", [self.sniffer_thread, mode, self.target]
+            log.debug("Launching packet collector: "+ `[self.sniffer_thread, mode, self.target]`)
             self.sniff = Popen(
               [self.sniffer_thread, mode, self.target], shell=use_shell,
               stdout=PIPE, stdin=PIPE, stderr=PIPE
@@ -186,16 +186,17 @@ class PacketListener(threading.Thread):
           util.set_win32_priority(self.sniff.pid, 5)
         else:  # UNIX is nice
           try:
-            Popen(["renice", "-19", `self.sniff.pid`])
+            n = Popen(["renice", "-19", `self.sniff.pid`], stdout=PIPE)
+            log.debug(n.stdout.read())
           except OSError:
-            print "Renicing failed with", sys.exc_info[0:2]
+            log.error("Attempt to prioritise sniffer failed with" + `sys.exc_info[0:2]`)
 
     def get_tempfile_name(self):
       """
       Communicate with the sniffer process to obtain the name of the
       mmap()ed tempfile through which it will pass us packets.
       """
-      print "looking for temp file.."
+      log.debug("looking for temp file..")
       self.sniff.stdin.close()
       line = self.sniff.stdout.readline()
       while line == "":

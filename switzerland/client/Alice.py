@@ -59,6 +59,10 @@ class Alice:
         log.debug("Starting AliceLink...")
         self.link.start()
         self.link.ready.wait(20.0)
+        if self.link.quit_event.isSet():
+          # error during handshake
+          self.listener.cleanup()
+          sys.exit(0)
         if not self.link.ready.isSet():
             log.error("failed to start link with switzerland")
             sys.exit(1)

@@ -49,6 +49,7 @@ class AliceLink(Protocol.Protocol):
     except:
       print traceback.format_exc()
     self.quit_event.set()
+    self.ready.set() # to hurry Alice up
 
   def handshake(self):
     """Confirm that we are talking to a Switzerland server"""
@@ -66,16 +67,14 @@ class AliceLink(Protocol.Protocol):
       sys.exit(1)
 
     if msg[:-2] == Protocol.no_common_version[:-2]:
-      self.debug_note("Server refuses to speak protocols before version " +
-                          Protocol.parse_version(msg[-2:]),seriousness=11)
+      log.error("Server refuses to speak protocols before version %d; we need version %d" % (Protocol.parse_version(msg[-2:]), Protocol.protocol_version))
       return False
     
     elif msg[:-2] != Protocol.handshake2[:-2]:
-      self.debug_note("Handshake failed, wasn't expecting:\n" + msg, seriousness=11)
+      log.error("Handshake failed, wasn't expecting:\n" + msg)
       return False
 
-    self.debug_note("Started session with version %d" % \
-                     Protocol.parse_version(msg[-2:]))
+    log.debug("Started session with version %d" % Protocol.parse_version(msg[-2:]))
     self.socket.setblocking(1)
     return True
 
@@ -261,7 +260,7 @@ class AliceLink(Protocol.Protocol):
     log.debug("Switzerland says our public ip is %s", `args[1]`)
     self.public_ip = args[1]
     self.firewalled = self.public_ip != self.private_ip
-    log.info("Final private/public IPs are: %s %s", `self.private_ip`, `self.public_ip`)
+    log.info("Private IP: %s ; Public IP: %s", `self.private_ip`, `self.public_ip`)
     self.now_ready()
 
   def handle_dangling_flow(self, args):

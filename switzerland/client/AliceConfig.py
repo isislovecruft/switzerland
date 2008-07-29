@@ -130,8 +130,8 @@ class AliceConfig:
 
     def check(self):
         if not self.host:
-            log.error("use -s to specify switzerland server")
-            sys.exit(1)
+            self.host = "switzerland.eff.org"
+            log.info("no switzerland server specified, defaulting to %s" % self.host)
         
         # check for valid ip address
         if not s.inet_aton(self.private_ip):

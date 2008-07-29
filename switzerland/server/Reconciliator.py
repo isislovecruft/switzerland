@@ -253,7 +253,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     self.lock.acquire()
     try:
       self.check_dangling()
-      assert not self.finalized, 'not expecting finalized'
+      assert not self.finalized, 'packets arriving in finalized reconciliator'
       assert timestamp >= self.newest_information_from_a, \
         'expecting timestamp to be monotonically increasing %f < %f' % \
         (timestamp, self.newest_information_from_a)
@@ -264,12 +264,12 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
       if hash_archival:
         for hash in batch:
           if hash in forged_history:
-            log.error("?????? FORGERIES AS A RESULT OF TIMING!!!!!!!!!!!")
+            log.error("TIMING ERROR, sent packets arriving unacceptably late")
             sys.exit(1)
 
       self.__discard_from_new_batch(batch, self.recd_packets, self.b_from_a)
       # Are there any packets left in the batch?
-      if len(batch) > 1:                 # TIMESTAMP still takes a slot
+      if len(batch) > 1:          # 0 or more packets -- TIMESTAMP takes 1 slot
         self.a_to_b.append(batch)
         for hash in batch:
           if hash != TIMESTAMP:
@@ -309,7 +309,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     A reconciliator is said to be dangling if for some reason it Alice and Bob
     never get matched (ie self.ready is never True).  Typical causes might be
     modifications to the opening packet that change opening_hash; Alice and Bob
-    seeing a different packet as the first packet in the flow (most likely if
+    seeing different packets as the first packet in the flow (most likely if
     the flow is older than their circle membership), or a flow between Alice
     and someone other than Bob behind Bob's firewall.  Raise an Exception if
     we're deemed to be dangling.
@@ -377,30 +377,6 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     )
     self.forged_packets += len(forgeries)
     if hash_archival:
-      if forgeries:
-        for f in forgeries:
-          assert len(f[1]) == Protocol.hash_length -2 # XXX transient
-          forged_history.append(f[1])
-
-      # debugging madness
-      f = forgeries[0]
-      b_hash = f[1]
-      print hexlify(b_hash), "is a forgery"
-      if hash_archival:
-        ipids = bob_ipids[b_hash]
-        print "IPIDs that match this forgery are:", ipids
-        for ipid in ipids:
-          a_hashes = alice_hashes.setdefault(ipid,[])
-          print "  ", hexlify(ipid), "matches", map(hexlify,a_hashes) , "from alice"
-          for hash in a_hashes:
-            a_ipids = alice_ipids[hash]
-            print "    ", hexlify(hash), "matches", map(hexlify,a_ipids)
-            if ipid in a_ipids:
-              print "      (which is crazy!)"
-              print "      Alice flows", alice_flows_by_hash.setdefault(hash,[])
-              print "      Bob   flows", bob_flows_by_hash.setdefault(hash,[])
-              if hash_event_archival:
-                print "      History is", events_by_hash.setdefault(hash,[])
 
     return forgeries
 
@@ -412,6 +388,33 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     others = len([e for e in entries if e > 1])
     str += "%d 0s, %d 1s, %d 1+s" % (zeroes, ones, others)
     return str
+
+  def trace_forgery_event(forgeries):
+    if forgeries:
+      for f in forgeries:
+        assert len(f[1]) == Protocol.hash_length -2 # XXX transient
+        forged_history.append(f[1])
+
+    # debugging madness
+    f = forgeries[0]
+    b_hash = f[1]
+    print hexlify(b_hash), "is a forgery"
+    if hash_archival:
+      ipids = bob_ipids[b_hash]
+      print "IPIDs that match this forgery are:", ipids
+      for ipid in ipids:
+        a_hashes = alice_hashes.setdefault(ipid,[])
+        print "  ", hexlify(ipid), "matches", map(hexlify,a_hashes),"from alice"
+        for hash in a_hashes:
+          a_ipids = alice_ipids[hash]
+          print "    ", hexlify(hash), "matches", map(hexlify,a_ipids)
+          if ipid in a_ipids:
+            print "      (which is crazy!)"
+            print "      Alice flows", alice_flows_by_hash.setdefault(hash,[])
+            print "      Bob   flows", bob_flows_by_hash.setdefault(hash,[])
+            if hash_event_archival:
+              print "      History is", events_by_hash.setdefault(hash,[])
+
 
   def scan_batches(self, batches, dict, other_dict, condition):
     """
