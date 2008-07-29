@@ -53,6 +53,8 @@ log = errlog = logging.getLogger('switzerland')
 # purposes
 random.seed(time.time())
 
+table_header = """CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot\n"""
+
 class SwitzerlandMasterServer:
 
   def __init__(self, config):
@@ -781,11 +783,11 @@ class SwitzerlandMasterServer:
         errlog.info(summary)
       if self.config.send_flow_status_updates:
         for link, summaries in notifications.items():
-          self.send_other_message(link,"flow-status", ["\n".join(summaries)])
+          self.send_other_message(link,"flow-status", \
+                       [table_header + "\n".join(summaries)])
     finally:
       self.global_flow_lock.release()
     return (n, total_okay, total_leftovers, total_forged, total_dropped)
-
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
   return (dest_ip,dest_port,src_ip,src_port,prot)
