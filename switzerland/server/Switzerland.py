@@ -53,7 +53,7 @@ log = errlog = logging.getLogger('switzerland')
 # purposes
 random.seed(time.time())
 
-table_header = """CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot\n"""
+table_header = """CURRENT FLOW TABLE:                            Okay  Drop Mod/frg Pend_t/rx Prot\n"""
 
 class SwitzerlandMasterServer:
 
