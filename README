@@ -36,8 +36,8 @@ Contents:
 
 1.1. What is switzerland?
 
-switzerland is client/server software to detect when ISPs, networks or
-firewalls interfere with Internet traffic.  switzerland clients summarize
+Switzerland is client/server software to detect when ISPs, networks or
+firewalls interfere with Internet traffic.  Switzerland clients summarize
 incoming and outgoing packets to a trusted server, which verifies that pairs
 of clients receive what each other sent.  If a third party injects, alters
 or drops packets en route between clients, the switzerland server alerts the
@@ -59,9 +59,9 @@ clients and records data about the event for further analysis.
     |           Switzerland (server)              |
     +---------------------------------------------+
 
-1.1.1. How do I run switzerland?
+1.1.1. How do I run Switzerland?
 
-BEFORE YOU RUN SWITZERLAND, be sure to read the sections on security, privacy
+Before you run switzerland, be sure to read the sections on security, privacy
 and firewalls below.  
 
 Once you've read those sections and installed switzerland (see the INSTALL file
@@ -146,7 +146,7 @@ It is important not to confuse packet modification by your firewall or
 another client's firewall with interference by an ISP.  If you want to
 preform reliable tests of an ISP, you'll need to plug your computer directly
 into your DSL or cable modem, and only consider results obtained with
-non-firewalled peers.  switzerland will tell you which other clients are
+non-firewalled peers.  Switzerland will tell you which other clients are
 behind NAT firewalls.
 
 In the future we may be able to build a database of different models of
