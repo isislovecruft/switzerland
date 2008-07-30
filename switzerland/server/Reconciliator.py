@@ -377,7 +377,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     )
     self.forged_packets += len(forgeries)
     if hash_archival:
-
+      trace_forgery_event(forgeries)
     return forgeries
 
   def diagnose(self, dict):
