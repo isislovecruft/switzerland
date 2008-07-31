@@ -593,14 +593,11 @@ class SwitzerlandMasterServer:
       forgeries = self.select_some_forgeries(forgeries)
 
       for link, id in rec.dest_links:
-
         remember = (forgeries, rec)
-
         self.send_other_message(link, "forged-in", [id, forgeries], \
                                 data_for_reply=remember)
 
       # Now we wait for a response from Bob before talking to Alice
-
     finally:
       rec.lock.release()
 
@@ -632,7 +629,8 @@ class SwitzerlandMasterServer:
 
   def handle_fi_context(self, link, args, seq_no, reply_seq_no):
     """
-    A "fi-context" message is in reply to our previous "forged-in".
+    A "fi-context" message is in reply to a previous "forged-in" from 
+    Switzerland.py
     """
     meta, data = args              # meta is paperwork from our side
                                    # data is from bob
@@ -786,11 +784,15 @@ class SwitzerlandMasterServer:
         errlog.info(summary)
       if self.config.send_flow_status_updates:
         for link, summaries in notifications.items():
-          self.send_other_message(link,"flow-status", \
-                       [table_header + "\n".join(summaries)])
+          # don't send an identical flow table to a client repeatedly
+          if link.last_status != summaries:
+            link.last_tatus = summaries
+            self.send_other_message(link,"flow-status", \
+                         [table_header + "\n".join(summaries)])
     finally:
       self.global_flow_lock.release()
     return (n, total_okay, total_leftovers, total_forged, total_dropped)
+
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
   return (dest_ip,dest_port,src_ip,src_port,prot)

@@ -23,7 +23,7 @@ Other security issues:
 
  - It is possible for the switzerland client to quit in such a way that it does
    not shred & delete the temporary file used for packet capture.  This would
-   leave copies of raw captured packets on the system's hard disk.  (On unsual
+   leave copies of raw captured packets on the system's hard disk.  (On unusual
    copy-on-write or versioning filesystems, this might be the case even if we
    call shred.  We won't fix that.) [MOSTLY FIXED, but we should probably catch
    a few signals and handle those]
@@ -34,7 +34,7 @@ Semantics:
    It currently works for TCP, UDP, SCTP and port-less protocols, but not for
    some other protocols like RDP.  Fixes should go in Packet.py!
 
- - If an network modifies a flow from the very first packet, we currently won't
+ - If a network modifies a flow from the very first packet, we currently won't
    realise that we're seeing both ends of the flow.  This is because the "flow
    matchmakers" in Switzerland.py are currently (src_ip, dst_ip,
    hash_of_opening_packet_with_some_fields_masked).  Those criteria are good

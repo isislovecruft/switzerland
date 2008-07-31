@@ -15,7 +15,7 @@ Contents:
 1.1.1 How do I run switzerland?
 1.2. Stability of this release
 1.3. Security
-1.3.1. Privleged client
+1.3.1. Privileged client
 1.4. Platforms supported
 1.5. Privacy concerns
 
@@ -86,7 +86,7 @@ do not run it in a production setting, on computers that store sensitive
 data or data that has not been backed up, or on computers exchanging
 sensitive data over unencrypted connections.
 
-1.3.1. Privleged client
+1.3.1. Privileged client
 
 Because the switzerland client passively observes all traffic on your
 computer's network interface, it needs administrative (root) privleges, much
@@ -99,7 +99,7 @@ We've tested the client and server on:
 - Windows XP
 - OpenBSD
 - FreeBSD
-- Darwin (tiger, with an upgrade to python2.5)
+- Darwin (Tiger, with an upgrade to python2.5)
 
 Please help us add support for your platform of choice.
 
@@ -108,24 +108,29 @@ Please help us add support for your platform of choice.
 In this release, a switzerland server publishes the IP addresses of all
 connected clients.
 
-Your client will only summarize traffic exchanged with other switzerland
-clients, and won't tell the server anything about communications with
-computers that are not switzerland clients.
+Your client is designed to only summarize traffic exchanged with other
+switzerland clients, and should not tell the server anything about
+communications with computers that are not switzerland clients.
 
 Summary information uses cryptographic hashes of packets, so it's hard to
 reconstruct the contents of your packets from what you send to switzerland.
 However, when it detects forged packets, the switzerland server may ask your
-computer for full copies of packets sent around the same time as the forgery
-was received.  Therefore it is likely that running switzerland will result
-in portions of your unencrypted communications being logged at a server.
+computer for full copies of packets sent around the time that the forgery was
+received.  Therefore it is likely that running switzerland will result in
+portions of your unencrypted communications being logged at the server.  By
+default, switzerland clients will use a server run by the EFF, but you have the
+option of running your own server and telling your clients to connect to that
+instead.
 
 In this release, traffic between switzerland clients and the server is
-unencrypted, so it's possible for an eavesdropper to see information about
-what kind of connections you have open with which other switzerland clients,
-and how frequently you're exchanging data.
+unencrypted, so it's possible for an eavesdropper near the server to see
+information about what kind of connections you have open with which other
+switzerland clients, and how frequently you're exchanging data (an evesdropper
+near you could probably see most of this information regardless of whether you
+were running Switzerland).
 
-Later releases will be more careful about privacy and add more options for
-fine-grained privacy control.  For now though, treat any traffic travelling
+Later releases will reduce some of these privacy issues and add more options
+for fine-grained privacy control.  For now though, treat any traffic travelling
 between switzerland clients as "public record" information.
 
 2. Testing Notes

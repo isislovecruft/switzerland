@@ -107,12 +107,12 @@ static void *open_buffer()
   f_des = mkstemp(filename);
   if (f_des == -1) {
     fprintf(stderr, "Error opening tempfile: %s\n", strerror(errno));
-     exit(1);
+    exit(1);
   }
   for (n = 0; n < PACKETS; n++) {
     if (write(f_des, &blank, ENTRY_SIZE) != ENTRY_SIZE) {
       fprintf(stderr, "Error setting up tempfile: %s\n", strerror(errno));
-       exit(1);
+      exit(1);
     }
   }
 #ifndef WIN32
@@ -147,9 +147,9 @@ static void write_packet(const unsigned char *packet, unsigned short int len, do
   }
   if (len > MAX_PACKET_SIZE) {
     fprintf(stderr, "ERROR: Cannot handle a packet of size %d\n", len);
-    fprintf(stderr, 
-        "(Check for Large Segment Offloading on gigabit Ethernet cards)\n");
-     exit(1);
+    fprintf(stderr, "(Check for Large Segment Offloading on gigabit Ethernet cards,\n");
+    fprintf(stderr, "and avoid loopback devices)\n");
+    exit(1);
   }
   entry->packet_length = len;
   entry->timestamp = timestamp;

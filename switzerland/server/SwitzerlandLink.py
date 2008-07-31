@@ -26,6 +26,8 @@ class SwitzerlandLink(Protocol.Protocol):
     # fully joined, which would have bad consequences
     self.welcomed = threading.Event()
 
+    # last_status is used by Switzerland's flow state reporting thread
+    self.last_status = []
     Protocol.Protocol.__init__(self, self.log, seriousness)
 
   def handshake(self):
