@@ -785,10 +785,10 @@ class SwitzerlandMasterServer:
       if self.config.send_flow_status_updates:
         for link, summaries in notifications.items():
           # don't send an identical flow table to a client repeatedly
-          if link.last_status != summaries:
-            link.last_tatus = summaries
-            self.send_other_message(link,"flow-status", \
-                         [table_header + "\n".join(summaries)])
+          msg = "\n".join(summaries)
+          if link.last_status != msg:
+            link.last_tatus = msg
+            self.send_other_message(link,"flow-status", [table_header + msg])
     finally:
       self.global_flow_lock.release()
     return (n, total_okay, total_leftovers, total_forged, total_dropped)

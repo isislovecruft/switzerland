@@ -25,6 +25,7 @@ class AliceLink(Protocol.Protocol):
     self.parent = parent
     self.config = config
     self.quit_event = quit_event
+    self.dangling_note = False
 
     self.socket = s.socket(s.AF_INET, s.SOCK_STREAM)
     log.info("Connecting to %s:%s", config.host, `config.port`)
@@ -266,17 +267,21 @@ class AliceLink(Protocol.Protocol):
   def handle_dangling_flow(self, args):
     "Switzerland has failed to matchmake our view of this flow with out peers"
     msg = "Switzerland is unable to test flow #%d.  " % args[0]
-    msg += "Reasons for this may include:\n"
-    msg += " - Modifications to the first packet in the flow (hash 0x%s)\n" % \
-           hexlify(args[1])
-    # XXX we could make the inclusion of some of these lines conditional on
-    # whether the peer is actually firewalled
-    msg += " - The flow is not actually with the other Switzerland client\n" 
-    msg += "   (it could be with their firewall, another machine on their LAN,\n"
-    msg += "   or an impostor)\n"
-    msg+=" - Alice and Bob seeing a different packet as the first packet in the\n"
-    msg+="   flow (most likely if the flow was active before switzerland started)\n"
+    if not self.dangling_note:
+      msg += "Reasons for this may include:\n"
+      msg += " - Modifications to the first packet in the flow (hash 0x%s)\n" % \
+             hexlify(args[1])
+      # XXX we could make the inclusion of some of these lines conditional on
+      # whether the peer is actually firewalled
+      msg += " - The flow is not actually with the other Switzerland client\n" 
+      msg += "   (it could be with their firewall, another machine on their LAN,\n"
+      msg += "   or an impostor)\n"
+      msg+=" - Alice and Bob seeing a different packet as the first packet in the\n"
+      msg+="   flow (most likely if the flow was active before switzerland started)\n"
+    else:
+      msg += "(opening hash 0x%s)" % hexlify(args[1])
     log.warn(msg)
+    self.dangling_note = True
     # XXX we should also take steps to prevent the flow manager from send sent
     # and recd messages for this flow
 

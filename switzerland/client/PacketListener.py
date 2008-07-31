@@ -169,13 +169,13 @@ class PacketListener(threading.Thread):
           sys.exit(1)
 
         self.tmpfile = self.get_tempfile_name()
-        print "Opening tempfile", self.tmpfile
+        log.debug("Opening tempfile %s" % self.tmpfile)
         self.file = open(self.tmpfile, "a+b")
         fd = self.file.fileno()
         self.mem = mmap.mmap(fd, buffer_size, access=mmap.ACCESS_WRITE)
 
         self.parent.config.pcap_datalink = self.get_pcap_datalink()
-        print "Got pcap_datalink:", self.parent.config.pcap_datalink
+        log.debug("Got pcap_datalink: %s" % `self.parent.config.pcap_datalink`)
 
     def prioritise_sniffer(self):
         """
