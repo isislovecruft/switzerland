@@ -156,6 +156,9 @@ class SwitzerlandLink(Protocol.Protocol):
     elif msg_type == "parameters":
       self.handle_parameters(args)
       return True
+    elif msg_type == "traceroute":
+      log.info("received traceroute from %s:\n%s" % (`self.peer`,`args`))
+      return True
 
     # Fallthrough, but is this code slow?
     handler_name = "handle_" + msg_type

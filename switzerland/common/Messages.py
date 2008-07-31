@@ -76,6 +76,7 @@ _amsg("recd", ["flow id", "timestamp", "concatenated hashes"])
 _amsg("fi-context", [{"hash": [("timestamp", "hash", "data")]}], is_reply=True, expects_reply=True)
 _amsg("fo-context", [{"hash": [("timestamp", "data")]}], is_reply=True)
 _amsg("rst-radar", [[("list", "of"), ("packet", "pairs")]])
+_amsg("traceroute", ["destination", "type", "results"])
 
   
 # Switzerland -> Alice

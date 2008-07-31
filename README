@@ -80,7 +80,7 @@ have not been implemented.  We need your help!
 
 1.3. Security
 
-This release of switzerland may have bugs or security vulnerabilities that
+This release of switzerland may contain bugs or security vulnerabilities that
 allow an attacker to compromise your computer's security.  We recommend you
 do not run it in a production setting, on computers that store sensitive
 data or data that has not been backed up, or on computers exchanging
