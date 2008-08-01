@@ -1,3 +1,7 @@
+#ifdef WIN32
+# define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,12 +18,12 @@
 # include <stdint.h>
 # include <sys/wait.h>
 #else
-# define _CRT_SECURE_NO_WARNINGS
 # define open _open
 # define close _close
 # define write _write
 # define strdup _strdup
 # include <fcntl.h>
+# include <tchar.h>
 
 typedef UCHAR  uint8_t;
 typedef USHORT uint16_t;
@@ -59,7 +63,8 @@ static int live = 1; // capturing from device (live)?  assume so by default
 #ifndef WIN32
 static char filename[] = "/tmp/tmpXXXXXX";
 #else
-static char filename[] = "c:\\Temp\\tmpXXXXXX";
+# define FILENAME_SIZE 512
+static TCHAR filename[FILENAME_SIZE];
 #endif
 static void *mem;
 static unsigned int count = 0;
@@ -69,9 +74,9 @@ static int f_des;
 static PacketEntry blank = { 0x00,0x00,0,0,0,{0x00}};
 
 #ifdef WIN32
-static void *win32_mmap(const char *filename)
+static void *win32_mmap(const TCHAR *filename)
 {
-   HANDLE f = CreateFileA(filename, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+   HANDLE f = CreateFile(filename, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
    HANDLE m;
    void *p;
    if (!f) return NULL;
@@ -82,11 +87,39 @@ static void *win32_mmap(const char *filename)
    return p;
 }
 
-static int mkstemp(char *tmpl)
+static int mkstemp(TCHAR *tmpl)
 {
+  static TCHAR tmppath[FILENAME_SIZE];
+  DWORD dwBufSize = FILENAME_SIZE, dwrv;
+  unsigned int urv;
   int ret=-1;
-  mktemp(tmpl);
-  return open(tmpl,O_RDWR|O_BINARY|O_CREAT|O_EXCL|_O_SHORT_LIVED, _S_IREAD|_S_IWRITE);
+  HANDLE htmp;
+
+  dwrv = GetTempPath(dwBufSize, tmppath);
+  if (dwrv > dwBufSize || (dwrv == 0)) {
+    fprintf(stderr, "error opening tmpfile\n");
+    exit(1);
+  }
+
+  urv = GetTempFileName(tmppath, TEXT("fc"), 0, tmpl);
+  if (urv == 0) {
+    fprintf(stderr, "error opening tmpfile\n");
+    exit(1);
+  }
+
+  htmp = CreateFile((LPTSTR) filename,
+                    GENERIC_READ | GENERIC_WRITE,
+                    0,
+                    NULL,
+                    CREATE_ALWAYS,
+                    FILE_ATTRIBUTE_NORMAL,
+                    NULL);
+  if (htmp == INVALID_HANDLE_VALUE) {
+      fprintf(stderr, "CreateFile failed (%d)\n", GetLastError());
+      exit(1);
+  }
+
+  return _open_osfhandle((intptr_t)htmp, O_RDWR|O_BINARY);
 }
 
 static void usleep(int us)
@@ -121,14 +154,15 @@ static void *open_buffer()
     fprintf(stderr, "mmap failed: %s\n", strerror(errno));
      exit(1);
   }
+  printf("Tempfile: %s\n", filename);
 #else
   close(f_des);
   if (!(mem = win32_mmap(filename))) {
     fprintf(stderr, "mmap failed: %s\n", strerror(errno));
     exit(1);
   }
+  _tprintf(TEXT("Tempfile: %s\n"), filename);
 #endif
-  printf("Tempfile: %s\n", filename);
   fflush(stdout);
   return mem;
 }

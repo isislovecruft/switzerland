@@ -31,6 +31,10 @@ def get_interface():
     interface = get_bsd_interface()
   else:
     raise OSError, "Don't know how to identify the network interface used to reach the Internet.  Try specifying one with -i <interface>"
+  if not interface:
+    print 'sorry, couldn''t detect your network interface (is it up?)\n'
+    print 'please use -i to specify an interface\n'
+    sys.exit(1)
   assert interface
   return interface
  
