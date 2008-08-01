@@ -1,4 +1,17 @@
-Installation requirements:
+To build and install Switzerland, cd to the base directory (the one that
+contains this file), and run the following command:
+
+python setup.py install
+
+You will need to be logged in as root or Administrator.  On Mac OS X, become
+root like this:
+
+sudo python setup.py install
+
+INSTALLATION REQUIREMENTS
+
+Switzerland won't install/work properly unless you have the following packages
+on your computer:
 
 For the Switzerland client:
 
@@ -6,23 +19,16 @@ python2.5
 libpcap            (already installed on most systems)
 ntp                (not *absolutely* required but operating without it is risky)
 
-You will either a pre-compiled copy of the client packet capture executable
-(we may supply one for OS X and Windows) or a basic development environment
-including a C compiler and libc-dev and libpcap-dev.  The Mac OS X Developer
-Tools can provide these requirements on Macs, Cygwin can provide them on
-Windows.
+You will either a working pre-compiled copy of the client packet capture
+executable (we supply them for some versions of Linux, OS X and Windows) or a
+basic development environment including a C compiler and libc-dev and
+libpcap-dev.  The Mac OS X Developer Tools can provide these requirements on
+Macs, Cygwin can be used to provide them on Windows.
 
 For a Switzerland server:
 
 python2.5
 
-On UNIX systems, you can build and install switzerland by running:
-
-make install
-
-as root.  To be root on Mac OS X, try:
-
-sudo make install
-
 Both the client and server may run faster if you insall the psyco package, but
 neither require it.
+
