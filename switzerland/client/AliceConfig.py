@@ -135,7 +135,9 @@ class AliceConfig:
             log.info("no switzerland server specified, defaulting to %s" % self.host)
         
         # check for valid ip address
-        if not s.inet_aton(self.private_ip):
+        try:
+          s.inet_aton(self.private_ip)
+        except:
           log.error("invalid local address format %s", self.private_ip)
           sys.exit(1) # bail out if we don't have one
 
