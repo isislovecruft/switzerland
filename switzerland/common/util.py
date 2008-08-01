@@ -5,6 +5,9 @@ import threading
 import platform
 import binascii
 import os
+import random
+import time
+import traceback
 
 prot_table={}
 prot_gen = False 
@@ -30,6 +33,18 @@ def __gen_prot_table():
           pass
   except:
     print "Unable to produce protocol table"
+
+def writable(path):
+  import string
+  random.seed(time.time())
+  name = path + os.sep + "".join([random.choice(string.letters) for n in range(6)])
+  try:
+    f = open(name, "w")
+  except:
+    return False
+  f.close()
+  os.unlink(name)
+  return True
 
 def prot_name(prot_num):
   "Called from outside: return the name of a protocol number, if we can."

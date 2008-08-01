@@ -47,6 +47,14 @@ def try_binary(path):
   if "Couldn't" in line:
     # magic to keep things quiet
     print "Looks like it executes on this machine!"
+    try:
+      # Remove that pesky tempfile
+      line = outp.readline()
+      words = line.split()
+      if words[0] == "Tempfile:":
+        os.unlink(words[1])
+    except:
+      pass
     return path
   print "This is what we got when we tried the precompiled binary:\n%s" % line[:-1]
   print "Looks like that isn't going to work :("

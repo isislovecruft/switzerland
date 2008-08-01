@@ -5,6 +5,7 @@ import socket as s
 import platform
 
 from switzerland.common import local_ip
+from switzerland.common import util
 log = logging.getLogger('')
 
 if platform.system() != "Windows":
@@ -137,5 +138,11 @@ class AliceConfig:
         if not s.inet_aton(self.private_ip):
           log.error("invalid local address format %s", self.private_ip)
           sys.exit(1) # bail out if we don't have one
+
+        if not util.writable(self.pcap_logdir):
+          log.error("Cannot write to PCAP log directory %s", self.pcap_logdir)
+          log.error("Change its permissions or specify another directory with -P")
+          log.error('Use "-P -" for no logging')
+          sys.exit(1)
  
 #vim: et ts=4
