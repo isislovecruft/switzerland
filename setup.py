@@ -12,7 +12,7 @@ def check_version():
     # This is a bad start, but let's see if there is a python2.5 around:
     backup_plan = False
     if "PATH" in os.environ:
-      for dir in os.environ[PATH].split(os.pathsep):
+      for dir in os.environ["PATH"].split(os.pathsep):
         if os.path.exists(dir + os.sep + "python2.5"):
           backup_plan = True
 
