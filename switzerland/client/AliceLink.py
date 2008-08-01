@@ -136,29 +136,30 @@ class AliceLink(Protocol.Protocol):
         the newest_timestamps specified in timestamps. """
     self.flow_manager.lock.acquire()
     try:
-      flow_id, packets_wanted = args
-      log.warn("Switzerland has informed us of %d modified inbound packets in flow #%d" % (len(args[1]), flow_id))
-      flow = self.lookup_flow_by_id(flow_id, "modified-in")
-      if not flow or self.nat_firewall_warnings(flow) == -1:
-        # errors have already been reported
-        return
+      try:
+        flow_id, packets_wanted = args
+        log.warn("Switzerland has informed us of %d modified inbound packets in flow #%d" % (len(args[1]), flow_id))
+        flow = self.lookup_flow_by_id(flow_id, "modified-in")
+        if not flow or self.nat_firewall_warnings(flow) == -1:
+          # errors have already been reported
+          return
 
-      contexts = {}
-      out_filenames = []
-      for ts,hash in packets_wanted:
-        context = contexts[hash] = flow.get_fi_context(ts, hash)
-        if not context:
-          log.warn("No context was available for hash %s" % hexlify(hash))
-          out_filenames.append("")
-        else:
-          fn = self.parent.pcap_logger.log_forged_in(context, flow_id)
-          out_filenames.append(fn)
+        contexts = {}
+        out_filenames = []
+        for ts,hash in packets_wanted:
+          context = contexts[hash] = flow.get_fi_context(ts, hash)
+          if not context:
+            log.warn("No context was available for hash %s" % hexlify(hash))
+            out_filenames.append("")
+          else:
+            fn = self.parent.pcap_logger.log_forged_in(context, flow_id)
+            out_filenames.append(fn)
 
-      self.send_message("fi-context", [contexts], reply_seq_no=seq_no,\
-                        data_for_reply=out_filenames)
-    except:
-      log.error("exception in handle_forged_in:")
-      log.error(traceback.format_exc())
+        self.send_message("fi-context", [contexts], reply_seq_no=seq_no,\
+                          data_for_reply=out_filenames)
+      except:
+        log.error("exception in handle_forged_in:")
+        log.error(traceback.format_exc())
     finally:
       self.flow_manager.lock.release()
 

@@ -99,16 +99,17 @@ class SwitzerlandMasterServer:
         except:
           errlog.info("(exception on shutdown)")
         try:
-          self.peer_lock.acquire()
-          for ip in self.peer_ips.values():
-            for link in ip.values():
-              try:
-                link.close()
-              except:
-                errlog.error("problem closing %s", `link`)
-        except:
-          errlog.error("problem iterating over links")
-          raise
+          try:
+            self.peer_lock.acquire()
+            for ip in self.peer_ips.values():
+              for link in ip.values():
+                try:
+                  link.close()
+                except:
+                  errlog.error("problem closing %s", `link`)
+          except:
+            errlog.error("problem iterating over links")
+            raise
         finally:
           self.peer_lock.release()
         self.socket.close()
@@ -523,23 +524,24 @@ class SwitzerlandMasterServer:
       return False
     rec.lock.acquire()
     try:
-      if sent:
-        forgeries = rec.sent_by_alice(timestamp, hashes)
-        drops = rec.check_for_drops()
-        if drops:
-          self.debug_note("%d dropped packets!" % len(drops))
-      else:
-        forgeries = rec.recd_by_bob(timestamp, hashes)
-    except Reconciliator.Dangling:
-      opening_hash = rec.m_tuple[2]
-      link.send_message("dangling-flow", [flow_id, opening_hash])
-      log.warn("Flow %s is dangling" % `print_flow_tuple(rec.flow)`)
-      link.flow_lock.acquire()
       try:
-        link.flow_table[flow_id] = None
-      finally:
-        link.flow_lock.release()
-      return
+        if sent:
+          forgeries = rec.sent_by_alice(timestamp, hashes)
+          drops = rec.check_for_drops()
+          if drops:
+            self.debug_note("%d dropped packets!" % len(drops))
+        else:
+          forgeries = rec.recd_by_bob(timestamp, hashes)
+      except Reconciliator.Dangling:
+        opening_hash = rec.m_tuple[2]
+        link.send_message("dangling-flow", [flow_id, opening_hash])
+        log.warn("Flow %s is dangling" % `print_flow_tuple(rec.flow)`)
+        link.flow_lock.acquire()
+        try:
+          link.flow_table[flow_id] = None
+        finally:
+          link.flow_lock.release()
+        return
     finally:
       rec.lock.release()
     if forgeries:

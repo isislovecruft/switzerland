@@ -369,18 +369,19 @@ class Protocol(threading.Thread):
     self.debug_note("Bailing out with: %s" % string)
     self.status_lock.acquire()
     try:
-      if not (force or self.ready.isSet()):
-        self.debug_note("Not ready for bailout, queueing")
-        self.bailout_waiting = string
-        return
-      # ensure that if things go really pear-shaped, bailouts don't nest
-      if not self.bailing_out:
-        self.bailing_out = True
-        self.send_message("error-bye", [string])
-    except:
-      sys.stderr.write("Can't even bail out properly!")
-      raise
-      # our caller should be just about to raise an exception anyway
+      try:
+        if not (force or self.ready.isSet()):
+          self.debug_note("Not ready for bailout, queueing")
+          self.bailout_waiting = string
+          return
+        # ensure that if things go really pear-shaped, bailouts don't nest
+        if not self.bailing_out:
+          self.bailing_out = True
+          self.send_message("error-bye", [string])
+      except:
+        sys.stderr.write("Can't even bail out properly!")
+        raise
+        # our caller should be just about to raise an exception anyway
     finally:
       self.debug_note("lock released")
       self.status_lock.release()

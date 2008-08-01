@@ -19,7 +19,7 @@ log = logging.getLogger('alice.flow_manager')
 logging.disable(logging.DEBUG)
 
 
-class Peer():
+class Peer:
     "This class holds all the information we store on a per-peer basis"
     def __init__(self, firewalled, key="XXX"):
         self.firewalled = firewalled

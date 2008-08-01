@@ -12,8 +12,7 @@ log = logging.getLogger()
 class LoggerError(Exception):
   pass
 
-
-class PcapWriter():
+class PcapWriter:
   "Write some packets to a pcap file"
   def __init__(self, path):
 
@@ -42,7 +41,7 @@ class PcapWriter():
      self.file.write(packet)
 
 
-class PcapLogger():
+class PcapLogger:
   """
   This device organises the elaborate switzerland logging structure, which
   is a standard log containing references to a directory of incident-specific

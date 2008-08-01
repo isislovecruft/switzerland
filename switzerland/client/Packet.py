@@ -1,4 +1,4 @@
-import hashlib
+import sha
 import sys
 import hmac
 import struct
@@ -291,7 +291,7 @@ class Packet:
             else:
                 self.zero_source_port()
 
-        m = hmac.new(self.key,self.data,hashlib.sha1)
+        m = hmac.new(self.key,self.data,sha)
         self.hash = m.digest()[:Protocol.hash_length-2] + self.ip_id
         if track_ip_ids: self.alice.fm.ip_ids[self.ip_id] = self.hash[:-2]
 
