@@ -1,5 +1,25 @@
-To build and install Switzerland, cd to the base directory (the one that
-contains this file), and run the following command:
+HOW TO INSTALL SWITZERLAND
+
+sudo python setup.py install
+
+Switzerland is alpha software.  Remarkably, it runs on lots of different
+operating systems (we've seen it work on Linux, OS X, BSD and Windows XP), but
+because it's alpha software we can't promise that it's easy to install on all
+of these operating systems.  We're looking for volunteers to help with a
+Windows installer!
+
+Switzerland requires Python 2.4.  Recent *nix installs and OS X
+Leopard come with Python 2.4.  On OS X Tiger, and on Windows, you
+will should install Python 2.5.2.  Google it!
+
+Once python is available, there are two things that need to be right for
+Switzerland to run: the base directory needs to be in your PYTHONPATH and the
+packet sniffing executable (called FastCollector) needs to be compiled and in
+your system PATH.
+
+The installer tries to achieve these requirements by hook or by crook.  You
+can try it: cd to the base directory (the one that contains this file), and
+run the following command:
 
 python setup.py install
 
@@ -8,27 +28,26 @@ root like this:
 
 sudo python setup.py install
 
+If you're lucky, that will just work and you can run "switzerland-client" at
+the command line.  If not, read on...
+
 INSTALLATION REQUIREMENTS
 
-Switzerland won't install/work properly unless you have the following packages
-on your computer:
+The Switzerland client may not build/install/work properly unless you have the
+following packages on your computer:
 
-For the Switzerland client:
+python2.4
+libpcap          (already installed on some systems, Windows users need WinPcap)
+ntp              (not *absolutely* required but operating without it is risky)
 
-python2.5
-libpcap            (already installed on most systems)
-ntp                (not *absolutely* required but operating without it is risky)
+The setup.py script tries some pre-compiled binaries, but if none of those
+work on your machine, you will need a basic development environment including
+a C compiler and libc-dev and libpcap-dev to compile FastCollector.  The Mac
+OS X Developer Tools provide these requirements on Macs, Cygwin can be
+used to provide them on Windows.  On Linux, make sure you have gcc and the
+basic libc development packages installed.
 
-You will either a working pre-compiled copy of the client packet capture
-executable (we supply them for some versions of Linux, OS X and Windows) or a
-basic development environment including a C compiler and libc-dev and
-libpcap-dev.  The Mac OS X Developer Tools can provide these requirements on
-Macs, Cygwin can be used to provide them on Windows.
-
-For a Switzerland server:
-
-python2.5
-
-Both the client and server may run faster if you insall the psyco package, but
-neither require it.
-
+With all of these prerequesites sorted out, the "python setup.py install"
+command should just work for non-Windows systems.  On Windows, you may have to
+work out how to get FastCollector.c compiled and the resulting
+FastCollector.py placed somewhere in the PATH.  Good luck!

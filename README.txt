@@ -65,7 +65,8 @@ Before you run Switzerland, be sure to read the sections on security, privacy
 and firewalls below.  
 
 Once you've read those sections and installed Switzerland (see the INSTALL file
-for instructions), you can run Switzerland like this:
+for instructions -- on some computers installation will be very easy, on
+others, it may require some hacking), you can run Switzerland like this:
 
 switzerland-client 
 
