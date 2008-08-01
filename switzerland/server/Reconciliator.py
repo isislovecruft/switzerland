@@ -6,6 +6,7 @@ import socket as s
 import logging
 from binascii import hexlify
 import time
+import traceback
 
 from switzerland.common import Protocol
 from switzerland.common import util
@@ -172,8 +173,11 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     o_hash = self.m_tuple[2]
     # the other side is the only reliable indicator of each side's
     # public port number
-    pub_src += ":" + `util.bin2int(self.dest_flow[1])`
-    pub_dest += ":" + `util.bin2int(self.src_flow[3])`
+    try:
+      pub_src += ":" + `util.bin2int(self.dest_flow[1])`
+      pub_dest += ":" + `util.bin2int(self.src_flow[3])`
+    except:
+      log.error(sys.format_exc())
 
     line1 = pub_src.center(21) + " > " + pub_dest.center(21)
 
