@@ -32,7 +32,7 @@ def try_precompiled_binaries():
   if plat == "Linux":
     return try_binary("bin/FastCollector.linux")
   elif plat == "Windows":
-    return try_binary("bin/FastCollector.exe")
+    return try_binary("bin\FastCollector.exe")
   elif plat == "Darwin":
     return try_binary("bin/FastCollector.darwin")
   return False
