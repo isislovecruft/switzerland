@@ -1,17 +1,20 @@
 Installation requirements:
 
-For Switzerland server:
+For the Switzerland client:
 
 python2.5
+libpcap            (already installed on most systems)
+ntp                (not *absolutely* required but operating without it is risky)
 
-For Alice, the Switzerland client:
+You will either a pre-compiled copy of the client packet capture executable
+(we may supply one for OS X and Windows) or a basic development environment
+including a C compiler and libc-dev and libpcap-dev.  The Mac OS X Developer
+Tools can provide these requirements on Macs, Cygwin can provide them on
+Windows.
+
+For a Switzerland server:
 
 python2.5
-libpcap
-ntp 
-
-Either a pre-compiled copy of the client packet capture binary (we supply one
-for OS X and Windows) or a C compiler and libpcap.
 
 On UNIX systems, you can build and install switzerland by running:
 

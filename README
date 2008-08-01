@@ -1,9 +1,9 @@
-switzerland v0.0
+Switzerland v0.0
 
-e-mail switzerland-devel@eff.org
-       https://falcon.eff.org/mailman/listinfo/switzerland-devel
+e-mail Switzerland-devel@eff.org
+       https://falcon.eff.org/mailman/listinfo/Switzerland-devel
 
-IRC    #switzerland on irc.freenode.org
+IRC    #Switzerland on irc.freenode.org
 
 bugs   https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569
 
@@ -11,8 +11,8 @@ Contents:
 
 1. Overview
 
-1.1. What is switzerland?
-1.1.1 How do I run switzerland?
+1.1. What is Switzerland?
+1.1.1 How do I run Switzerland?
 1.2. Stability of this release
 1.3. Security
 1.3.1. Privileged client
@@ -34,13 +34,13 @@ Contents:
 
 1. Overview
 
-1.1. What is switzerland?
+1.1. What is Switzerland?
 
 Switzerland is client/server software to detect when ISPs, networks or
 firewalls interfere with Internet traffic.  Switzerland clients summarize
 incoming and outgoing packets to a trusted server, which verifies that pairs
 of clients receive what each other sent.  If a third party injects, alters
-or drops packets en route between clients, the switzerland server alerts the
+or drops packets en route between clients, the Switzerland server alerts the
 clients and records data about the event for further analysis.
 
                      +-----------+
@@ -61,26 +61,27 @@ clients and records data about the event for further analysis.
 
 1.1.1. How do I run Switzerland?
 
-Before you run switzerland, be sure to read the sections on security, privacy
+Before you run Switzerland, be sure to read the sections on security, privacy
 and firewalls below.  
 
-Once you've read those sections and installed switzerland (see the INSTALL file
-for instructions), you can run switzerland like this:
+Once you've read those sections and installed Switzerland (see the INSTALL file
+for instructions), you can run Switzerland like this:
 
-switzerland-client -s switzerland.eff.org
+switzerland-client 
 
-If you run your own switzerland server, you can specify that instead using the
+By default, the client will use EFF's Switzerland server, switzerland.eff.org.
+If you run your own Switzerland server, you can specify that instead using the
 -s flag.
 
 1.2. Stability of this release
 
-This is an alpha release; switzerland is not stable software.  It's been
+This is an alpha release; Switzerland is not stable software.  It's been
 gently tested but is still heavily under development.  Many planned features
 have not been implemented.  We need your help!
 
 1.3. Security
 
-This release of switzerland may contain bugs or security vulnerabilities that
+This release of Switzerland may contain bugs or security vulnerabilities that
 allow an attacker to compromise your computer's security.  We recommend you
 do not run it in a production setting, on computers that store sensitive
 data or data that has not been backed up, or on computers exchanging
@@ -88,7 +89,7 @@ sensitive data over unencrypted connections.
 
 1.3.1. Privileged client
 
-Because the switzerland client passively observes all traffic on your
+Because the Switzerland client passively observes all traffic on your
 computer's network interface, it needs administrative (root) privleges, much
 like the tcpdump program.
 
@@ -96,54 +97,55 @@ like the tcpdump program.
 
 We've tested the client and server on:
 - Linux (x86/debian)
-- Windows XP
-- OpenBSD
 - FreeBSD
+- OpenBSD
 - Darwin (Tiger, with an upgrade to python2.5)
+- Windows XP (it runs, but as with many UNIX programs on win32, installation
+              is harder)
 
 Please help us add support for your platform of choice.
 
 1.5. Privacy concerns
 
-In this release, a switzerland server publishes the IP addresses of all
+In this release, a Switzerland server publishes the IP addresses of all
 connected clients.
 
 Your client is designed to only summarize traffic exchanged with other
-switzerland clients, and should not tell the server anything about
-communications with computers that are not switzerland clients.
+Switzerland clients, and should not tell the server anything about
+communications with computers that are not Switzerland clients.
 
 Summary information uses cryptographic hashes of packets, so it's hard to
-reconstruct the contents of your packets from what you send to switzerland.
-However, when it detects forged packets, the switzerland server may ask your
+reconstruct the contents of your packets from what you send to Switzerland.
+However, when it detects forged packets, the Switzerland server may ask your
 computer for full copies of packets sent around the time that the forgery was
-received.  Therefore it is likely that running switzerland will result in
+received.  Therefore it is likely that running Switzerland will result in
 portions of your unencrypted communications being logged at the server.  By
-default, switzerland clients will use a server run by the EFF, but you have the
+default, Switzerland clients will use a server run by the EFF, but you have the
 option of running your own server and telling your clients to connect to that
 instead.
 
-In this release, traffic between switzerland clients and the server is
+In this release, traffic between Switzerland clients and the server is
 unencrypted, so it's possible for an eavesdropper near the server to see
 information about what kind of connections you have open with which other
-switzerland clients, and how frequently you're exchanging data (an evesdropper
+Switzerland clients, and how frequently you're exchanging data (an evesdropper
 near you could probably see most of this information regardless of whether you
 were running Switzerland).
 
 Later releases will reduce some of these privacy issues and add more options
 for fine-grained privacy control.  For now though, treat any traffic travelling
-between switzerland clients as "public record" information.
+between Switzerland clients as "public record" information.
 
 2. Testing Notes
 
 2.1. NAT (Network Address Translation) firewalls
 
-switzerland is aware of the changes to IP addresses and port numbers that
+Switzerland is aware of the changes to IP addresses and port numbers that
 NAT firewalls normally make, and will not report those as modifications to
 the underlying traffic.
 
 But many NAT firewalls, especially home wireless routers, make other
 undocumented modifications to the traffic travelling through them, beyond
-the minimum required to be a NAT firewall.  As a result, switzerland clients
+the minimum required to be a NAT firewall.  As a result, Switzerland clients
 that are behind firewalls or talking to machines that are behind firewalls
 will often detect and report these modifications to traffic.
 
@@ -180,27 +182,27 @@ own servers elsewhere if you wish.
 
 3.1. Ways to help
 
-- become a maintainer
 - use the software and report bugs / results
 - run or write new unit testcases
-- add or fix support for your platform
+- add or fix support for your platform (especially installation!)
 - help find and fix security vulnerabilities
 - implement new features
+- send us patches, become a maintainer!
 
 3.2. svn repository
 
-switzerland's public ssh repository is available at
-https://switzerland.svn.sourceforge.net/svnroot/switzerland
+Switzerland's public ssh repository is available at
+https://Switzerland.svn.sourceforge.net/svnroot/Switzerland
 
 3.3. Tree organization
 
 bin/                     : supporting binaries
-switzerland/             : source code
+Switzerland/             : source code
   client/                : client code
     Alice.py             : main file for client
     AliceConfig.py       : command-line option/configuration file handling
     AliceFlow.py         : one direction of an IP communication
-    AliceLink.py         : interaction with switzerland server
+    AliceLink.py         : interaction with Switzerland server
     Cleaner.py           : thread to remove stale queued packets
     FastCollector.c      : packet sniffer that writes to mmap'd buffer
     FlowManager.py       : thread to track active flows
@@ -212,7 +214,7 @@ switzerland/             : source code
     TimeManager.py       : interface with NTP 
   common/                : code shared between client+server
     Flow.py              : one direction of an IP communication
-    Messages.py          : switzerland protocol messages
+    Messages.py          : Switzerland protocol messages
     PcapLogger.py        : write datagrams to pcap files
     Protocol.py          : client/server socket communication
     local_ip.py          : detect IP address / network interfaces

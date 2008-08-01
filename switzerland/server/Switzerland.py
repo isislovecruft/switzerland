@@ -174,7 +174,7 @@ class SwitzerlandMasterServer:
             return True
         except AttributeError:
           # p.firewalled hasn't been determined yet
-          link.bailout("Too many simultaneous connections from the one IP!")
+          link.bailout("We already have a connection from your IP.  Multiple connections from a single IP are currently disallowed!")
           return True
       self.debug_note("But they are all firewalled, so we'll let this in")
       return True
