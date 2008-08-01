@@ -139,7 +139,8 @@ class AliceConfig:
           log.error("invalid local address format %s", self.private_ip)
           sys.exit(1) # bail out if we don't have one
 
-        if not util.writable(self.pcap_logdir):
+        if self.pcap_logdir and self.pcap_logdir != "-" \
+           and not util.writable(self.pcap_logdir):
           log.error("Cannot write to PCAP log directory %s", self.pcap_logdir)
           log.error("Change its permissions or specify another directory with -P")
           log.error('Use "-P -" for no logging')
