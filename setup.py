@@ -8,22 +8,22 @@ import platform
 import shutil
 
 def check_version():
-  if sys.version_info < (2,5,0):
-    # This is a bad start, but let's see if there is a python2.5 around:
+  if sys.version_info < (2,4,0):
+    # This is a bad start, but let's see if there is a python2.4 around:
     backup_plan = False
     if "PATH" in os.environ:
       for dir in os.environ["PATH"].split(os.pathsep):
-        if os.path.exists(dir + os.sep + "python2.5"):
+        if os.path.exists(dir + os.sep + "python2.4"):
           backup_plan = True
 
     if not backup_plan:
-      print "Unfortunately you need Python 2.5 to run Switzerland."
-      print "Please install Python 2.5"
+      print "Unfortunately you need Python 2.4 to run Switzerland."
+      print "Please install Python 2.4"
       print "(or send us a patch so that Switzerland runs with your version of Python ;)"
       sys.exit(1)
     else:
-      print "It looks like Python2.5 is installed on your system, but it is not the"
-      print 'default Python version.  Try running setup.py using "python2.5" '
+      print "It looks like Python2.4 is installed on your system, but it is not the"
+      print 'default Python version.  Try running setup.py using "python2.4" '
       print 'instead of "python"'
       sys.exit(0)
 

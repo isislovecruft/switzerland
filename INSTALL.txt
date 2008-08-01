@@ -8,25 +8,23 @@ because it's alpha software we can't promise that it's easy to install on all
 of these operating systems.  We're looking for volunteers to help with a
 Windows installer!
 
-Switzerland requires Python 2.4.  Recent *nix installs and OS X
-Leopard come with Python 2.4.  On OS X Tiger, and on Windows, you
-will should install Python 2.5.2.  Google it!
+Switzerland requires Python 2.4.  Recent Linux operating systems, and OS X
+Leopard, should come with Python 2.4.  On OS X Tiger, and on Windows, you
+should install Python 2.5.2.  Google it!
 
 Once python is available, there are two things that need to be right for
 Switzerland to run: the base directory needs to be in your PYTHONPATH and the
 packet sniffing executable (called FastCollector) needs to be compiled and in
 your system PATH.
 
-The installer tries to achieve these requirements by hook or by crook.  You
-can try it: cd to the base directory (the one that contains this file), and
+The installer tries to achieve these requirements by hook or by crook.  It may
+work for you: cd to the base directory (the one that contains this file), and
 run the following command:
 
-python setup.py install
-
-You will need to be logged in as root or Administrator.  On Mac OS X, become
-root like this:
-
 sudo python setup.py install
+
+If sudo doesn't work for you, you can log in as root or Administrator and run
+the command without "sudo" at the front.
 
 If you're lucky, that will just work and you can run "switzerland-client" at
 the command line.  If not, read on...
