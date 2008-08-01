@@ -43,7 +43,7 @@ def try_binary(path):
     print "(probably because you are in the wrong directory....)"
     return False
   print "Testing executable %s:" % path
-  inp,outp,errors = os.popen3(path+ " notadeviceanywhere","r")
+  inp,outp,errors = os.popen3(path+ " notadeviceanywhere")
   line = errors.read()
   if "Couldn't" in line:
     # magic to keep things quiet
