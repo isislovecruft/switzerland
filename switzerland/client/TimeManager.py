@@ -38,9 +38,11 @@ class TimeManager:
     if mode == "unspec":
       log.error("""
       NTP is in "unspec" mode.  This is probably because your system clock
-      is quite wrong.  Switzerland won't work if your clock is really out
-      of whack.  It could also mean that you're offline or that you need to
-      give NTP another minute or two to find time servers.""")
+      is wrong by seconds or more.  Switzerland won't work if your clock is
+      that wrong.  Unspec mode could also mean that you're offline or that 
+      you need to give NTP another minute or two to find time servers.  If 
+      this doesn't work, try stopping NTP, use the ntpdate program to adjust 
+      the clock and then start NTP again.""")
       raise UncertainTimeError
     elif mode != "client":
       log.info("Note that NTP is in mode %s", mode)

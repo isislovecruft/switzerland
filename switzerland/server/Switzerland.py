@@ -580,7 +580,7 @@ class SwitzerlandMasterServer:
           return
         else:
           self.one_forgery = True
-          forgeies = forgeries[:1]
+          forgeries = forgeries[:1]
           timestamp, hash = forgeries[0]
           ipids = Reconciliator.bob_ipids[hash]
           #assert len(ipids) == 1, `ipids` + "is not of length 1!"

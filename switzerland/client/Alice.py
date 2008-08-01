@@ -25,6 +25,12 @@ log.setLevel(logging.DEBUG)
 startup_handler = logging.StreamHandler()
 log.addHandler(startup_handler)
 
+welcome_msg = \
+"""Welcome to Switzerland.  This is a Version Zero alpha release.  It's sure to
+break at some point.  Please let us know by email (switzerland-devel@eff.org),
+IRC (#switzerland on irc.oftc.net) or by filing a bug
+( https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569 )"""
+
 class Alice:
     """
     Alice is the Switzerland client.
@@ -112,8 +118,7 @@ class Alice:
             self.root_dispersion = self.time_manager.root_dispersion()
         except UncertainTimeError:
             if not self.config.allow_uncertain_time:
-                print "NTP data is not working on the localhost.\n"
-                print "Please fix NTP!!\n"
+                print "  Please fix NTP!!\n"
                 print "  (If that is not possible, you can specify an error bound on your system clock"
                 print "  using the -u flag, but you must ensure that it is correct. Failure to do so"
                 print "  may result in false reports of packet modification.)"
@@ -142,6 +147,8 @@ def main():
         me = Alice(config=AliceConfig(getopt=True))
         me.listener.start()
         me.start()
+        if not me.quit_event.isSet():
+            print welcome_msg
         # This wasn't helping:
         while not me.quit_event.isSet():
             me.quit_event.wait(5)

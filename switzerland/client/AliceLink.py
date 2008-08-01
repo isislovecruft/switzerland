@@ -335,7 +335,7 @@ class AliceLink(Protocol.Protocol):
       self.handle_farewell(args)
       return True
     elif msg_type == "debug-ipid":
-      self.debug_ipid(args)
+      self.debug_ip_id(args)
       return True
     elif msg_type == "public-ip":
       self.handle_public_ip(args)

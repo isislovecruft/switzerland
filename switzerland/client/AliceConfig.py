@@ -134,12 +134,16 @@ class AliceConfig:
             self.host = "switzerland.eff.org"
             log.info("no switzerland server specified, defaulting to %s" % self.host)
         
-        # check for valid ip address
+        # check for a valid ip address
+        if self.private_ip == None:
+          log.error("Switzerland wasn't able to determine your local IP address.")
+          log.error("Make sure you're online; if you are, use the -l flag to specify you IP")
+          sys.exit(1)
         try:
           s.inet_aton(self.private_ip)
         except:
           log.error("invalid local address format %s", `self.private_ip`)
-          sys.exit(1) # bail out if we don't have one
+          sys.exit(1) 
 
         if self.pcap_logdir and self.pcap_logdir != "-" \
            and not util.writable(self.pcap_logdir):
