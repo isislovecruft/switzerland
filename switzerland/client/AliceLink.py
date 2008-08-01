@@ -113,8 +113,7 @@ class AliceLink(Protocol.Protocol):
     self.flow_manager.lock.acquire()
     try:
       flow_id, forgeries = args
-      log.warn("Heard about %d modified outbound packets in flow #%d" % 
-               (len(forgeries), flow_id))
+      log.warn("Switzerland has informed us of %d modified/spoofed outbound packets in flow #%d" % (len(forgeries), flow_id))
       flow = self.lookup_flow_by_id(flow_id, "modified-out")
       self.nat_firewall_warnings(flow)
       contexts = {}
@@ -138,8 +137,7 @@ class AliceLink(Protocol.Protocol):
     self.flow_manager.lock.acquire()
     try:
       flow_id, packets_wanted = args
-      log.warn("Heard about %d modified inbound packets in flow #%d" % 
-               (len(args[1]), flow_id))
+      log.warn("Switzerland has informed us of %d modified inbound packets in flow #%d" % (len(args[1]), flow_id))
       flow = self.lookup_flow_by_id(flow_id, "modified-in")
       if not flow or self.nat_firewall_warnings(flow) == -1:
         # errors have already been reported

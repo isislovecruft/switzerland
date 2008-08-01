@@ -37,8 +37,8 @@ def __gen_prot_table():
 def writable(path):
   import string
   random.seed(time.time())
-  name = path + os.sep + "".join([random.choice(string.letters) for n in range(6)])
   try:
+    name = path + os.sep + "".join([random.choice(string.letters) for n in range(6)])
     f = open(name, "w")
   except:
     return False
