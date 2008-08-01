@@ -23,7 +23,8 @@ def check_version():
       sys.exit(1)
     else:
       print "It looks like Python2.5 is installed on your system, but it is not the"
-      print "default Python version.  You will need to run setup.py using python2.5"
+      print 'default Python version.  Try running setup.py using "python2.5" '
+      print 'instead of "python"'
       sys.exit(0)
 
 def try_precompiled_binaries():
