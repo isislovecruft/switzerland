@@ -119,9 +119,12 @@ class AliceLink(Protocol.Protocol):
       contexts = {}
       for wanted in forgeries:
         hash = wanted[0] # hash of forged packet (first thing in wanted)
-        ctxt = flow.get_fo_context(wanted[1], self.parent)
+        receipt_context = wanted[1]
+        filename = self.parent.pcap_logger.log_forged_in(receipt_context, flow_id)
+        ctxt = flow.get_fo_context(receipt_context, self.parent)
         if ctxt:
           contexts[hash] = ctxt
+          self.parent.pcap_logger.log_forged_out(ctxt, filename)
         else:
           log.error("No modified-out context for %s" % hexlify(hash))
           contexts[hash] = None
