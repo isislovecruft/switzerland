@@ -138,7 +138,7 @@ class AliceConfig:
         try:
           s.inet_aton(self.private_ip)
         except:
-          log.error("invalid local address format %s", self.private_ip)
+          log.error("invalid local address format %s", `self.private_ip`)
           sys.exit(1) # bail out if we don't have one
 
         if self.pcap_logdir and self.pcap_logdir != "-" \
