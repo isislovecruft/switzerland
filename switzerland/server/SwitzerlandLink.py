@@ -6,6 +6,8 @@ from switzerland.common import Messages
 import threading
 import logging
 
+log = logging.getLogger('switzerland.link')
+
 class SwitzerlandLink(Protocol.Protocol):
   def __init__(self, socket, peer_addr, parent=None, seriousness=0):
     self.peer = peer_addr
