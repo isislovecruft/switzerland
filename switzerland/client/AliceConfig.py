@@ -3,17 +3,20 @@ import sys
 import logging
 import socket as s
 import platform
+import os
+import errno
+from stat import *
 
 from switzerland.common import local_ip
 from switzerland.common import util
 log = logging.getLogger('')
 
 if platform.system() != "Windows":
-  default_pcap_logdir = "/var/log/switzerland-pcaps"
-  default_logfile = "/var/log/switzerland-client.log"
+    default_pcap_logdir = "/var/log/switzerland-pcaps"
+    default_logfile = "/var/log/switzerland-client.log"
 else:
-  default_pcap_logdir = "c:\switzerland\pcaplogs"
-  default_logfile = "c:\switzerland\clientlog"
+    default_pcap_logdir = "c:\switzerland\pcaplogs"
+    default_logfile = "c:\switzerland\clientlog"
 
 class AliceConfig:
     def __init__(self, 
@@ -72,40 +75,40 @@ class AliceConfig:
         if force_private_ip and self.private_ip == None: # could have been set by getopt?
             self.private_ip = force_private_ip
         if self.private_ip == None:
-          self.private_ip = local_ip.get_local_ip()
+            self.private_ip = local_ip.get_local_ip()
 
     def get_options(self):
-      if len(sys.argv) > 1 and sys.argv[1] == "help":
-        self.usage()
-      try:
-        (opts, args) = \
-            getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hq', \
-            ['server=', 'port=', 'interface=', 'ip', 'help'])
-      except:
-        self.usage()
+        if len(sys.argv) > 1 and sys.argv[1] == "help":
+            self.usage()
+        try:
+            (opts, args) = \
+                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hq', \
+                ['server=', 'port=', 'interface=', 'ip', 'help'])
+        except:
+            self.usage()
 
-      for opt in opts:
-          if opt[0] == '-s' or opt[0] == 'server':
-              self.host = opt[1]
-          elif opt[0] == '-p' or opt[0] == 'port':
-              self.port = int(opt[1])
-          elif opt[0] == '-i' or opt[0] == 'interface':
-              self.interface = opt[1]
-          elif opt[0] == '-l' or opt[0] == 'ip':
-              self.private_ip = opt[1]
-          elif opt[0] == '-L' or opt[0] == 'logfile':
-              self.logfile = opt[1]
-          elif opt[0] == '-P' or opt[0] == 'pcap-logs':
-              self.pcap_logdir = opt[1]
-          elif opt[0] == '-h' or opt[0] == 'help':
-              self.usage()
-          elif opt[0] == "-q" or opt[0] == 'quiet':
-              self.quiet = True
-          elif opt[0] == '-u' or opt[0] == 'uncertain-time':
-              self.allow_uncertain_time = True
-              self.manual_clock_error = float(opt[1])
-          elif opt[0] == "-v" or opt[0] == "verbose":
-              self.log_level -= (logging.INFO - logging.DEBUG)
+        for opt in opts:
+            if opt[0] == '-s' or opt[0] == 'server':
+                self.host = opt[1]
+            elif opt[0] == '-p' or opt[0] == 'port':
+                self.port = int(opt[1])
+            elif opt[0] == '-i' or opt[0] == 'interface':
+                self.interface = opt[1]
+            elif opt[0] == '-l' or opt[0] == 'ip':
+                self.private_ip = opt[1]
+            elif opt[0] == '-L' or opt[0] == 'logfile':
+                self.logfile = opt[1]
+            elif opt[0] == '-P' or opt[0] == 'pcap-logs':
+                self.pcap_logdir = opt[1]
+            elif opt[0] == '-h' or opt[0] == 'help':
+                self.usage()
+            elif opt[0] == "-q" or opt[0] == 'quiet':
+                self.quiet = True
+            elif opt[0] == '-u' or opt[0] == 'uncertain-time':
+                self.allow_uncertain_time = True
+                self.manual_clock_error = float(opt[1])
+            elif opt[0] == "-v" or opt[0] == "verbose":
+                self.log_level -= (logging.INFO - logging.DEBUG)
 
     def usage(self):
         print 
@@ -136,20 +139,34 @@ class AliceConfig:
         
         # check for a valid ip address
         if self.private_ip == None:
-          log.error("Switzerland wasn't able to determine your local IP address.")
-          log.error("Make sure you're online; if you are, use the -l flag to specify you IP")
-          sys.exit(1)
+            log.error("Switzerland wasn't able to determine your local IP address.")
+            log.error("Make sure you're online; if you are, use the -l flag to specify you IP")
+            sys.exit(1)
         try:
-          s.inet_aton(self.private_ip)
+            s.inet_aton(self.private_ip)
         except:
-          log.error("invalid local address format %s", `self.private_ip`)
-          sys.exit(1) 
+            log.error("invalid local address format %s", `self.private_ip`)
+            sys.exit(1) 
 
-        if self.pcap_logdir and self.pcap_logdir != "-" \
-           and not util.writable(self.pcap_logdir):
-          log.error("Cannot write to PCAP log directory %s", self.pcap_logdir)
-          log.error("Change its permissions or specify another directory with -P")
-          log.error('Use "-P -" for no logging')
-          sys.exit(1)
+        if self.pcap_logdir and self.pcap_logdir != "-":
+            try:
+                st = os.stat(self.pcap_logdir)
+                if not S_ISDIR(st[ST_MODE]): # not a directory
+                    log.error("%s isn't a directory", self.pcap_logdir)
+                    log.error('Please make this a directory, or use "-P -" for no logging')
+                    sys.exit(1)
+            except OSError,e:
+                if e.errno == errno.ENOENT: # no such file or directory
+                    log.error("PCAP log directory %s doesn't exist", self.pcap_logdir)
+                    log.error('Please create it, or use "-P -" for no logging')
+                else: # can't stat, that's probably bad
+                    log.error("can't stat PCAP log directory %s: %s", self.pcap_logdir, str(e))
+                    log.error('Use "-P -" for no logging')
+                sys.exit(1)
+            if not util.writable(self.pcap_logdir):
+                log.error("Cannot write to PCAP log directory %s", self.pcap_logdir)
+                log.error("Change its permissions or specify another directory with -P")
+                log.error('Use "-P -" for no logging')
+                sys.exit(1)
  
 #vim: et ts=4
