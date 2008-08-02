@@ -36,7 +36,11 @@ following packages on your computer:
 
 python2.4
 libpcap          (already installed on some systems, Windows users need WinPcap)
+    windows: http://www.winpcap.org/install/default.htm
 ntp              (not *absolutely* required but operating without it is risky)
+    windows: http://www.meinberg.de/english/sw/ntp.htm#ntp_nt_stable
+python win32 extensions
+    http://sourceforge.net/project/showfiles.php?group_id=78018
 
 The setup.py script tries some pre-compiled binaries, but if none of those
 work on your machine, you will need a basic development environment including
