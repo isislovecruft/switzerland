@@ -161,14 +161,17 @@ def get_windows_interface():
   import _winreg as r
   for dev in devices:
     try:
-      kn = "SYSTEM\\CurrentControlSet\\Services\\"+dev+"\\Parameters\\Tcpip"
+      kn = "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\"+dev
       k = r.OpenKey(r.HKEY_LOCAL_MACHINE, kn)
-      static_ip = r.QueryValueEx(k, 'IPAddress')[0][0]
       enable_dhcp = r.QueryValueEx(k, 'EnableDHCP')[0]
-      dhcp_ip = r.QueryValueEx(k, 'DhcpIPAddress')[0]
-      if (not enable_dhcp and static_ip == ip) or \
-         (enable_dhcp and dhcp_ip == ip):
-        return "\\Device\\NPF_"+dev
+      if enable_dhcp:
+        dhcp_ip = r.QueryValueEx(k, 'DhcpIPAddress')[0]
+        if dhcp_ip == ip:
+            return "\\Device\\NPF_"+dev
+      else:
+        static_ip = r.QueryValueEx(k, 'IPAddress')[0][0]
+        if static_ip == ip:
+            return "\\Device\\NPF_"+dev
     except:
       pass
 
@@ -216,10 +219,11 @@ def get_windows_local_ip():
       words = line.split()
       if len(words) > 3 and words[0] == '0.0.0.0':
         return words[3]
-    elif line == 'Active Routes:':
+    elif (line == 'Active Routes:') | (line == 'Aktive Routen:'):  #this is language specific
       found_header = True
     
   return -1
 
 if __name__ == "__main__":
   print "Local IP is", get_local_ip()
+  
