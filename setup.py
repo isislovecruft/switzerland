@@ -100,7 +100,12 @@ def find_binary():
     return attempts
 
 check_version()
-executables = ["switzerland-client","switzerland-server"]
+if platform.system() == "Windows":
+    shutil.copyfile("switzerland-client", "switzerland-client.py")
+    shutil.copyfile("switzerland-server", "switzerland-server.py")
+    executables = ["switzerland-client.py","switzerland-server.py"]
+else:
+    executables = ["switzerland-client","switzerland-server"]
 bin = find_binary()
 if bin: 
   if bin != dest:
