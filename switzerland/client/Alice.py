@@ -27,8 +27,8 @@ log.addHandler(startup_handler)
 
 welcome_msg = \
 """Welcome to Switzerland.  This is a Version Zero alpha release.  It's sure to
-break at some point.  Please let us know by email (switzerland-devel@eff.org),
-IRC (#switzerland on irc.oftc.net) or by filing a bug
+break at some point.  If/when that happens, please let us know by email 
+(switzerland-devel@eff.org), IRC (#switzerland on irc.oftc.net) or bug report
 ( https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569 )"""
 
 class Alice:
@@ -61,6 +61,15 @@ class Alice:
         self.listener.setDaemon(True)
         self.reporter.setDaemon(True)
         self.link.setDaemon(True)
+        self.params = {}
+
+        # XXX we need a privacy setting to disable this, since it might in some
+        # cases create link between separate client sessions at separate IPs.
+        # But this is about the minimum amount of information we need to spot
+        # weird platform specific crashes in early releases
+        version = (platform.system(), platform.release(), \
+                    platform.machine(), sys.version_info)
+        self.params["version"] = version
         
         log.debug("Starting AliceLink...")
         self.link.start()
@@ -127,7 +136,6 @@ class Alice:
                 #log.warn("NTP is not working:\n"+traceback.format_exc())
                 log.warn("but allow_uncertain_time is set so we're defaulting the clock error to %f" % self.config.manual_clock_error)
                 self.root_dispersion = self.config.manual_clock_error
-        self.params = {}
         self.params["clock dispersion"] = self.root_dispersion
 
     def shutdown(self):

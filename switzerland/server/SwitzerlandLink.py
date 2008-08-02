@@ -118,6 +118,8 @@ class SwitzerlandLink(Protocol.Protocol):
       self.params = args[0]
       assert "clock dispersion" in self.params, "Params w/o clock dispersion"
       self.clock_dispersion = self.params["clock dispersion"]
+      if "version" in self.params:
+        log.info("%s is running on %s" %(`self.peer`, `self.params["version"]`))
     finally:
       self.status_lock.release()
 
