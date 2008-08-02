@@ -733,8 +733,11 @@ class SwitzerlandMasterServer:
     "Run this in a thread.  Print the global flow table from time to time"
     while True:
       time.sleep(21)
-      #self.print_flow_matchmaker(print_mms)
-      self.prettyprint_flows()
+      try:
+        self.prettyprint_flows()
+      except:
+        log.error("The prettyprinter would have died, but we're invincible:")
+        log.error(traceback.format_exc())
 
   def prettyprint_flows(self, print_mms=True):
     """

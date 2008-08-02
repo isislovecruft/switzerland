@@ -26,10 +26,12 @@ startup_handler = logging.StreamHandler()
 log.addHandler(startup_handler)
 
 welcome_msg = \
-"""Welcome to Switzerland.  This is a Version Zero alpha release.  It's sure to
+"""--------------------------------------------------------------------------------
+Welcome to Switzerland.  This is a Version Zero alpha release.  It's sure to
 break at some point.  If/when that happens, please let us know by email 
 (switzerland-devel@eff.org), IRC (#switzerland on irc.oftc.net) or bug report
-( https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569 )"""
+( https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569 )
+--------------------------------------------------------------------------------"""
 
 class Alice:
     """
@@ -145,6 +147,7 @@ class Alice:
 def main():
     me = None
     try:
+        print welcome_msg
         try:
             if platform.system() != "Windows":
                 os.setuid(0)
@@ -155,8 +158,6 @@ def main():
         me = Alice(config=AliceConfig(getopt=True))
         me.listener.start()
         me.start()
-        if not me.quit_event.isSet():
-            print welcome_msg
         # This wasn't helping:
         while not me.quit_event.isSet():
             me.quit_event.wait(5)

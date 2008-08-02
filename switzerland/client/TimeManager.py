@@ -16,7 +16,7 @@ class TimeManager:
     log.info("Looking for ntpd...")
     try:
       ntpdc = Popen("ntpdc", stdin=PIPE, stdout=PIPE)
-    except OSError:
+    except:
       log.error("Couldn't run ntpdc:\n" + traceback.format_exc())
       raise UncertainTimeError
       

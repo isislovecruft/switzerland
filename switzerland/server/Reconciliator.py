@@ -177,7 +177,9 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
       pub_src += ":" + `util.bin2int(self.dest_flow[1])`
       pub_dest += ":" + `util.bin2int(self.src_flow[3])`
     except:
-      log.error(sys.format_exc())
+      log.error("Weird error caused by flow %s (%s, %s)" % (`self.flow`, \
+                `self.dest_flow`, `self.src_flow`))
+      log.error(traceback.format_exc())
 
     line1 = pub_src.center(21) + " > " + pub_dest.center(21)
 
