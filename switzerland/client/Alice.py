@@ -47,6 +47,7 @@ class Alice:
 
         self.init_logging()
          
+        self.params = {}
         if config.use_ntp:
             self.ntp_setup()
 
@@ -61,7 +62,6 @@ class Alice:
         self.listener.setDaemon(True)
         self.reporter.setDaemon(True)
         self.link.setDaemon(True)
-        self.params = {}
 
         # XXX we need a privacy setting to disable this, since it might in some
         # cases create link between separate client sessions at separate IPs.
