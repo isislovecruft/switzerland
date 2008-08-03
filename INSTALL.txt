@@ -49,7 +49,7 @@ OS X Developer Tools provide these requirements on Macs, Cygwin can be
 used to provide them on Windows.  On Linux, make sure you have gcc and the
 basic libc development packages installed.
 
-With all of these prerequesites sorted out, the "python setup.py install"
+With all of these prerequisites sorted out, the "python setup.py install"
 command should just work for non-Windows systems.  On Windows, you may have to
 work out how to get FastCollector.c compiled and the resulting
 FastCollector.py placed somewhere in the PATH.  Good luck!

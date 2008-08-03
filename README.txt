@@ -3,7 +3,7 @@ Switzerland v0.0
 e-mail Switzerland-devel@eff.org
        https://falcon.eff.org/mailman/listinfo/Switzerland-devel
 
-IRC    #Switzerland on irc.freenode.org
+IRC    #Switzerland on irc.oftc.org
 
 bugs   https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569
 
@@ -91,7 +91,7 @@ sensitive data over unencrypted connections.
 1.3.1. Privileged client
 
 Because the Switzerland client passively observes all traffic on your
-computer's network interface, it needs administrative (root) privleges, much
+computer's network interface, it needs administrative (root) privileges, much
 like the tcpdump program.
 
 1.4. Platforms supported
@@ -128,12 +128,12 @@ instead.
 In this release, traffic between Switzerland clients and the server is
 unencrypted, so it's possible for an eavesdropper near the server to see
 information about what kind of connections you have open with which other
-Switzerland clients, and how frequently you're exchanging data (an evesdropper
+Switzerland clients, and how frequently you're exchanging data (an eavesdropper
 near you could probably see most of this information regardless of whether you
 were running Switzerland).
 
 Later releases will reduce some of these privacy issues and add more options
-for fine-grained privacy control.  For now though, treat any traffic travelling
+for fine-grained privacy control.  For now though, treat any traffic traveling
 between Switzerland clients as "public record" information.
 
 2. Testing Notes
@@ -145,14 +145,14 @@ NAT firewalls normally make, and will not report those as modifications to
 the underlying traffic.
 
 But many NAT firewalls, especially home wireless routers, make other
-undocumented modifications to the traffic travelling through them, beyond
+undocumented modifications to the traffic traveling through them, beyond
 the minimum required to be a NAT firewall.  As a result, Switzerland clients
 that are behind firewalls or talking to machines that are behind firewalls
 will often detect and report these modifications to traffic.
 
 It is important not to confuse packet modification by your firewall or
 another client's firewall with interference by an ISP.  If you want to
-preform reliable tests of an ISP, you'll need to plug your computer directly
+perform reliable tests of an ISP, you'll need to plug your computer directly
 into your DSL or cable modem, and only consider results obtained with
 non-firewalled peers.  Switzerland will tell you which other clients are
 behind NAT firewalls.
@@ -170,7 +170,7 @@ It is theoretically possible that interference can be performed by non-NAT
 firewalls.  These are most likely to be encountered on corporate and
 university networks.  Switzerland will detect this as interference by an
 intermediary.  It isn't a bug, it's a feature.  Remember, traffic
-interference could be occuring at any step along the way from your computer
+interference could be occurring at any step along the way from your computer
 to another.
 
 2.3 Test server
