@@ -215,9 +215,7 @@ class SwitzerlandMasterServer:
           self.send_farewells(ip)
           del self.peer_ips[ip]
       except KeyError:
-        self.debug_note("Error in link_closed", link)
-        errlog.info("%s", `self.peer_ips`)
-        raise
+        errlog.error("Error while closing link:\n%s", traceback.format_exc())
     finally:
       self.peer_lock.release()
 
