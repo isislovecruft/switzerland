@@ -242,7 +242,6 @@ class PacketListener(threading.Thread):
           self.read_packets()
         except:    # sniffer error; clean up on the way out
           self.cleanup()
-          raise
           # The obvious thing to do here would be to set the quit event
           # and then "raise".  But if there's a context switch in between
           # those two lines, we might never see the exception.  So print it
