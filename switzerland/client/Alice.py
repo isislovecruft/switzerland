@@ -121,7 +121,7 @@ class Alice:
             import psyco
             psyco.profile()
         except ImportError:
-            log.info("The psyco package is unavailable...")
+            log.info("The psyco package is unavailable (that's okay, but the client is more\nefficient if psyco is installed).")
 
     def ntp_setup(self):
         try:
