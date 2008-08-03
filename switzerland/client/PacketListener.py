@@ -246,7 +246,7 @@ class PacketListener(threading.Thread):
           # and then "raise".  But if there's a context switch in between
           # those two lines, we might never see the exception.  So print it
           # before sending quit_event.
-          traceback.print_exc()
+          log.error(traceback.format_exc())
           self.parent.quit_event.set()
           sys.exit(1)
 
