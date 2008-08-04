@@ -12,11 +12,12 @@ import time
 import select
 import signal
 import traceback
-if platform.system() != 'Windows':
-    import posix
-else:
-    import win32api
 from subprocess import Popen, PIPE
+
+if platform.system() == 'Windows':
+    import win32api
+else:
+    import posix
 
 from switzerland.common import util
 from switzerland.client import Packet
@@ -471,12 +472,15 @@ class PacketListener(threading.Thread):
           return
         self.mem.close()
         self.file.close()
-        if platform.system == "Windows":
-          # According to http://code.activestate.com/recipes/347462/, 
-          # this is how we killa process on Windows
-          win32api.TerminateProcess(int(self.sniff._handle), -1)
-        else:
-          os.kill(self.sniff.pid, signal.SIGTERM)
+        try: # to kill FastCollector
+          if platform.system == "Windows":
+            # According to http://code.activestate.com/recipes/347462/, 
+            # this is how we killa process on Windows
+            win32api.TerminateProcess(int(self.sniff._handle), -1)
+          else:
+            os.kill(self.sniff.pid, signal.SIGTERM)
+        except:
+          pass # it's probably already dead
         try:
           cmd = ["shred", "-n", "1", self.tmpfile]
           shred = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
