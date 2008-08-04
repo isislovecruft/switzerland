@@ -215,12 +215,12 @@ def get_windows_local_ip():
   lines = cmd.stdout.read().split("\r\n")
   found_header = False
   for line in lines:
-    if found_header:
+    try:
       words = line.split()
       if len(words) > 3 and words[0] == '0.0.0.0':
         return words[3]
-    elif (line == 'Active Routes:') | (line == 'Aktive Routen:'):  #this is language specific
-      found_header = True
+    except:
+      pass
     
   return -1
 
