@@ -63,9 +63,12 @@ class AliceLink(Protocol.Protocol):
     except s.timeout:
       self.debug_note("Timeout during handshake", seriousness=11)
       return False
+    except s.error, e:
+      log.error("error during handshake: %s" % e)
+      return False
     except:
       log.error("error during handshake")
-      sys.exit(1)
+      return False
 
     if msg[:-2] == Protocol.no_common_version[:-2]:
       log.error("Server refuses to speak protocols before version %d; we need version %d" % (Protocol.parse_version(msg[-2:]), Protocol.protocol_version))
