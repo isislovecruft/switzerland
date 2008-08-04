@@ -174,6 +174,7 @@ def main():
     except KeyboardInterrupt:
         log.info("Exiting at your request...")
         if me != None:
+            me.listener.cleanup()
             me.shutdown()
         sys.exit(0)
     log.info("shutting down...")
