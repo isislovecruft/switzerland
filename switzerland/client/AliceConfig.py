@@ -131,7 +131,8 @@ class AliceConfig:
         print "  -q, --quiet                Do not print output"
         print
         sys.exit(0)
-
+            
+                            
     def check(self):
         if not self.host:
             self.host = "switzerland.eff.org"
@@ -157,12 +158,26 @@ class AliceConfig:
                     sys.exit(1)
             except OSError,e:
                 if e.errno == errno.ENOENT: # no such file or directory
-                    log.error("PCAP log directory %s doesn't exist", self.pcap_logdir)
-                    log.error('Please create it, or use "-P -" for no logging')
+                    log.warn("PCAP log directory %s doesn't exist", self.pcap_logdir)
+                    log.warn("trying to create it")
+                    dir=os.path.split(self.pcap_logdir)
+                    create=[dir[1]]
+                    while ((not os.path.exists(dir[0])) and (not dir[0]== os.path.dirname(dir[0]))):
+                        dir=os.path.split(dir[0])
+                        create.insert(0,dir[1])
+                    try:
+                        dir=dir[0]
+                        for newdir in create:
+                            dir=os.path.join(dir,newdir)
+                            os.mkdir(dir)
+                    except:
+                        log.error("can't create PCAP log directory")
+                        log.error('Please create it, or use "-P -" for no logging')
+                        sys.exit(1)
                 else: # can't stat, that's probably bad
                     log.error("can't stat PCAP log directory %s: %s", self.pcap_logdir, str(e))
                     log.error('Use "-P -" for no logging')
-                sys.exit(1)
+                    sys.exit(1)
             if not util.writable(self.pcap_logdir):
                 log.error("Cannot write to PCAP log directory %s", self.pcap_logdir)
                 log.error("Change its permissions or specify another directory with -P")
