@@ -48,7 +48,8 @@ class TimeManager:
       that wrong.  Unspec mode could also mean that you're offline or that 
       you need to give NTP another minute or two to find time servers.  If 
       this doesn't work, try stopping NTP, use the ntpdate program to adjust 
-      the clock and then start NTP again.""")
+      the clock and then start NTP again.
+      see http://switzerland.wiki.sourceforge.net/NTP for further details.""")
       raise UncertainTimeError
     elif mode != "client":
       log.info("Note that NTP is in mode %s", mode)

@@ -133,6 +133,7 @@ class Alice:
                 print "  (If that is not possible, you can specify an error bound on your system clock"
                 print "  using the -u flag, but you must ensure that it is correct. Failure to do so"
                 print "  may result in false reports of packet modification.)"
+                print "  see http://switzerland.wiki.sourceforge.net/NTP for further details."
                 sys.exit(1)
             else:
                 #log.warn("NTP is not working:\n"+traceback.format_exc())
