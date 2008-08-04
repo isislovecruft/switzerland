@@ -88,26 +88,26 @@ class AliceConfig:
             self.usage()
 
         for opt in opts:
-            if opt[0] == '-s' or opt[0] == 'server':
+            if opt[0] in ('-s', '--server'):
                 self.host = opt[1]
-            elif opt[0] == '-p' or opt[0] == 'port':
+            elif opt[0] in ('-p', '--port'):
                 self.port = int(opt[1])
-            elif opt[0] == '-i' or opt[0] == 'interface':
+            elif opt[0] in ('-i', '--interface'):
                 self.interface = opt[1]
-            elif opt[0] == '-l' or opt[0] == 'ip':
+            elif opt[0] in ('-l', '--ip'):
                 self.private_ip = opt[1]
-            elif opt[0] == '-L' or opt[0] == 'logfile':
+            elif opt[0] in ('-L', '--logfile'):
                 self.logfile = opt[1]
-            elif opt[0] == '-P' or opt[0] == 'pcap-logs':
+            elif opt[0] in ('-P', '--pcap-logs'):
                 self.pcap_logdir = opt[1]
-            elif opt[0] == '-h' or opt[0] == 'help':
+            elif opt[0] in ('-h', '--help'):
                 self.usage()
-            elif opt[0] == "-q" or opt[0] == 'quiet':
+            elif opt[0] in ('-q', '--quiet'):
                 self.quiet = True
-            elif opt[0] == '-u' or opt[0] == 'uncertain-time':
+            elif opt[0] in ('-u', '--uncertain-time'):
                 self.allow_uncertain_time = True
                 self.manual_clock_error = float(opt[1])
-            elif opt[0] == "-v" or opt[0] == "verbose":
+            elif opt[0] in ('-v', '--verbose'):
                 self.log_level -= (logging.INFO - logging.DEBUG)
 
     def usage(self):
