@@ -179,6 +179,35 @@ EFF runs a default server at switzerland.eff.org:7778 (we expect it'll crash
 and misbehave a bit for early versions of the code), but you can run your
 own servers elsewhere if you wish.
 
+2.4 Tests you can run
+
+http://switzerland.wiki.sourceforge.net/tests
+
+There are a few different ways to run tests with Switzerland.
+
+Any packets exchanged between Switzerland clients connected to the same server
+will be tested automatically. The question is, how do you find other clients
+and talk to them using the protocols you want to test?
+
+For now, the easiest way to set up tests is to co-ordinate them through the
+wiki page linked above or the IRC channel. If you want to test whether
+BitTorrent downloads are working correctly, go to that page and find some
+torrents that others are seeding from test machines. If you want to test if
+your ISP is interfering with BitTorrent seeding, you can post a link to a
+torrent file on the wiki, seed that torrent while running a Switzerland client
+and other people can find it on the wiki and try to download it while running
+a Switzerland client.
+
+Another way is to run clients on two different computers, and then make the
+machines talk to each other using whatever protocol you'd like to test.
+That's fine if you have administrator accounts on two suitable machines for
+running the test, and are comfortable running the right clients and servers
+on them.
+
+If you're a developer working on an application (say a P2P or IP telephony
+app) that might be a target for interference, you could automate one of the
+above methodologies.
+
 3. Contributing
 
 3.1. Ways to help
