@@ -14,12 +14,13 @@ import signal
 import traceback
 from subprocess import Popen, PIPE
 
+# hack: import util first to make sure we can import win32api
+from switzerland.common import util
 if platform.system() == 'Windows':
     import win32api
 else:
     import posix
 
-from switzerland.common import util
 from switzerland.client import Packet
 from switzerland.client import FlowManager
 
