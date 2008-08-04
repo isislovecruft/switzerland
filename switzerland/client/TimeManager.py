@@ -17,7 +17,8 @@ class TimeManager:
     try:
       ntpdc = Popen("ntpdc", stdin=PIPE, stdout=PIPE)
     except:
-      log.error("Couldn't run ntpdc:\n" + traceback.format_exc())
+      log.error("Couldn't run ntpdc")
+      log.debug(traceback.format_exc())
       raise UncertainTimeError
       
     ntpdc.stdin.write("sysinfo\n")
