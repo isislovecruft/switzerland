@@ -50,6 +50,14 @@ entry_size = packet_size + packlen_size + ts_size + valid_size + padding2_size
 packets = 25000
 buffer_size = packets * entry_size
 
+# now some syntactic sugar... 
+# but XXX this could be cleaned up a great deal!
+pls = packlen_size   # size of packet length field
+assert pls == struct.calcsize("H")
+tss = ts_size        # size of timestamp field
+assert tss == struct.calcsize("d")
+vs = valid_size
+#assert vs == struct.calcsize("c")  let's use 2 to stay word aligned
 
 class SnifferError(Exception):
   pass
@@ -66,7 +74,7 @@ class PacketListener(threading.Thread):
         self._zcat_pipe = None
         self._zcat = None
         self.tmpfile = None
-        self.cleanup_lock = threading.RLock()
+        self.lock = threading.RLock()
         self.latest = 0
         self.max_timewarp = 0
         self._skew = parent.config.skew
@@ -303,43 +311,64 @@ class PacketListener(threading.Thread):
       Read packets out of the mmap()ed buffer that PacketCollector.py
       is busy writing them into.
       """
-      pls = packlen_size   # size of packet length field
-      assert pls == struct.calcsize("H")
-      tss = ts_size        # size of timestamp field
-      assert tss == struct.calcsize("d")
-      vs = valid_size
-      #assert vs == struct.calcsize("c")  let's use 2 to stay word aligned
-      pos = 0
+
+      self.pos = 0
       count = 0
 
       if platform.system() == 'Windows':
         import msvcrt
-        check_for_sniffer_error = self.check_for_sniffer_error_win32
+        self.check_for_sniffer_error = self.check_for_sniffer_error_win32
         self.sniff.fd_stderr = self.sniff.stderr.fileno()
         self.sniff.os_stderr = msvcrt.get_osfhandle(self.sniff.fd_stderr)
       else:
-        check_for_sniffer_error = self.check_for_sniffer_error_posix
+        self.check_for_sniffer_error = self.check_for_sniffer_error_posix
 
       while True:
-        valid = self.mem[pos]
+        packet = self.read_one_packet()
+        if packet == None:
+          return
+        else:
+          timestamp, data = packet
+          
+        count +=1
+        if count % lag_check_frequency == 0:
+          delta = time.time() - timestamp
+          log.info("Packet capture lag is currently %lf seconds" % delta)
+        self.process_packet(timestamp, data)
+        if double_check:
+          print "Pos is now 0x%x" % self.pos
+          print scapy.Ether(data).summary()
+
+        #if count % 10 == 0:
+        #  # at this point we aren't interested in normal playback termination
+        #  # from the sniffer (ie, half_done==True).  We just need to know
+        #  # about urgent conditions like dropped packets in live deployment
+        #  self.check_for_sniffer_error()
+
+    def read_one_packet(self):
+      "Read a single packet out of the mmaped buffer; return (timestamp, data)."
+      self.lock.acquire()
+      try:
+        if not self.tmpfile: return
+        valid = self.mem[self.pos]
         while valid == '\x00':
-          if check_for_sniffer_error(): return     # playback complete
+          if self.check_for_sniffer_error(): return     # playback complete
           time.sleep(poll_interval)
-          valid = self.mem[pos]
+          valid = self.mem[self.pos]
           if double_check: sys.stdout.write(".")
 
-        base_pos = pos
-        pos += vs
+        base_pos = self.pos
+        self.pos += vs
 
-        len = struct.unpack("H", self.mem[pos:pos+pls])[0]
+        len = struct.unpack("H", self.mem[self.pos:self.pos+pls])[0]
         if double_check: print "Packet of length", len
         if len > 1514:
-          print "Wild packet length %d at pos 0x%x" % (len, pos)
+          print "Wild packet length %d at pos 0x%x" % (len, self.pos)
           self.parent.quit_event.set()
           sys.exit(1)
-        pos +=pls + padding2_size
+        self.pos +=pls + padding2_size
 
-        timestamp = struct.unpack("d", self.mem[pos:pos+tss])[0]
+        timestamp = struct.unpack("d", self.mem[self.pos:self.pos+tss])[0]
         if timestamp > self.latest:
           self.latest = timestamp
         else:
@@ -356,27 +385,15 @@ class PacketListener(threading.Thread):
             self.max_timewarp = t
 
         if double_check: print "Timestamp", timestamp
-        pos += tss
+        self.pos += tss
 
-        data = self.mem[pos:pos+len]
+        data = self.mem[self.pos:self.pos+len]
         # mark this packet as read
         self.mem[base_pos] = "\x00"
-        pos = (pos + packet_size) % buffer_size
-
-        count +=1
-        if count % lag_check_frequency == 0:
-          delta = time.time() - timestamp
-          log.info("Packet capture lag is currently %lf seconds" % delta)
-        self.process_packet(timestamp, data)
-        if double_check:
-          print "Pos is now 0x%x" % pos
-          print scapy.Ether(data).summary()
-
-        #if count % 10 == 0:
-        #  # at this point we aren't interested in normal playback termination
-        #  # from the sniffer (ie, half_done==True).  We just need to know
-        #  # about urgent conditions like dropped packets in live deployment
-        #  self.check_for_sniffer_error()
+        self.pos = (self.pos + packet_size) % buffer_size
+        return (timestamp, data)
+      finally:
+        self.lock.release()
 
     def process_packet(self, timestamp, data):
       "Integrate this packet appropriately into Alice's data structures."
@@ -466,7 +483,7 @@ class PacketListener(threading.Thread):
 
     def cleanup(self):
       # Alice may call this code too, so avoid deadlocks
-      self.cleanup_lock.acquire()
+      self.lock.acquire()
       try:
         if not self.tmpfile:
           return
@@ -502,7 +519,8 @@ class PacketListener(threading.Thread):
           else:
             raise
       finally:
-        self.cleanup_lock.release()
+        self.lock.release()
+        self.tmpfile = None
           
 
 if __name__ == "__main__":

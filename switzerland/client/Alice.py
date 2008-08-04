@@ -169,6 +169,7 @@ def main():
     except s.error,e:
         log.error("socket error: %s", `e`)
         if me != None:
+            me.listener.cleanup()
             me.shutdown()
         raise
     except KeyboardInterrupt:
