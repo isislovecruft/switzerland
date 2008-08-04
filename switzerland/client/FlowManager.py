@@ -49,7 +49,13 @@ class FlowManager:
         self.lock.acquire()
         try:
             ip = s.inet_aton(old_peer)
-            del self.peers[ip] 
+            try:
+                del self.peers[ip] 
+            except KeyError:
+                msg = "Farewell message for non-existent peer %s" % old_peer
+                log.error(msg)
+                self.parent.link.send_message("error-cont", [msg])
+
             for f in self.flows.values():
                 if f.src_ip == ip or f.dest_ip == ip:
                     f.marked_for_deletion = True
