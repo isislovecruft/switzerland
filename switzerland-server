@@ -1,12 +1,18 @@
 #!/usr/bin/env python2.5
 
 try:
-  from switzerland.server import Switzerland
+    from switzerland.server import Switzerland
 except ImportError:
-  import sys
-  sys.path.append("/usr/local/lib/python2.5/site-packages/")
-  sys.path.append("/usr/lib/python2.5/site-packages/")
-  sys.path.append(".")
-  from switzerland.server import Switzerland
+    import sys
+    sys.path.append('/usr/local/lib/python2.5/site-packages/')
+    sys.path.append('/usr/lib/python2.5/site-packages/')
+    sys.path.append('.')
+
+    try:
+        from switzerland.server import Switzerland
+    except ImportError:
+        print >> sys.stderr, \
+              'Error: cannot load server. Please check your $PYTHONPATH.'
+        sys.exit(1)
 
 Switzerland.main()
