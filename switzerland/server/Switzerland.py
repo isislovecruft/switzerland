@@ -78,7 +78,6 @@ class SwitzerlandMasterServer:
     if self.special_forgery_debugging and not Reconciliator.hash_archival:
       raise ValueError, "cannot do special debugging without special archival"
         
-    self.bughunt = {}
     if self.config.logging:
       self.log = PcapLogger(self.config.pcap_logdir)
 
@@ -502,12 +501,6 @@ class SwitzerlandMasterServer:
     Sent and recd messages are conceptually very similar, so this function
     handles both cases.  sent = True|False accordingly.
     """
-    tag = link.peer[0]
-    if tag not in self.bughunt:
-      self.bughunt[tag] = open(tag + ".log", "w")
-    self.bughunt[tag].write(`sent` + `args` + '\n')
-    self.bughunt[tag].flush()
-
     flow_id, timestamp, hashes = args
     link.flow_lock.acquire()
     try:
