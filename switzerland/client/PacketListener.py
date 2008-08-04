@@ -10,8 +10,11 @@ import logging
 import mmap
 import time
 import select
+import signal
+import traceback
 if platform.system() != 'Windows':
     import posix
+    import win32api
 from subprocess import Popen, PIPE
 
 from switzerland.common import util
@@ -467,6 +470,12 @@ class PacketListener(threading.Thread):
           return
         self.mem.close()
         self.file.close()
+        if platform.system == "Windows":
+          # According to http://code.activestate.com/recipes/347462/, 
+          # this is how we killa process on Windows
+          win32api.TerminateProcess(int(self.sniff._handle), -1)
+        else:
+          os.kill(self.sniff.pid, signal.SIGTERM)
         try:
           cmd = ["shred", "-n", "1", self.tmpfile]
           shred = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
