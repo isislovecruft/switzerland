@@ -15,7 +15,7 @@ class TimeManager:
   def __init__(self):
     log.info("Looking for ntpd...")
     try:
-      ntpdc = Popen("ntpdc", stdin=PIPE, stdout=PIPE)
+      ntpdc = Popen("ntpdc", stdin=PIPE, stderr=PIPE, stdout=PIPE)
     except:
       log.error("Couldn't run ntpdc")
       log.debug(traceback.format_exc())
@@ -26,6 +26,11 @@ class TimeManager:
     self.lines = ntpdc.stdout.readlines()
     if not self.lines or "onnection refused" in self.lines[0]:
       log.error('ntpdc is present but ntpd does not appear to be alive: ("%s")' % self.lines)
+      raise UncertainTimeError
+
+    err = ntpdc.stderr.readlines()
+    if err:
+      log.error('error running ntpdc: ("%s")' % err)
       raise UncertainTimeError
       
     self.ntp_sysinfo = {}
