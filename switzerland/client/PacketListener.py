@@ -14,6 +14,7 @@ import signal
 import traceback
 if platform.system() != 'Windows':
     import posix
+else:
     import win32api
 from subprocess import Popen, PIPE
 
