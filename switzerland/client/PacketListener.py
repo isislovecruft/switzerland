@@ -472,15 +472,16 @@ class PacketListener(threading.Thread):
           return
         self.mem.close()
         self.file.close()
-        try: # to kill FastCollector
-          if platform.system == "Windows":
+        try:            # to kill FastCollector
+          if platform.system() == "Windows":
             # According to http://code.activestate.com/recipes/347462/, 
             # this is how we killa process on Windows
             win32api.TerminateProcess(int(self.sniff._handle), -1)
           else:
             os.kill(self.sniff.pid, signal.SIGTERM)
         except:
-          pass # it's probably already dead
+          pass          # it's probably already dead
+        time.sleep(0.3) # give the FastCollector time to exit
         try:
           cmd = ["shred", "-n", "1", self.tmpfile]
           shred = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
