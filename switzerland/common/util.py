@@ -9,6 +9,14 @@ import random
 import time
 import traceback
 
+if platform.system() == 'Windows':
+    try:
+        import win32api, win32process, win32con
+    except:
+        print 'Please install the python win32 extensions'
+        print '(see INSTALL.txt for details)'
+        sys.exit(1)
+    
 prot_table={}
 prot_gen = False 
 
@@ -84,9 +92,6 @@ def set_win32_priority(pid=None,priority=1):
     """ Set The Priority of a Windows Process.  Priority is a value between 0-5 where
         2 is normal priority.  Default sets the priority of the current
         python process but can take any valid process ID. """
-        
-    import win32api,win32process,win32con
-    
     priorityclasses = [win32process.IDLE_PRIORITY_CLASS,
                        win32process.BELOW_NORMAL_PRIORITY_CLASS,
                        win32process.NORMAL_PRIORITY_CLASS,
