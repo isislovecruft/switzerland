@@ -34,7 +34,13 @@ def try_precompiled_binaries():
   elif plat == "Windows":
     return try_binary("bin\FastCollector.exe")
   elif plat == "Darwin":
-    return try_binary("bin/FastCollector.darwin")
+    if platform.release() < "9.0.0":
+      # only try this on pre-Leopard platforms.  We don't have a sane Leopard
+      # binary yet
+      return try_binary("bin/FastCollector.darwin")
+    else:
+      print "This seems to be OS X Leopard.  We don't currently have a",
+      print "precompiled binary\nfor Leopard.  Let's see if we can build one!"
   return False
 
 def try_binary(path):
