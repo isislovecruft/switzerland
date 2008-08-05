@@ -189,7 +189,8 @@ class SwitzerlandMasterServer:
     self.peer_lock.acquire()
     try:
       assert new_ip in self.peer_ips
-      self.debug_note("Joining circle, notifying %d others" % (len(self.peer_ips) -1) )
+      self.debug_note("Joining circle, notifying %d others" % 
+                                             (len(self.peer_ips) -1) )
       for ip,links in self.peer_ips.items():
         if ip == new_ip:
           continue
@@ -277,7 +278,8 @@ class SwitzerlandMasterServer:
         for f_id in deleted_flows:
           self.delete_flow(link, f_id)
     except:
-      link.protocol_error("Problem with flow list: %s\n" % util.screensafe(new_flows))
+      link.protocol_error("Problem with flow list: %s\n" % 
+                                              util.screensafe(new_flows))
       raise
 
     # Now the new flows:
@@ -302,7 +304,8 @@ class SwitzerlandMasterServer:
 
     except:
       errlog.debug("OH NOES %s", sys.exc_info()[:2])
-      link.protocol_error("Problem with flow list: %s\n" % util.screensafe(new_flows))
+      link.protocol_error("Problem with flow list: %s\n" % 
+                                            util.screensafe(new_flows))
       raise
 
 

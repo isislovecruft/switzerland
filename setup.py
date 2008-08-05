@@ -37,10 +37,9 @@ def try_precompiled_binaries():
     if platform.release() < "9.0.0":
       # only try this on pre-Leopard platforms.  We don't have a sane Leopard
       # binary yet
-      return try_binary("bin/FastCollector.darwin")
+      return try_binary("bin/FastCollector.tiger")
     else:
-      print "This seems to be OS X Leopard.  We don't currently have a",
-      print "precompiled binary\nfor Leopard.  Let's see if we can build one!"
+      return try_binary("bin/FastCollector.leopard")
   return False
 
 def try_binary(path):
