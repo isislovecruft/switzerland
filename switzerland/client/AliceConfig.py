@@ -19,21 +19,21 @@ else:
     default_logfile = "c:\switzerland\clientlog"
 
 class AliceConfig:
-    def __init__(self, 
+    def __init__(self,
         use_localhost_ip=False,
-        host=None, 
-        port=7778, 
+        host=None,
+        port=7778,
         interface=None,
-        skew=0.0, 
-        log_level=logging.DEBUG, 
-        seriousness=0, 
-        do_cleaning=True, 
-        use_ntp=True, 
-        filter_packets=True, 
+        skew=0.0,
+        log_level=logging.DEBUG,
+        seriousness=0,
+        do_cleaning=True,
+        use_ntp=True,
+        filter_packets=True,
         keep_archives=False,
-        ignore_nonlocal_packets=True, 
-        getopt=False, 
-        force_public_ip=False, 
+        ignore_nonlocal_packets=True,
+        getopt=False,
+        force_public_ip=False,
         force_private_ip=False,
         pcap_playback=None,
         pcap_datalink=0,
@@ -156,7 +156,7 @@ class AliceConfig:
                     log.error("%s isn't a directory", self.pcap_logdir)
                     log.error('Please make this a directory, or use "-P -" for no logging')
                     sys.exit(1)
-            except OSError,e:
+            except OSError, e:
                 if e.errno == errno.ENOENT: # no such file or directory
                     log.warn("PCAP log directory %s doesn't exist", self.pcap_logdir)
                     log.warn("trying to create it")
@@ -164,11 +164,11 @@ class AliceConfig:
                     create=[dir[1]]
                     while ((not os.path.exists(dir[0])) and (not dir[0]== os.path.dirname(dir[0]))):
                         dir=os.path.split(dir[0])
-                        create.insert(0,dir[1])
+                        create.insert(0, dir[1])
                     try:
                         dir=dir[0]
                         for newdir in create:
-                            dir=os.path.join(dir,newdir)
+                            dir=os.path.join(dir, newdir)
                             os.mkdir(dir)
                     except:
                         log.error("can't create PCAP log directory")
