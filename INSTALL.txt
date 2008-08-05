@@ -1,6 +1,6 @@
 HOW TO INSTALL SWITZERLAND
 
-sudo python setup.py install
+  sudo python setup.py install
 
 Switzerland is alpha software.  Remarkably, it runs on lots of different
 operating systems (we've seen it work on Linux, OS X, BSD and Windows XP), but
@@ -21,7 +21,7 @@ The installer tries to achieve these requirements by hook or by crook.  It may
 work for you: cd to the base directory (the one that contains this file), and
 run the following command:
 
-sudo python setup.py install
+  sudo python setup.py install
 
 If sudo doesn't work for you, you can log in as root or Administrator and run
 the command without "sudo" at the front.
@@ -38,22 +38,24 @@ python2.4
 libpcap          (already installed on some systems, Windows users need WinPcap)
     Windows: http://www.winpcap.org/install/default.htm
 ntp              (not *absolutely* required but operating without it is risky)
-    Windows: http://www.meinberg.de/english/sw/ntp.htm#ntp_nt_stable
-    Note Windows XP's built-in network time support doesn't seem to work well
-    enough for use with switzerland; a third-party ntp daemon such as Meinberg's
-    is recommended for reliable operation.  (You may need to run ntpdate
-    to update your system clock before ntpd will start synchronizing.)
+
+    Windows: http://www.meinberg.de/english/sw/ntp.htm#ntp_nt_stable Note
+    Windows XP's built-in network time support doesn't seem to work well enough
+    for use with switzerland; a third-party ntp daemon such as Meinberg's is
+    recommended for reliable operation.  (You may need to run ntpdate to update
+    your system clock before ntpd will start synchronizing.)
 python win32 extensions
     http://sourceforge.net/project/showfiles.php?group_id=78018
 
-The setup.py script tries some pre-compiled binaries, but if none of those
-work on your machine, you will need a basic development environment including
-a C compiler and libc-dev and libpcap-dev to compile FastCollector.  The Mac
-OS X Developer Tools provide these requirements on Macs, Cygwin can be
-used to provide them on Windows.  On Linux, make sure you have gcc and the
-basic libc development packages installed.
+The setup.py script tries some precompiled binaries, but if none of those work
+on your machine, you will need a basic development environment including a C
+compiler and libc-dev and libpcap-dev to compile FastCollector.  The Mac OS X
+Developer Tools provide these requirements on Macs, Cygwin can be used to
+provide them on Windows.  On Linux, make sure you have gcc and the basic libc
+development packages installed.
 
 With all of these prerequisites sorted out, the "python setup.py install"
 command should just work for non-Windows systems.  On Windows, you may have to
-work out how to get FastCollector.c compiled and the resulting
-FastCollector.py placed somewhere in the PATH.  Good luck!
+work out how to get FastCollector.c compiled and the resulting FastCollector.py
+placed somewhere in the PATH.  Good luck!
+

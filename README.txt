@@ -62,13 +62,13 @@ clients and records data about the event for further analysis.
 1.1.1. How do I run Switzerland?
 
 Before you run Switzerland, be sure to read the sections on security, privacy
-and firewalls below.  
+and firewalls below.
 
 Once you've read those sections and installed Switzerland (see the INSTALL file
 for instructions -- on some computers installation will be very easy, on
 others, it may require some hacking), you can run Switzerland like this:
 
-switzerland-client 
+switzerland-client
 
 By default, the client will use EFF's Switzerland server, switzerland.eff.org.
 If you run your own Switzerland server, you can specify that instead using the
@@ -76,17 +76,17 @@ If you run your own Switzerland server, you can specify that instead using the
 
 1.2. Stability of this release
 
-This is an alpha release; Switzerland is not stable software.  It's been
-gently tested but is still heavily under development.  Many planned features
-have not been implemented.  We need your help!
+This is an alpha release; Switzerland is not stable software.  It's been gently
+tested but is still heavily under development.  Many planned features have not
+been implemented.  We need your help!
 
 1.3. Security
 
 This release of Switzerland may contain bugs or security vulnerabilities that
-allow an attacker to compromise your computer's security.  We recommend you
-do not run it in a production setting, on computers that store sensitive
-data or data that has not been backed up, or on computers exchanging
-sensitive data over unencrypted connections.
+allow an attacker to compromise your computer's security.  We recommend you do
+not run it in a production setting, on computers that store sensitive data or
+data that has not been backed up, or on computers exchanging sensitive data
+over unencrypted connections.
 
 1.3.1. Privileged client
 
@@ -140,44 +140,42 @@ between Switzerland clients as "public record" information.
 
 2.1. NAT (Network Address Translation) firewalls
 
-Switzerland is aware of the changes to IP addresses and port numbers that
-NAT firewalls normally make, and will not report those as modifications to
-the underlying traffic.
+Switzerland is aware of the changes to IP addresses and port numbers that NAT
+firewalls normally make, and will not report those as modifications to the
+underlying traffic.
 
 But many NAT firewalls, especially home wireless routers, make other
-undocumented modifications to the traffic traveling through them, beyond
-the minimum required to be a NAT firewall.  As a result, Switzerland clients
-that are behind firewalls or talking to machines that are behind firewalls
-will often detect and report these modifications to traffic.
+undocumented modifications to the traffic traveling through them, beyond the
+minimum required to be a NAT firewall.  As a result, Switzerland clients that
+are behind firewalls or talking to machines that are behind firewalls will
+often detect and report these modifications to traffic.
 
-It is important not to confuse packet modification by your firewall or
-another client's firewall with interference by an ISP.  If you want to
-perform reliable tests of an ISP, you'll need to plug your computer directly
-into your DSL or cable modem, and only consider results obtained with
-non-firewalled peers.  Switzerland will tell you which other clients are
-behind NAT firewalls.
+It is important not to confuse packet modification by your firewall or another
+client's firewall with interference by an ISP.  If you want to perform reliable
+tests of an ISP, you'll need to plug your computer directly into your DSL or
+cable modem, and only consider results obtained with non-firewalled peers.
+Switzerland will tell you which other clients are behind NAT firewalls.
 
-In the future we may be able to build a database of different models of
-common NAT firewalls and the things they do, which would allow preliminary
-tests to be done through the firewall.  At the moment, for instance, we
-think that devices running the DD-WRT open firmware make no unexpected
-modifications to traffic, so you should be able to run ISP tests through
-them.  A firewall-free setup should always be used to confirm test results.
+In the future we may be able to build a database of different models of common
+NAT firewalls and the things they do, which would allow preliminary tests to be
+done through the firewall.  At the moment, for instance, we think that devices
+running the DD-WRT open firmware make no unexpected modifications to traffic,
+so you should be able to run ISP tests through them.  A firewall-free setup
+should always be used to confirm test results.
 
 2.2 Other firewalls
 
 It is theoretically possible that interference can be performed by non-NAT
-firewalls.  These are most likely to be encountered on corporate and
-university networks.  Switzerland will detect this as interference by an
-intermediary.  It isn't a bug, it's a feature.  Remember, traffic
-interference could be occurring at any step along the way from your computer
-to another.
+firewalls.  These are most likely to be encountered on corporate and university
+networks.  Switzerland will detect this as interference by an intermediary.  It
+isn't a bug, it's a feature.  Remember, traffic interference could be occurring
+at any step along the way from your computer to another.
 
 2.3 Test server
 
 EFF runs a default server at switzerland.eff.org:7778 (we expect it'll crash
-and misbehave a bit for early versions of the code), but you can run your
-own servers elsewhere if you wish.
+and misbehave a bit for early versions of the code), but you can run your own
+servers elsewhere if you wish.
 
 2.4 Tests you can run
 
@@ -186,34 +184,33 @@ http://switzerland.wiki.sourceforge.net/tests
 There are a few different ways to run tests with Switzerland.
 
 Any packets exchanged between Switzerland clients connected to the same server
-will be tested automatically. The question is, how do you find other clients
+will be tested automatically.  The question is, how do you find other clients
 and talk to them using the protocols you want to test?
 
 For now, the easiest way to set up tests is to co-ordinate them through the
-wiki page linked above or the IRC channel. If you want to test whether
+wiki page linked above or the IRC channel.  If you want to test whether
 BitTorrent downloads are working correctly, go to that page and find some
-torrents that others are seeding from test machines. If you want to test if
+torrents that others are seeding from test machines.  If you want to test if
 your ISP is interfering with BitTorrent seeding, you can post a link to a
 torrent file on the wiki, seed that torrent while running a Switzerland client
-and other people can find it on the wiki and try to download it while running
-a Switzerland client.
+and other people can find it on the wiki and try to download it while running a
+Switzerland client.
 
 Another way is to run clients on two different computers, and then make the
-machines talk to each other using whatever protocol you'd like to test.
-That's fine if you have administrator accounts on two suitable machines for
-running the test, and are comfortable running the right clients and servers
-on them.
+machines talk to each other using whatever protocol you'd like to test.  That's
+fine if you have administrator accounts on two suitable machines for running
+the test, and are comfortable running the right clients and servers on them.
 
-If you're a developer working on an application (say a P2P or IP telephony
-app) that might be a target for interference, you could automate one of the
-above methodologies.
+If you're a developer working on an application (say a P2P or IP telephony app)
+that might be a target for interference, you could automate one of the above
+methodologies.
 
 3. Contributing
 
 3.1. Ways to help
 
 - use the software and report bugs / results
-- run or write new unit testcases
+- run or write new unit test cases
 - add or fix support for your platform (especially installation!)
 - help find and fix security vulnerabilities
 - implement new features
@@ -241,7 +238,7 @@ Switzerland/             : source code
     PacketListener.py    : thread to listen for incoming packets
     PacketQueue.py       : a queue of batches in the same flow
     Reporter.py          : thread to report traffic to server
-    TimeManager.py       : interface with NTP 
+    TimeManager.py       : interface with NTP
   common/                : code shared between client+server
     Flow.py              : one direction of an IP communication
     Messages.py          : Switzerland protocol messages
@@ -254,7 +251,7 @@ Switzerland/             : source code
   server/                : server code
     Reconciliator.py     : test whether two views of a flow agree
     Switzerland.py       : main server file
-    SwitzerlandConfig.py : command-line optin/configuration file handling
+    SwitzerlandConfig.py : command-line options/configuration file handling
     SwitzerlandLink.py   : interaction with clients
   tests/                 : unit tests
 switzerland-client*      : client
