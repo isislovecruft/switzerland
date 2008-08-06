@@ -81,6 +81,30 @@ def try_gcc_compile():
   else:
     return False
 
+def try_gcc_compile_static_libpcap():
+  cmd = "gcc -O3 -lpcap -o %s %s" % (dest,source)
+  print "Trying compile:", cmd
+  os.system(cmd)
+  if try_binary(dest):
+    return dest
+  else:
+    return False
+
+def try_vaguely_responsible_compile():
+  cc = os.environ.get("CC", "gcc")
+  cflags = os.environ.get("CFLAGS", "")
+  ldflags = os.environ.get("LDFLAGS", "")
+
+  cmd = cc + " " + cflags + " " + ldflags + (" -lpcap -o %s %s" % (dest,source))
+
+  cmd = "gcc -O3 -lpcap -o %s %s" % (dest,source)
+  print "Trying compile:", cmd
+  os.system(cmd)
+  if try_binary(dest):
+    return dest
+  else:
+    return False
+
 def try_cc_compile():
   cmd = "cc -lpcap -o %s %s" % (dest,source)
   print "Trying compile:", cmd
@@ -97,7 +121,8 @@ def find_binary():
   else:
     print "Trying to compile a binary for you..."
 
-    attempts = try_gcc_compile() or try_cc_compile()
+    attempts = try_gcc_compile() or try_cc_compile() or \
+          try_vaguely_responsible_compile() or try_gcc_compile_static_libpcap()
     if attempts:
       print "Compile successful!"
     else:
