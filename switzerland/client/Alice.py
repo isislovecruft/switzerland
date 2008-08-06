@@ -126,7 +126,7 @@ class Alice:
     def ntp_setup(self):
         try:
             self.time_manager = TimeManager()
-            self.root_dispersion = self.time_manager.root_dispersion()
+            self.root_dispersion = self.time_manager.get_time_error()
         except UncertainTimeError:
             if not self.config.allow_uncertain_time:
                 print "  Please fix NTP!!\n"
