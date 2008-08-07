@@ -218,11 +218,11 @@ class PacketListener(threading.Thread):
         rval = self.sniff.poll()
         if rval != None:              # The sniffer died
           print self.sniff.stderr.read()
-          raise Exception("packet collector exited with return code %d" % (rval))
+          raise SnifferError("packet collector exited with return code %d" % (rval))
 
       words = line.split()
       if len(words) == 0 or words[0] != "Tempfile:":
-        raise Exception("packet collector didn't print a Tempfile: line")
+        raise SnifferError("packet collector didn't print a Tempfile: line")
       return words[1]
 
     def get_pcap_datalink(self):
@@ -238,10 +238,10 @@ class PacketListener(threading.Thread):
             rval = self.sniff.poll()
             if rval != None:              # The sniffer died
                 print self.sniff.stderr.read()
-                raise Exception("packet collector exited with return code %d" % (rval))
+                raise SnifferError("packet collector exited with return code %d" % (rval))
         words = line.split()
         if len(words) == 0 or words[0] != "pcap_datalink:":
-            raise Exception("packet collector didn't print a pcap_datalink: line")
+            raise SnifferError("packet collector didn't print a pcap_datalink: line")
         return int(words[1])
 
 
@@ -250,16 +250,22 @@ class PacketListener(threading.Thread):
             in interactive mode, run until the parent thread exits.
             in offline mode, break when the dump file ends """
 
-        self.launch_collector()
         # This only returns on an error condition...
         try:
+          self.launch_collector()
           self.read_packets()
-        except:    # sniffer error; clean up on the way out
+
+	  # The obvious thing to do with exceptions here would be to set the
+	  # quit event and then "raise".  But if there's a context switch in
+	  # between those two lines, we might never see the exception.  So
+	  # print it before sending quit_event.
+        except SnifferError,e:    # sniffer error; clean up on the way out
           self.cleanup()
-          # The obvious thing to do here would be to set the quit event
-          # and then "raise".  But if there's a context switch in between
-          # those two lines, we might never see the exception.  So print it
-          # before sending quit_event.
+          log.error(e)
+          self.parent.quit_event.set()
+          sys.exit(1)
+        except:    		  # What kind of error is this?
+          self.cleanup()
           log.error(traceback.format_exc())
           self.parent.quit_event.set()
           sys.exit(1)
