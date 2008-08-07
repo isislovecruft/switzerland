@@ -48,6 +48,10 @@ def try_binary(path):
     print "(probably because you are in the wrong directory....)"
     return False
   print "Testing executable %s:" % path
+  if platform.system() != "Windows":
+    if not os.access(path,os.X_OK):
+      print "You don't seem to have execute permissions on %s, trying to fix..." % path
+      os.chmod(path,0755)
   inp,outp,errors = os.popen3(path+ " notadeviceanywhere")
   line = errors.read()
   if "Couldn't" in line:
