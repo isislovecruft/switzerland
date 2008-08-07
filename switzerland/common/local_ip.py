@@ -3,24 +3,9 @@ import socket
 import sys
 import platform
 
-set_ip = None
-interface = None
-
-def set_local_ip(cl_ip):
-  assert socket.inet_aton(cl_ip)
-  global set_ip 
-  set_ip = cl_ip
-
-def set_interface(iface):
-  global interface 
-  # XXX check this is a valid interface?
-  interface = iface
 
 def get_interface():
   os_type = platform.system()
-  global interface
-  if interface:
-    return interface
   if os_type == "Linux":
     interface = get_linux_interface()
   elif os_type == 'Darwin':
@@ -35,12 +20,10 @@ def get_interface():
     print 'sorry, couldn''t detect your network interface (is it up?)\n'
     print 'please use -i to specify an interface\n'
     sys.exit(1)
-  assert interface
   return interface
  
 
-
-def get_local_ip():
+def get_local_ip(interface=None):
   """ 
   Figure out the local IP address, by hook or by crook.  Optional
   command line hints about the local IP should be passed in here; sometimes
@@ -48,16 +31,13 @@ def get_local_ip():
   """
 
   os_type = platform.system()
-  if set_ip != None:
-    # Maybe we'll want to double check this in the future
-    socket.inet_aton(set_ip)
-    return set_ip
   if os_type == "Linux":
-    interface = get_linux_interface()
+    if not interface: interface = get_linux_interface()
     if interface != None:
       ip=get_linux_local_ip(interface)
       return ip
   elif os_type == 'Darwin':
+    if not interface: interface = get_darwin_interface()
     interface = get_darwin_interface()
     if interface != None:
       ip=get_darwin_local_ip(interface)
@@ -65,7 +45,7 @@ def get_local_ip():
   elif os_type == 'Windows':
     return get_windows_local_ip()
   elif os_type[-3:] == "BSD":
-    interface = get_bsd_interface()
+    if not interface: interface = get_bsd_interface()
     if interface != None:
       ip=get_darwin_local_ip(interface)
       return ip

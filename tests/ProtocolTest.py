@@ -98,8 +98,8 @@ class ProtocolTestCase(unittest.TestCase):
     self.assert_(['public-ip', 0, '127.0.0.1' ] in client1.in_log)
     self.assert_(['public-ip', 0, '127.0.0.1'] in server_thread2.out_log)
     self.assert_(['public-ip', 0, '127.0.0.1'] in client2.in_log)
-    self.assert_(['error-bye', 'Too many simultaneous connections from the one IP!'] in server_thread2.out_log)
-    self.assert_(['error-bye', 'Too many simultaneous connections from the one IP!'] in client2.in_log)
+    self.assert_(['error-bye', 'We already have a connection from your IP.  Multiple connections from a single IP are currently disallowed!'] in server_thread2.out_log)
+    self.assert_(['error-bye', 'We already have a connection from your IP.  Multiple connections from a single IP are currently disallowed!'] in client2.in_log)
 
   def random_flow(self, ip1="55.66.77.88", ip2="11.22.33.44"):
     import binascii

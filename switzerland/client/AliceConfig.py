@@ -75,7 +75,7 @@ class AliceConfig:
         if force_private_ip and self.private_ip == None: # could have been set by getopt?
             self.private_ip = force_private_ip
         if self.private_ip == None:
-            self.private_ip = local_ip.get_local_ip()
+            self.private_ip = local_ip.get_local_ip(self.interface)
 
     def get_options(self):
         if len(sys.argv) > 1 and sys.argv[1] == "help":
@@ -89,9 +89,25 @@ class AliceConfig:
 
         for opt in opts:
             if opt[0] in ('-s', '--server'):
-                self.host = opt[1]
+                try:
+                    if ":" in opt[1]:
+                        self.host, self.port = opt[1].split(":")
+                        self.port = int(self.port)
+                    else:
+                        self.host = opt[1]
+                except:
+                    self.usage(False)
+                    print "Invalid argument for the", opt[0], "flag (specify a",
+                    print "server to connect to)"
+                    sys.exit(1)
             elif opt[0] in ('-p', '--port'):
-                self.port = int(opt[1])
+                try:
+                    self.port = int(opt[1])
+                except:
+                    self.usage(False)
+                    print "Invalid argument for the", opt[0], "flag (need a",
+                    print "port number"
+                    sys.exit(1)
             elif opt[0] in ('-i', '--interface'):
                 self.interface = opt[1]
             elif opt[0] in ('-l', '--ip'):
@@ -106,18 +122,24 @@ class AliceConfig:
                 self.quiet = True
             elif opt[0] in ('-u', '--uncertain-time'):
                 self.allow_uncertain_time = True
-                self.manual_clock_error = float(opt[1])
+                try:
+                    self.manual_clock_error = float(opt[1])
+                except:
+                    self.usage(False)
+                    print "Invalid argument for the", opt[0], "flag (please",
+                    print "specify the maximum error of your clock in seconds)"
+                    sys.exit(1)
             elif opt[0] in ('-v', '--verbose'):
                 self.log_level -= (logging.INFO - logging.DEBUG)
 
-    def usage(self):
+    def usage(self, exit=True):
         print 
         print "%s [OPTIONS]" % sys.argv[0]
         print 
         print "This is the client for EFF's Switzerland network traffic auditing system"
         print
         print "  -h, --help                 Print usage info"
-        print "  -s, --server <host>        Switzerland server"
+        print "  -s, --server <host[:port]> Switzerland server [and port]"
         print "  -p, --port <port number>   Switzerland server port"
         print "  -i, --interface <iface>    Interface on which to monitor traffic"
         print "  -l, --ip <ip>              (Local) ip address of monitored interface"
@@ -130,7 +152,7 @@ class AliceConfig:
         print "                             (defaults to " + default_pcap_logdir + ")"
         print "  -q, --quiet                Do not print output"
         print
-        sys.exit(0)
+        if exit: sys.exit(0)
             
                             
     def check(self):
