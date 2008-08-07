@@ -27,7 +27,9 @@ log.addHandler(startup_handler)
 
 welcome_msg = \
 """--------------------------------------------------------------------------------
-Welcome to Switzerland.  This is a Version Zero alpha release.  It's sure to
+Welcome to Switzerland.  READ THE PRIVACY AND SECURITY SECTIONS OF THE README.txt!!
+
+Once you've done that... this is a Version Zero alpha release.  It's sure to
 break at some point.  If/when that happens, please let us know by email 
 (switzerland-devel@eff.org), IRC (#switzerland on irc.oftc.net) or bug report
 ( https://sourceforge.net/tracker/?func=browse&group_id=233013&atid=1088569 )
