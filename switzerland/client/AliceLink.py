@@ -178,7 +178,7 @@ class AliceLink(Protocol.Protocol):
     forged -in and -out PCAPs.  But only do this once!
     """
     if not self.forged_notification:
-      log.warn("For information about Switzerland's modified/forged PCAP "+\ 
+      log.warn("For information about Switzerland's modified/forged PCAP "+\
                "records, please see") 
       log.warn("http://switzerland.wiki.sf.net/forged")
       self.forged_notification = True
