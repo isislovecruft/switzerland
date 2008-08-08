@@ -217,8 +217,9 @@ class PacketListener(threading.Thread):
         line = self.sniff.stdout.readline()
         rval = self.sniff.poll()
         if rval != None:              # The sniffer died
-          print self.sniff.stderr.read()
-          raise SnifferError("packet collector exited with return code %d" % (rval))
+          msg = "packet collector exited with return code %d\n" % rval
+          msg += self.sniff.stderr.read()
+          raise SnifferError(msg)
 
       words = line.split()
       if len(words) == 0 or words[0] != "Tempfile:":
@@ -237,8 +238,9 @@ class PacketListener(threading.Thread):
             line = self.sniff.stdout.readline()
             rval = self.sniff.poll()
             if rval != None:              # The sniffer died
-                print self.sniff.stderr.read()
-                raise SnifferError("packet collector exited with return code %d" % (rval))
+                msg = "packet collector exited with return code %d\n" % (rval)
+                msg += self.sniff.stderr.read()
+                raise SnifferError(msg)
         words = line.split()
         if len(words) == 0 or words[0] != "pcap_datalink:":
             raise SnifferError("packet collector didn't print a pcap_datalink: line")
@@ -262,6 +264,8 @@ class PacketListener(threading.Thread):
         except SnifferError,e:    # sniffer error; clean up on the way out
           self.cleanup()
           log.error(e)
+          if "handle a packet of size" in e:
+            large_segment_message()
           self.parent.quit_event.set()
           sys.exit(1)
         except:    		  # What kind of error is this?
@@ -385,11 +389,15 @@ class PacketListener(threading.Thread):
           # more out-of-order than anything we've seen yet
           if t > self.max_timewarp:
             msg = "Timestamp monotonicity violated by up to %g seconds" % t
-            log.error(msg)
-            # XXX if this gets up into the millisecond range we should
-            # probably switch to a hard error.
-            self.parent.link.send_message("error-cont", [msg])
             self.max_timewarp = t
+            if t > 0.0002:  # 200 microseconds
+              log.error(msg)
+              # XXX if this gets up into the millisecond range we should
+              # probably switch to a hard error.
+              self.parent.link.send_message("error-cont", [msg])
+            else:
+              log.debug(msg)
+
 
         if double_check: print "Timestamp", timestamp
         self.pos += tss
@@ -551,3 +559,27 @@ if __name__ == "__main__":
   dummy = True
   listener = PacketListener(DummyAlice())
   listener.run()
+
+segment_message = \
+"""This error is usually a results of having a feature called "TCP Segmentation
+Offloading" or "Large Segment Offloading" enabled in your operating
+system.  See http://en.wikipedia.org/wiki/Large_segment_offload for more info.
+Try running Switzerland with Segmentation Offloading disabled.
+"""
+
+def large_segment_message():
+  "Tell the user about large segement offloading and how to disable it"
+  msg = segment_message
+  plat = platform.system()
+  if plat == "Linux":
+    msg += "On linux, you can disable it with the following command:\n"
+    msg += "ethtool -K %s tso off" % self.parent.config.interface
+  elif plat == "Darwin" or plat[-3:] == "BSD":
+    msg += "On %s, you can disable it with the following command:\n" % plat
+    msg += "ifconfig %s -tso" % self.parent.config.interface
+  elif plat == "Windows":
+    msg += "On Windows, you should be able to disable it using the advanced "
+    msg += "settings for your network driver." 
+  else:
+    msg += "Sorry, we can't yet tell you how to disable it on %s" % plat
+  log.warn(msg)

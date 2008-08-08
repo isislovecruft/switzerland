@@ -5,6 +5,7 @@ from binascii import hexlify
 
 from switzerland.client import Packet
 
+# usage:
 # HashDump.py dumpfile private_ip public_ip [firewalled] [peer_firewalled]
 
 class FakeConfig:

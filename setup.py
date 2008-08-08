@@ -48,10 +48,14 @@ def try_binary(path):
     print "(probably because you are in the wrong directory....)"
     return False
   print "Testing executable %s:" % path
-  if platform.system() != "Windows":
-    if not os.access(path,os.X_OK):
-      print "You don't seem to have execute permissions on %s, trying to fix..." % path
-      os.chmod(path,0755)
+  try:
+    from subprocess import Popen, PIPE
+    # os.chmod does not work on, of all platforms, Windows, where cygwin may
+    # nonetheless require it.
+    p=Popen("chmod a+x " + path, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    p.wait()
+  except:
+    pass
   inp,outp,errors = os.popen3(path+ " notadeviceanywhere")
   line = errors.read()
   if "Couldn't" in line:

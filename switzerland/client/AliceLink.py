@@ -26,6 +26,7 @@ class AliceLink(Protocol.Protocol):
     self.config = config
     self.quit_event = quit_event
     self.dangling_note = False
+    self.forged_notification = True
 
     self.socket = s.socket(s.AF_INET, s.SOCK_STREAM)
     log.info("Connecting to %s:%s", config.host, `config.port`)
@@ -117,6 +118,7 @@ class AliceLink(Protocol.Protocol):
     try:
       flow_id, forgeries = args
       log.warn("Switzerland has informed us of %d modified/spoofed outbound packets in flow #%d" % (len(forgeries), flow_id))
+      self.forged_note()
       flow = self.lookup_flow_by_id(flow_id, "modified-out")
       self.nat_firewall_warnings(flow)
       contexts = {}
@@ -145,6 +147,7 @@ class AliceLink(Protocol.Protocol):
       try:
         flow_id, packets_wanted = args
         log.warn("Switzerland has informed us of %d modified inbound packets in flow #%d" % (len(args[1]), flow_id))
+        self.forged_note()
         flow = self.lookup_flow_by_id(flow_id, "modified-in")
         if not flow or self.nat_firewall_warnings(flow) == -1:
           # errors have already been reported
@@ -168,6 +171,17 @@ class AliceLink(Protocol.Protocol):
         log.error(traceback.format_exc())
     finally:
       self.flow_manager.lock.release()
+
+  def forged_note(self):
+    """
+    Point the user towards some (hopefully) helpful documentation about the
+    forged -in and -out PCAPs.  But only do this once!
+    """
+    if not self.forged_notification:
+      log.warn("For information about Switzerland's modified/forged PCAP "+\ 
+               "records, please see") 
+      log.warn("http://switzerland.wiki.sf.net/forged")
+      self.forged_notification = True
 
   def nat_firewall_warnings(self, flow):
     """
