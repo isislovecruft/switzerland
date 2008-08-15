@@ -59,6 +59,7 @@ static void handle_control_c(int);
 
 static char *iface_or_file = NULL; // interface or file name we're capturing from
 static int live = 1; // capturing from device (live)?  assume so by default
+static int delete_file = 0;
 
 #ifndef WIN32
 static char filename[] = "/tmp/tmpXXXXXX";
@@ -259,7 +260,7 @@ static void handle_packet(u_char *user_data, const struct pcap_pkthdr *header, c
 
 static void main_loop(pcap_t *pc) {
   int ret = 13;
-  int last_count = 0;
+  unsigned int last_count = 0;
   while (1) {
     last_count = count;
     ret = pcap_loop(pc, CHECK_FREQ, &handle_packet, NULL);
@@ -308,6 +309,7 @@ static void get_args(int argc, char **argv) {
       switch (arg[1]) {
         case 'i': live = 1; break;
         case 'f': live = 0; break;
+        case 'd': delete_file = 1; break;
         default:
           fprintf(stderr, "invalid/unrecognized argument: -%c\n", *arg);
           exit(1);
@@ -319,12 +321,19 @@ static void get_args(int argc, char **argv) {
   }
 }
 
+void cleanup() {
+  if (delete_file && 0 != unlink(filename)) {
+    perror(filename);
+  }
+}
+
 int main(int argc,char *argv[])
 {
   assert(sizeof(PacketEntry) == 1616 &&
       "Your compiler didn't pack struct packet_entry like we foolishly expected, bailing");
   open_buffer();
   get_args(argc, argv);
+  atexit(cleanup);
   pc_global = start_capture(iface_or_file);
   printf("pcap_datalink: %d\n", pcap_datalink(pc_global));
   fflush(stdout);

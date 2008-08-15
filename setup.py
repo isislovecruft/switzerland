@@ -7,6 +7,12 @@ import os.path
 import platform
 import shutil
 
+OPERATING_SYSTEM = platform.system()
+
+# Fix up the %PATH% on Windows so that we can use Cygwin if it is  present.
+if "Windows" == OPERATING_SYSTEM:
+  os.environ["PATH"] += os.pathsep + r"c:\cygwin\bin"
+
 def check_version():
   if sys.version_info < (2,4,0):
     # This is a bad start, but let's see if there is a python2.4 around:
@@ -28,7 +34,7 @@ def check_version():
       sys.exit(0)
 
 def try_precompiled_binaries():
-  plat = platform.system()
+  plat = OPERATING_SYSTEM
   if plat == "Linux":
     return try_binary("bin/FastCollector.linux")
   elif plat == "Windows":
@@ -56,26 +62,18 @@ def try_binary(path):
     p.wait()
   except:
     pass
-  inp,outp,errors = os.popen3(path+ " notadeviceanywhere")
+  inp,outp,errors = os.popen3(path+ " -d notadeviceanywhere")
   line = errors.read()
   if "Couldn't" in line:
     # magic to keep things quiet
     print "Looks like it executes on this machine!"
-    try:
-      # Remove that pesky tempfile
-      line = outp.readline()
-      words = line.split()
-      if words[0] == "Tempfile:":
-        os.unlink(words[1])
-    except:
-      pass
     return path
   print "This is what we got when we tried the precompiled binary:\n%s" % line[:-1]
   print "Looks like that isn't going to work :("
   return False
 
 source = os.path.join("switzerland", "client", "FastCollector.c")
-if platform.system() == "Windows":
+if OPERATING_SYSTEM == "Windows":
   dest = os.path.join("switzerland", "client", "FastCollector.exe")
 else:
   dest = os.path.join("switzerland", "client", "FastCollector")
@@ -90,7 +88,7 @@ def try_gcc_compile():
     return False
 
 def try_gcc_compile_static_libpcap():
-  cmd = "gcc -O3 -lpcap -o %s %s" % (dest,source)
+  cmd = "gcc -O3 -lpcap `locate libpcap.a | head -1` -o %s %s" % (dest,source)
   print "Trying compile:", cmd
   os.system(cmd)
   if try_binary(dest):
@@ -105,7 +103,6 @@ def try_vaguely_responsible_compile():
 
   cmd = cc + " " + cflags + " " + ldflags + (" -lpcap -o %s %s" % (dest,source))
 
-  cmd = "gcc -O3 -lpcap -o %s %s" % (dest,source)
   print "Trying compile:", cmd
   os.system(cmd)
   if try_binary(dest):
@@ -154,7 +151,7 @@ def ntpdate_runs():
 
 def main():
   check_version()
-  if platform.system() == "Windows":
+  if OPERATING_SYSTEM == "Windows":
       shutil.copyfile("switzerland-client", "switzerland-client.py")
       shutil.copyfile("switzerland-server", "switzerland-server.py")
       executables = ["switzerland-client.py","switzerland-server.py"]
