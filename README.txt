@@ -13,6 +13,8 @@ Contents:
 
 1.1. What is Switzerland?
 1.1.1 How do I run Switzerland?
+1.1.2 NTP usage
+1.1.3 How do I understand the output of Switzerland?
 1.2. Stability of this release
 1.3. Security
 1.3.1. Privileged client
@@ -73,6 +75,72 @@ switzerland-client
 By default, the client will use EFF's Switzerland server, switzerland.eff.org.
 If you run your own Switzerland server, you can specify that instead using the
 -s flag.
+
+1.1.2 NTP usage
+
+When running Switzerland, you may see some errors/warnings about NTP.  NTP, 
+or Network Time Protocol, is a way of making sure your computer's clock is
+accurate.  Switzerland works best with an accurate clock, but even if your 
+clock is not accurate, Switzerland must know how far off your clock is from
+the "correct" time.
+
+Under ideal conditions, you will have the ntp daemon installed and running, and
+it will have set your clock to the correct time.  Switzerland will try to use a
+program called 'ntpdc' to query your ntp daemon to ask it about the clock
+accuracy.  If ntpdc is not installed on your system, or it can't connect to the
+ntp daemon (usually because it's not running), then Switzerland will issue some
+warnings. Switzerland will then try to use the program 'ntpdate' (if installed)
+to figure out the accuracy of your clock.  If ntpdate fails (usually because
+you don't have it installed) then Switzerland will really complain and then
+quit.
+
+If you are receiving warnings/errors about NTP, here are some steps you can
+take:
+
+ 1) Make sure ntp is installed and configured properly for your system.  On
+    Linux/UNIX systems, installing and configuring ntp is often as easy as 
+    installing the 'ntp' package using your distributions package manager.  If
+    you are on windows, you can download and install the ntp package from here:
+      http://www.meinberg.de/english/sw/ntp.htm
+      (Note: The standard Windows NTP client that comes with many Windows 
+       systems is NOT sufficient for Switzerland)
+ 2) If you've just recently installed ntp and Switzerland is still complaining
+    about ntp being in 'UNSPEC' mode:
+    a) Check your clock.  ntp will refuse to work if your clock is more than a
+       few seconds off (while this may seem silly, there are some good reasons
+       for this behavior). Try setting your clock manually, or possibly by 
+       using the 'ntpdate' command by running 'ntpdate pool.ntp.org'
+	b) If your clock is accurate, it may be that ntp hasn't been running long
+       enough to establish that it has correctly synced your clock.  Try 
+       waiting a bit longer.  On some systems it may take upwards of 10 or 20
+       minutes.        
+
+ 3) If, for whatever reason, you can't get ntp installed, then try installing
+    the ntpdate program, which Switzerland will try to use if it can't use ntp.
+
+ 4) If there is no way to install ntp or ntpdate, then you can use the -u 
+    option to switzerland-client to tell it the maximum number of seconds your
+    clock will be off by.
+
+
+1.1.3 How do I understand the output of Switzerland?
+
+First, see the following wiki page for an example of what Switzerland should
+print to the screen if it's working correctly:
+http://switzerland.wiki.sourceforge.net/output+example
+
+Switzerland will output 'Now testing flow' messages when you are exchanging
+data with another peer running Switzerland.  About 20 seconds after you see
+a 'Now testing flow' message, you should see a flow table.  The columns in the
+flow table are as follows:
+  Okay      : Unmodified packet count
+  Drop      : Dropped packet count
+  Mod/frg   : Modified or fragmented packet count
+  Pend_t/rt : Number of packets the server is still processing
+  Prot      : The flow protocol (tcp/icmp/etc.)
+
+Some dropped packets are not unusual, but a high dropped packet count may be 
+indicative of traffic shaping.
 
 1.2. Stability of this release
 
