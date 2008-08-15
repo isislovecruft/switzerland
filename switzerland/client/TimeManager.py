@@ -5,6 +5,7 @@ from subprocess import Popen,PIPE
 import logging
 import traceback
 import platform
+import os
 
 log = logging.getLogger('alice.time_manager')
 
@@ -72,12 +73,18 @@ class TimeManager:
     try:
       import re
       regex = re.compile("offset (-?[0-9]+\.[0-9]+) sec")
+      executable = "ntpdate"
+      # try bin/ntpdate if ntpdate doesn't work
+      try:
+        Popen(executable, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+      except:
+        executable = os.path.join("bin", "ntpdate")
       if platform.system() == "Windows":
-        cmd = ["ntpdate","-b","-q",timeserver]
+        cmd = [executable,"-b","-q",timeserver]
         cmd = " ".join(cmd)
         ntpdate = Popen(cmd, stdin=PIPE, stderr=PIPE, stdout=PIPE, shell=True)
       else:
-        cmd = ["ntpdate","-q",timeserver]        
+        cmd = [executable,"-q",timeserver]        
         ntpdate = Popen(cmd, stdin=PIPE, stderr=PIPE, stdout=PIPE)
       ntpdate_lines = ntpdate.stdout.read()
       match = regex.search(ntpdate_lines)

@@ -1,5 +1,13 @@
-Switzerland v0.0 was written by Peter Eckersley (pde@eff.org) and Jered Werzibicki
-(jeredw@gmail.com) with many helpful contributions from Steven Lucy (Steven
-Lucy slucy@parallactic.com) 
+The first release of Switzerland was written by Peter Eckersley (pde@eff.org)
+and Jered Werzibicki (jeredw@gmail.com).
 
-Thanks to John Gilmore and Nicholas Weaver for their valuable advice.
+Other valuable contributors of code and bugfixes:
+
+Andrew Chin (achin@eminence32.net)
+Steven Lucy (slucy@parallactic.com) 
+Chris Palmer (chris@noncombatant.org)
+Josef Schneider (linuxjosef@users.sourceforge.net)
+Stephan Schroevers <sschroev@science.uva.nl>
+
+Thanks to John Gilmore and Nicholas Weaver for their valuable design advice,
+and to Sebastien Willemijns for tireles Windows testing.

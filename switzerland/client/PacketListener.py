@@ -88,8 +88,10 @@ class PacketListener(threading.Thread):
         
         if platform.system() == 'Windows':
           self.sniffer_thread = os.path.sep.join(['FastCollector.exe'])
+          self.sniffer_thread2 = os.path.sep.join(['bin','FastCollector.exe'])
         else:
           self.sniffer_thread = os.path.sep.join(['FastCollector'])
+          self.sniffer_thread2 = os.path.sep.join(['bin','FastCollector'])
         if parent.config.pcap_playback:
           self.live = False
           self.target = self.filename_magic(parent.config.pcap_playback)
@@ -160,10 +162,17 @@ class PacketListener(threading.Thread):
             if not self.live:
               mode = '-f'
             log.debug("Launching packet collector: "+ `[self.sniffer_thread, mode, self.target]`)
-            self.sniff = Popen(
-              [self.sniffer_thread, mode, self.target], shell=use_shell,
-              stdout=PIPE, stdin=PIPE, stderr=PIPE
-            )         
+            try:
+              self.sniff = Popen(
+                [self.sniffer_thread, mode, self.target], shell=use_shell,
+                stdout=PIPE, stdin=PIPE, stderr=PIPE
+              )         
+            except:
+              # try bin/FastCollector
+              self.sniff = Popen(
+                [self.sniffer_thread2, mode, self.target], shell=use_shell,
+                stdout=PIPE, stdin=PIPE, stderr=PIPE
+              )         
           except:
             log.error("failed to start %s", self.sniffer_thread)
             raise
@@ -219,7 +228,7 @@ class PacketListener(threading.Thread):
         if rval != None:              # The sniffer died
           msg = "packet collector exited with return code %d\n" % rval
           msg += self.sniff.stderr.read()
-          raise SnifferError(msg)
+          raise SnifferError, msg
 
       words = line.split()
       if len(words) == 0 or words[0] != "Tempfile:":
@@ -240,10 +249,10 @@ class PacketListener(threading.Thread):
             if rval != None:              # The sniffer died
                 msg = "packet collector exited with return code %d\n" % (rval)
                 msg += self.sniff.stderr.read()
-                raise SnifferError(msg)
+                raise SnifferError, msg
         words = line.split()
         if len(words) == 0 or words[0] != "pcap_datalink:":
-            raise SnifferError("packet collector didn't print a pcap_datalink: line")
+            raise SnifferError,"packet collector didn't print a pcap_datalink: line"
         return int(words[1])
 
 
@@ -264,8 +273,8 @@ class PacketListener(threading.Thread):
         except SnifferError,e:    # sniffer error; clean up on the way out
           self.cleanup()
           log.error(e)
-          if "handle a packet of size" in e:
-            large_segment_message()
+          if "handle a packet of size" in repr(e):
+            self.large_segment_message()
           self.parent.quit_event.set()
           sys.exit(1)
         except:    		  # What kind of error is this?
@@ -344,7 +353,7 @@ class PacketListener(threading.Thread):
         count +=1
         if count % lag_check_frequency == 0:
           delta = time.time() - timestamp
-          log.info("Packet capture lag is currently %lf seconds" % delta)
+          log.info("Capturing a packet currently takes us %lf seconds" % delta)
         self.process_packet(timestamp, data)
         if double_check:
           print "Pos is now 0x%x" % self.pos
@@ -538,8 +547,33 @@ class PacketListener(threading.Thread):
         self.tmpfile = None
           
 
+    segment_message = \
+"""This error is usually a results of having a feature called "TCP Segmentation
+Offloading" or "Large Segment Offloading" enabled in your operating
+system.  See http://en.wikipedia.org/wiki/Large_segment_offload for more info.
+Try running Switzerland with Segmentation Offloading disabled.
+"""
+
+    def large_segment_message(self):
+      "Tell the user about large segement offloading and how to disable it"
+      msg = self.segment_message
+      plat = platform.system()
+      if plat == "Linux":
+        msg += "On linux, you can disable it with the following command:\n"
+        msg += "ethtool -K %s tso off" % self.parent.config.interface
+      elif plat == "Darwin" or plat[-3:] == "BSD":
+        msg += "On %s, you can disable it with the following command:\n" % plat
+        msg += "ifconfig %s -tso" % self.parent.config.interface
+      elif plat == "Windows":
+        msg += "On Windows, you should be able to disable it using the advanced "
+        msg += "settings for your network driver." 
+      else:
+        msg += "Sorry, we can't yet tell you how to disable it on %s" % plat
+      log.warn(msg)
+
 if __name__ == "__main__":
   import AliceConfig
+  logging.basicConfig()
   class DummyFlowManager:
     def __init__(self):
         self.queue = []
@@ -548,6 +582,7 @@ if __name__ == "__main__":
         self.queue.append(packet)
   class DummyAlice:
     config = AliceConfig.AliceConfig()
+    quit_event = threading.Event()
     if len(sys.argv) > 1:
       config.interface = sys.argv[1]
     else:
@@ -560,26 +595,3 @@ if __name__ == "__main__":
   listener = PacketListener(DummyAlice())
   listener.run()
 
-segment_message = \
-"""This error is usually a results of having a feature called "TCP Segmentation
-Offloading" or "Large Segment Offloading" enabled in your operating
-system.  See http://en.wikipedia.org/wiki/Large_segment_offload for more info.
-Try running Switzerland with Segmentation Offloading disabled.
-"""
-
-def large_segment_message():
-  "Tell the user about large segement offloading and how to disable it"
-  msg = segment_message
-  plat = platform.system()
-  if plat == "Linux":
-    msg += "On linux, you can disable it with the following command:\n"
-    msg += "ethtool -K %s tso off" % self.parent.config.interface
-  elif plat == "Darwin" or plat[-3:] == "BSD":
-    msg += "On %s, you can disable it with the following command:\n" % plat
-    msg += "ifconfig %s -tso" % self.parent.config.interface
-  elif plat == "Windows":
-    msg += "On Windows, you should be able to disable it using the advanced "
-    msg += "settings for your network driver." 
-  else:
-    msg += "Sorry, we can't yet tell you how to disable it on %s" % plat
-  log.warn(msg)

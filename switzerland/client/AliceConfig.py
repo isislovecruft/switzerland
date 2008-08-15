@@ -82,7 +82,7 @@ class AliceConfig:
             self.usage()
         try:
             (opts, args) = \
-                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hq', \
+                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hqv', \
                 ['server=', 'port=', 'interface=', 'ip', 'help'])
         except:
             self.usage()

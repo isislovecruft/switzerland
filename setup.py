@@ -32,7 +32,7 @@ def try_precompiled_binaries():
   if plat == "Linux":
     return try_binary("bin/FastCollector.linux")
   elif plat == "Windows":
-    return try_binary("bin\FastCollector.exe")
+    return try_binary("bin\\FastCollector.exe")
   elif plat == "Darwin":
     if platform.release() < "9.0.0":
       # only try this on pre-Leopard platforms.  We don't have a sane Leopard
@@ -137,38 +137,65 @@ def find_binary():
       print "No luck with compilers"
     return attempts
 
-check_version()
-if platform.system() == "Windows":
-    shutil.copyfile("switzerland-client", "switzerland-client.py")
-    shutil.copyfile("switzerland-server", "switzerland-server.py")
-    executables = ["switzerland-client.py","switzerland-server.py"]
-else:
-    executables = ["switzerland-client","switzerland-server"]
-bin = find_binary()
-if bin: 
-  if bin != dest:
-    # Since FastCollector.linux isn't what we wan't in /usr/bin 
-    shutil.copy(bin,dest)
-  executables.append(dest)
+def ntpdate_runs():
+  "No guarantees that it does what you want..."
+  try:
+    print "Checking to see if we can execute ntpdate"
+    from subprocess import Popen, PIPE
+    p = Popen("ntpdate", stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    p.wait()
+    return True
+  except ImportError:
+    print "Can't test ntpdate with old pythons, assuming ntpdate works..."
+    return True
+  except:
+    print "No ntpdate executable in the PATH..."
+    return False
 
-setup(name = "Switzerland",
-      version = "0.0",
-      description = "EFF Network Testing System",
-      author = "Peter Eckersley, Jered Wierzbicki and Steven Lucy",
-      author_email = "switzerland-devel@eff.org",
-      url = "http://www.eff.org/testyourisp/switzerland",
-      packages = ["switzerland", "switzerland.lib","switzerland.client",\
-                  "switzerland.common","switzerland.server"],
-      scripts = executables
-     )
-if not bin:
-  print """
-  Well, Switzerland is sort of installed, but we can't seem to obtain a
-  working FastCollector executable on your machine.  Please make sure you
-  have libpcap, then try again.  If it still doesn't work, make sure you
-  have a C compiler and try again.  If it *still* doesn't work, go and
-  compile %s yourself.  Once you've done that, make sure you put it somewhere 
-  in your system PATH.  Then run Switzerland!""" % source
-else:
-  print "Switzerland installed successfully!"
+def main():
+  check_version()
+  if platform.system() == "Windows":
+      shutil.copyfile("switzerland-client", "switzerland-client.py")
+      shutil.copyfile("switzerland-server", "switzerland-server.py")
+      executables = ["switzerland-client.py","switzerland-server.py"]
+      if not ntpdate_runs():
+        executables.append("bin\\ntpdate.exe")
+  else:
+      executables = ["switzerland-client","switzerland-server"]
+  bin = find_binary()
+  if bin: 
+    if bin != dest:
+      # Since FastCollector.linux isn't what we wan't in /usr/bin 
+      shutil.copy(bin,dest)
+    executables.append(dest)
 
+
+# Gah.  It would be fair to say that distutils sucks.  The following hack
+# adding the undocumented -f flag is necessary to ensure that the installer
+# overwrites outdated previously installed versions of Switzerland.
+  if sys.argv[-1] == "install":
+    sys.argv.append("--force")
+
+  setup(name = "Switzerland",
+        version = "0.0.7",
+        description = "EFF Network Testing System",
+        author = "Peter Eckersley, Jered Wierzbicki and Steven Lucy",
+        author_email = "switzerland-devel@eff.org",
+        url = "http://www.eff.org/testyourisp/switzerland",
+        packages = ["switzerland", "switzerland.lib","switzerland.client",\
+                    "switzerland.common","switzerland.server"],
+        scripts = executables,
+       )
+  if "install" in sys.argv:
+    if not bin:
+      print """
+      Well, Switzerland is sort of installed, but we can't seem to obtain a
+      working FastCollector executable on your machine.  Please make sure you
+      have libpcap, then try again.  If it still doesn't work, make sure you
+      have a C compiler and try again.  If it *still* doesn't work, go and
+      compile %s yourself.  Once you've done that, make sure you put it somewhere 
+      in your system PATH.  Then run Switzerland!""" % source
+    else:
+      print "Switzerland installed successfully!"
+
+main()
