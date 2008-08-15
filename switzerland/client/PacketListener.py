@@ -79,6 +79,7 @@ class PacketListener(threading.Thread):
         self.latest = 0
         self.max_timewarp = 0
         self._skew = parent.config.skew
+        self.kernel_tweaked = False
         self.frag_warn = False # have we warned about fragmented packets?
         self.done = threading.Event() # are we done replaying an 
                                       # offline capture?
@@ -129,13 +130,28 @@ class PacketListener(threading.Thread):
           vars = [("/proc/sys/net/core/rmem_default", "33554432"),
                   ("/proc/sys/net/core/rmem_max", "33554432"),
                   ("/proc/sys/net/core/netdev_max_backlog", "10000")]
+          self.old_kernel_state = []
           for file, value in vars:
+            # save kernel state before overwriting it
+            f = open(file,"r")
+            self.old_kernel_state.append((file, f.read()))
+            f.close()
             f = open(file,"w")
             f.write(value)
             f.close()
+          self.kernel_tweaked = True
 
         # on Windows, we should call pcap_setbuff from inside FastCollector.
-       
+
+    def restore_kernel_state(self):
+        p = platform.system()
+        if p == "Linux":
+            for file, value in self.old_kernel_state:
+                # save kernel state before overwriting it
+                f = open(file,"w")
+                f.write(value)
+                f.close()
+            self.kernel_tweaked = False
 
     def launch_collector(self):
         """
@@ -149,6 +165,7 @@ class PacketListener(threading.Thread):
         try:
           if self.live: self.minimize_packet_loss()
         except:
+          log.info(traceback.format_exc())
           print "Failed to set kernel buffers to minimize packet loss!!!"
           print "You may encounter problems as a result of this..."
 
@@ -508,6 +525,11 @@ class PacketListener(threading.Thread):
     def cleanup(self):
       # Alice may call this code too, so avoid deadlocks
       self.lock.acquire()
+      try:
+        if self.kernel_tweaked:
+          self.restore_kernel_state()
+      except:
+        log.error(traceback.format_exc())
       try:
         if not self.tmpfile:
           return
