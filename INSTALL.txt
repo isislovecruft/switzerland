@@ -43,7 +43,8 @@ ntp              (not *absolutely* required but operating without it is risky)
     Windows XP's built-in network time support doesn't seem to work well enough
     for use with switzerland; a third-party ntp daemon such as Meinberg's is
     recommended for reliable operation.  (You may need to run ntpdate to update
-    your system clock before ntpd will start synchronizing.)
+    your system clock before ntpd will start synchronizing.)  See the README
+    file for more information on how Switzerland uses ntp.
 python win32 extensions
     http://sourceforge.net/project/showfiles.php?group_id=78018
 
@@ -55,7 +56,10 @@ provide them on Windows.  On Linux, make sure you have gcc and the basic libc
 development packages installed.
 
 With all of these prerequisites sorted out, the "python setup.py install"
-command should just work for non-Windows systems.  On Windows, you may have to
-work out how to get FastCollector.c compiled and the resulting FastCollector.py
-placed somewhere in the PATH.  Good luck!
+command should just work for non-Windows systems.  On Windows, you can try 
+cd'ing into your switzerland directory and simply running
+"python switzerland-client".  If that does not work, you may have to run 
+"python setup.py install" or work out how to get FastCollector.c compiled 
+and the resulting FastCollector.exe placed somewhere in the PATH.  
+Good luck!
 
