@@ -196,7 +196,7 @@ class SwitzerlandMasterServer:
           continue
         for port,l in links.items():
           if l.ready.isSet():
-            self.send_other_message(l, "new-members", [[(new_ip_packed, firewalled)]])
+            l.send_other_message("new-members", [[(new_ip_packed, firewalled)]])
 
       link.welcomed.set()      # the link threads can now farewell us :)
     finally:
@@ -245,25 +245,8 @@ class SwitzerlandMasterServer:
     for ip,links in self.peer_ips.items():
       if ip == leaving_ip:
         continue
-      for port,l in links.items():
-        self.send_other_message(l,"farewell", [leaving_ip])
-
-  def send_other_message(self, link, msg, args, **keywords):
-    """
-    Use this function to send messages to other links.  We should ensure
-    that this thread can't die along the way.  Return True if we succeeded,
-    and False if the link died.
-    """
-    try:
-      link.send_message(msg, args, **keywords)
-      return True
-    except:
-      errlog.error("Error sending %s message to %s:\n%s\nArgs: %s" % 
-                   (msg, `link.peer`, traceback.format_exc(), args))
-      link.close()
-      link.free_resources()
-      return False
-    
+      for port,link in links.items():
+        link.send_other_message("farewell", [leaving_ip])
 
   def handle_active_flows(self, link, args):
     "The active_flows message from Alice updates our state of flows."
@@ -580,7 +563,7 @@ class SwitzerlandMasterServer:
           #assert len(ipids) == 1, `ipids` + "is not of length 1!"
           for ipid in ipids:
             self.debug_note("We have a forgery.  Debugging IPID %s" % ipid)
-            self.send_other_message(rec.src_links[0][0],"debug-ipid", [ipid])
+            rec.src_links[0][0].send_other_message("debug-ipid", [ipid])
             return
         
       self.debug_note("Observed %d modified or forged packets" %
@@ -590,7 +573,7 @@ class SwitzerlandMasterServer:
 
       for link, id in rec.dest_links:
         remember = (forgeries, rec)
-        self.send_other_message(link, "forged-in", [id, forgeries], \
+        link.send_other_message("forged-in", [id, forgeries], \
                                 data_for_reply=remember)
 
       # Now we wait for a response from Bob before talking to Alice
@@ -622,89 +605,6 @@ class SwitzerlandMasterServer:
         return subset
       else:
         return forgeries
-
-  def handle_fi_context(self, link, args, seq_no, reply_seq_no):
-    """
-    A "fi-context" message is in reply to a previous "forged-in" from 
-    Switzerland.py
-    """
-    meta, data = args              # meta is paperwork from our side
-                                   # data is from bob
-    in_reply_to, remembered = meta
-
-    if in_reply_to != "forged-in":
-      link.protocol_error("reply %d should not be a fi-context message\n" %\
-      reply_seq_no)
-      sys.exit(0)
-    
-    forgeries, rec = remembered
-
-    msgs = []
-    log_filenames = []
-    for forgery in forgeries:
-      timestamp, hash = forgery
-      context = data[hash]
-      msgs.append((hash, context)) # by convention the actual forgery
-                                   # should be context[0]
-
-      # XXX should we do this later, since Alice is waiting?
-      if self.config.logging:
-        if not context:
-          log.error("Bob couldn't find the original fi packet!")
-          log_filenames.append("")
-        else:
-          # it's a bit tricky to decide what filename to put the logs in,
-          # and the inbound and outbound filenames need to match; so we
-          # figure them both out here and remember the outbound one for later
-          out_filename = self.log.log_forged_in(context, id=rec.id)
-          log_filenames.append(out_filename)
-
-    token_for_bob = seq_no
-    store = (log_filenames,rec,forgeries,token_for_bob)
-    for alice, id in rec.src_links:
-      self.send_other_message(alice,"forged-out", [id, msgs], 
-                              data_for_reply=store)
-
-  def handle_fo_context(self, link, args, reply_seq_no):
-    meta, data = args
-    in_reply_to, remembered = meta
-    if in_reply_to != "forged-out":
-      link.protocol_error("reply %d should not be a fo-context message\n" %\
-      reply_seq_no)
-      sys.exit(0)
-
-    filenames,rec,forgeries,token_for_bob = remembered
-    msgs = []
-    if filenames == []:
-      assert not self.config.logging, "Pcap log list empty while logging"
-      filenames = [None] * len(forgeries)
-
-    assert len(filenames) == len(forgeries), "Pcap logs do not match forgeries"
-
-    # Alice's handle_forged_out should preserve the order of the forgeries
-    for forgery,filename in zip(forgeries, filenames):
-      timestamp, hash = forgery
-      context = data[hash]
-      msgs.append((timestamp, context)) # by convention the actual forgery
-                                        # should be context[0]
-      if self.config.logging:
-        if context:
-          self.log.log_forged_out(context, filename)
-        else:
-          errlog.info("No meaningful forged out context")
-
-    for link, id in rec.dest_links:
-      self.send_other_message(link, "forged-details", [id, msgs], \
-                              reply_seq_no=token_for_bob)
-       
-
-  hook_callback = None # overwite if desired
-  def hook_handle(self, link, args, seq_no, reply_seq_no):
-    "You can copy this method over some other handler method for debugging."
-    self.debug_note("Hook handle w/ %s, %s, %s" % (args, seq_no, reply_seq_no))
-    if self.hook_callback:
-      # this is a function that can be inserted by test cases
-      self.hook_callback(self, link, args, seq_no, reply_seq_no)
 
   def judgement_day(self):
     """
@@ -787,7 +687,7 @@ class SwitzerlandMasterServer:
           msg = "\n".join(summaries)
           if link.last_status != msg:
             link.last_tatus = msg
-            self.send_other_message(link,"flow-status", [table_header + msg])
+            link.send_other_message("flow-status", [table_header + msg])
     finally:
       self.global_flow_lock.release()
     return (n, total_okay, total_leftovers, total_forged, total_dropped)

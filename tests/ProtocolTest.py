@@ -191,8 +191,9 @@ class ProtocolTestCase(unittest.TestCase):
     client2.ready.wait()
     server_thread1, server_thread2 = self.server.threads  # XXX not safe!!!
     # This interface is undocumented
-    self.server.real_fi_handler = self.server.handle_fi_context
-    self.server.handle_fi_context = self.server.hook_handle
+    for t in self.server.threads:
+      t.real_fi_handler = t.handle_fi_context
+      t.handle_fi_context = t.hook_handle
     self.callback_count = 0
     contexts = {}
     for n in range(5):
@@ -203,8 +204,7 @@ class ProtocolTestCase(unittest.TestCase):
     forgeries = zip(timestamps, forgeries)
     rec = self.random_reconciliator(server_thread1, server_thread2)
     frogs = (forgeries, rec)
-    def callback(master, link, args, seq_no, reply_seq_no):
-      self.assertEqual(master, self.server)
+    def callback(link, args, seq_no, reply_seq_no):
       self.assertEqual(link, server_thread1)
       meta = args[0]
       data = args[1]
@@ -214,8 +214,9 @@ class ProtocolTestCase(unittest.TestCase):
       self.assertEqual(remembered, frogs)
       self.callback_count += 1
       # okay, we've finished testing, now call the real method:
-      master.real_fi_handler(link, args, seq_no, reply_seq_no)
-    self.server.hook_callback = callback
+      link.real_fi_handler(args, seq_no, reply_seq_no)
+    for l in self.server.threads:
+      l.hook_callback = callback
     client1.send_message("ping")
 
     server_thread1.send_message("forged-in", [0] + [forgeries], data_for_reply = frogs)

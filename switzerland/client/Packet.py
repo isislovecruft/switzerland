@@ -140,8 +140,10 @@ class Packet:
                         "pcap_datalink was 1 but not IPv4 packet"
             # if not ethernet, just trust header length
             self.data = array("c",self.original_data[header_length:])
+            self.ll_len = header_length
         else:
             self.data = array("c",self.original_data)
+            self.ll_len = 0
 
         # XXX remove all the magic numbers from this thing!!!
         # XXX make less poorly bad!!!
@@ -166,7 +168,10 @@ class Packet:
         # check for and remove ethernet trailer
         total_length = struct.unpack(">H", self.data[2:4].tostring())[0]
         if total_length < 46 and len(self.data) == 46:
+            self.trailer_len = len(self.data) - total_length
             del self.data[total_length:]
+        else:
+            self.trailer_len = 0
 
     def ip_payload_start(self):
         return ((ord(self.data[0]))&15) << 2
@@ -257,9 +262,12 @@ class Packet:
 
     def get_hash(self):
         """ get hash of packet (SHA-1) """
-        #print "hashing", self.data
         if self.hash:
             return self.hash
+
+        # The following changes depend on knowing whether the peer is
+        # firewalled, which we don't know when we first construct this Packet.
+        # So we make them at hashing time instead...
 
         if self.source_ip == self.private_ip:
           outbound = True

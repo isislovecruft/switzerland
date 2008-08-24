@@ -131,7 +131,113 @@ class SwitzerlandLink(Protocol.Protocol):
       return self.clock_dispersion
     finally:
       self.status_lock.release()
+
+  def handle_fi_context(self, args, seq_no, reply_seq_no):
+    """
+    A "fi-context" message is in reply to a previous "forged-in" from 
+    Switzerland.py
+    """
+    meta, data = args              # meta is paperwork from our side
+                                   # data is from bob
+    in_reply_to, remembered = meta
+
+    if in_reply_to != "forged-in":
+      self.protocol_error("reply %d should not be a fi-context message\n" %\
+      reply_seq_no)
+      sys.exit(0)
     
+    forgeries, rec = remembered
+
+    msgs = []
+    log_filenames = []
+    for forgery in forgeries:
+      timestamp, hash = forgery
+      context = data[hash]
+      msgs.append((hash, context)) # by convention the actual forgery
+                                   # should be context[0]
+
+      # XXX should we do this later, since Alice is waiting?
+      if self.parent.config.logging:
+        if not context:
+          log.error("Bob couldn't find the original fi packet!")
+          log_filenames.append("")
+        else:
+          # it's a bit tricky to decide what filename to put the logs in,
+          # and the inbound and outbound filenames need to match; so we
+          # figure them both out here and remember the outbound one for later
+          out_filename = self.parent.log.log_forged_in(context, id=rec.id)
+          log_filenames.append(out_filename)
+
+    token_for_bob = seq_no
+    store = (log_filenames,rec,forgeries,token_for_bob)
+    for link, id in rec.src_links:
+      link.send_other_message("forged-out", [id, msgs], data_for_reply=store)
+
+  def handle_fo_context(self, args, reply_seq_no):
+    meta, data = args
+    in_reply_to, remembered = meta
+    if in_reply_to != "forged-out":
+      self.protocol_error("reply %d should not be a fo-context message\n" %\
+      reply_seq_no)
+      sys.exit(0)
+
+    filenames,rec,forgeries,token_for_bob = remembered
+    msgs = []
+    if filenames == []:
+      assert not self.parent.config.logging, "Pcap log list empty while logging"
+      filenames = [None] * len(forgeries)
+
+    assert len(filenames) == len(forgeries), "Pcap logs do not match forgeries"
+
+    # Alice's handle_forged_out should preserve the order of the forgeries
+    for forgery,filename in zip(forgeries, filenames):
+      timestamp, hash = forgery
+      context = data[hash]
+      msgs.append((timestamp, context)) # by convention the actual forgery
+                                        # should be context[0]
+      if self.parent.config.logging:
+        if context:
+          self.parent.log.log_forged_out(context, filename)
+        else:
+          log.info("No meaningful forged out context")
+
+    for link, id in rec.dest_links:
+      link.send_other_message("forged-details", [id, msgs], \
+                              reply_seq_no=token_for_bob)
+
+  hook_callback = None # overwite if desired
+  def hook_handle(self, args, seq_no, reply_seq_no):
+    "You can copy this method over some other handler method for debugging."
+    self.debug_note("Hook handle w/ %s, %s, %s" % (args, seq_no, reply_seq_no))
+    if self.hook_callback:
+      # this is a function that can be inserted by test cases
+      self.hook_callback(self, args, seq_no, reply_seq_no)
+
+       
+  def send_other_message(self, msg, args, **keywords):
+    """
+    This is a wrapper for Protocol.send_message which is intended to be called
+    from some thread other than the one started for this link.  This method is
+    responsible for ensuring that this thread can't die along the way, even if
+    this link is dead.  Return True if we succeeded, and False if the link
+    died.
+    """
+    try:
+      self.send_message(msg, args, **keywords)
+      return True
+    except:
+      log.error("Error sending %s message to %s:\n%s\nArgs: %s" % 
+                   (msg, `link.peer`, traceback.format_exc(), args))
+      try:
+        self.close()
+      except:
+        log.error("In other link:\n", traceback.format_exc())
+      try:
+        self.free_resources()
+      except:
+        log.error("In other link:\n", traceback.format_exc())
+      return False
+
 
   def determine_response(self, msg_type, args, seq_no, reply_seq_no):
 
@@ -152,10 +258,10 @@ class SwitzerlandLink(Protocol.Protocol):
       self.parent.handle_sent_or_recd(self, args, sent=False)
       return True
     elif msg_type == "fi-context":
-      self.parent.handle_fi_context(self, args, seq_no, reply_seq_no)
+      self.handle_fi_context(args, seq_no, reply_seq_no)
       return True
     elif msg_type == "fo-context":
-      self.parent.handle_fo_context(self, args, reply_seq_no)
+      self.handle_fo_context(args, reply_seq_no)
       return True
     elif msg_type == "parameters":
       self.handle_parameters(args)
