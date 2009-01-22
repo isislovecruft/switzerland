@@ -165,7 +165,7 @@ class SwitzerlandLink(Protocol.Protocol):
           # it's a bit tricky to decide what filename to put the logs in,
           # and the inbound and outbound filenames need to match; so we
           # figure them both out here and remember the outbound one for later
-          out_filename = self.parent.log.log_forged_in(context, id=rec.id)
+          out_filename = self.parent.mm.log.log_forged_in(context, id=rec.id)
           log_filenames.append(out_filename)
 
     token_for_bob = seq_no
@@ -197,7 +197,7 @@ class SwitzerlandLink(Protocol.Protocol):
                                         # should be context[0]
       if self.parent.config.logging:
         if context:
-          self.parent.log.log_forged_out(context, filename)
+          self.parent.mm.log.log_forged_out(context, filename)
         else:
           log.info("No meaningful forged out context")
 
