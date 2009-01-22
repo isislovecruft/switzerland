@@ -9,6 +9,9 @@ import logging
 
 from switzerland.common import Protocol
 
+# Packet.py -- parse packets and calculate their hash fragments primarily used
+# in the client but PacketDiff.py also leans on some of the work we do here.
+
 track_ip_ids = True
 
 # XXX Some control variables, to exclude certain kinds of underlying packet
@@ -22,7 +25,7 @@ track_ip_ids = True
 # fingerprinting.  But that will be complicated. 
 
 zero_ip_id = True
-normalise_tcp_options = True
+normalise_tcp_options = False
 zero_type_of_service = True
 
 # (Another strategy would be to have a "strong" and a "weak" portion of the
@@ -146,7 +149,6 @@ class Packet:
             self.ll_len = 0
 
         # XXX remove all the magic numbers from this thing!!!
-        # XXX make less poorly bad!!!
 
         # Zero the type of service (which shouldn't routinely change,
         # but does)

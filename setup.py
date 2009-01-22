@@ -151,14 +151,13 @@ def ntpdate_runs():
 
 def main():
   check_version()
+  executables = ["switzerland-client","switzerland-server", "study-switzerland-pcaps"]
   if OPERATING_SYSTEM == "Windows":
-      shutil.copyfile("switzerland-client", "switzerland-client.py")
-      shutil.copyfile("switzerland-server", "switzerland-server.py")
-      executables = ["switzerland-client.py","switzerland-server.py"]
+      for e in executables:
+        shutil.copyfile(e, e + ".py")
+      executables = [e + ".py" for e in executables]
       if not ntpdate_runs():
         executables.append("bin\\ntpdate.exe")
-  else:
-      executables = ["switzerland-client","switzerland-server"]
   bin = find_binary()
   if bin: 
     if bin != dest:

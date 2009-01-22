@@ -342,15 +342,15 @@ class SwitzerlandMasterServer:
       self.debug_note("link and match: %s %s" % 
                       (link_ip,`match_ip`), seriousness=-1)
 
-      ip1b = f_tuple[FlowTuple.src_ip]
-      ip1 = s.inet_ntoa(ip1b)
-      ip2b = f_tuple[FlowTuple.dest_ip]
-      ip2 = s.inet_ntoa(ip2b)
+      ip1bin = f_tuple[FlowTuple.src_ip]
+      ip1 = s.inet_ntoa(ip1bin)
+      ip2bin = f_tuple[FlowTuple.dest_ip]
+      ip2 = s.inet_ntoa(ip2bin)
 
       if ip1 == link_ip and ip2 in self.peer_ips:
-        return (match_ip, ip2b, opening_hash)
+        return (match_ip, ip2bin, opening_hash)
       if ip2 == link_ip and ip1 in self.peer_ips:
-        return (ip1b, match_ip, opening_hash)
+        return (ip1bin, match_ip, opening_hash)
 
     finally:
       self.peer_lock.release()

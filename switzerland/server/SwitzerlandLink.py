@@ -227,7 +227,7 @@ class SwitzerlandLink(Protocol.Protocol):
       return True
     except:
       log.error("Error sending %s message to %s:\n%s\nArgs: %s" % 
-                   (msg, `link.peer`, traceback.format_exc(), args))
+                   (msg, `self.peer`, traceback.format_exc(), args))
       try:
         self.close()
       except:

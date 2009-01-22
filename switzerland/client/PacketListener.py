@@ -24,14 +24,18 @@ else:
 from switzerland.client import Packet
 from switzerland.client import FlowManager
 
-double_check = False
 try:
   import scapy
   have_scapy = True
 except:
-  print "No scapy... that's okay, we don't really need it"
-  have_scapy = False
+  try:
+    from switzerland.lib import scapy
+    have_scapy = True
+  except:
+    print "No scapy... that's okay, we don't really need it"
+    have_scapy = False
 
+double_check = False
 if double_check:
   pcount = 0
 
@@ -283,10 +287,10 @@ class PacketListener(threading.Thread):
           self.launch_collector()
           self.read_packets()
 
-	  # The obvious thing to do with exceptions here would be to set the
-	  # quit event and then "raise".  But if there's a context switch in
-	  # between those two lines, we might never see the exception.  So
-	  # print it before sending quit_event.
+          # The obvious thing to do with exceptions here would be to set the
+          # quit event and then "raise".  But if there's a context switch in
+          # between those two lines, we might never see the exception.  So
+          # print it before sending quit_event.
         except SnifferError,e:    # sniffer error; clean up on the way out
           self.cleanup()
           log.error(e)
@@ -294,7 +298,7 @@ class PacketListener(threading.Thread):
             self.large_segment_message()
           self.parent.quit_event.set()
           sys.exit(1)
-        except:    		  # What kind of error is this?
+        except:                   # What kind of error is this?
           self.cleanup()
           log.error(traceback.format_exc())
           self.parent.quit_event.set()
@@ -596,20 +600,7 @@ Try running Switzerland with Segmentation Offloading disabled.
 if __name__ == "__main__":
   import AliceConfig
   logging.basicConfig()
-  class DummyFlowManager:
-    def __init__(self):
-        self.queue = []
-        self.ip_ids = {}
-    def handle_packet(self, packet):
-        self.queue.append(packet)
-  class DummyAlice:
-    config = AliceConfig.AliceConfig()
-    quit_event = threading.Event()
-    if len(sys.argv) > 1:
-      config.interface = sys.argv[1]
-    else:
-      config.interface = "ath0"
-    fm = DummyFlowManager()
+  from switzerland.common.Dummies import DummyAlice
   
   if "-v" in sys.argv:
     double_check = True

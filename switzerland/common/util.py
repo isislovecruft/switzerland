@@ -9,6 +9,7 @@ import sys
 import time
 import traceback
 import threading
+import array
 
 # FIXME: It is perhaps best to move the PROTOCOLS dict to a separate file. Note
 # that doing so will require the function prot_name to be updated.
@@ -246,3 +247,23 @@ class ThreadLauncher(threading.Thread):
     def run(self):
         self.fn()
 
+def hexhex(thing):
+    "Coerce an arugment in to hexadecimal, by hook or by crook"
+    tries = ""
+    try:
+        return hex(thing)
+    except:
+        tries += traceback.format_exc()
+    try:
+        return binascii.hexlify(thing)
+    except:
+        tries += traceback.format_exc()
+    try:
+        return binascii.hexlify(thing.tostring())
+    except:
+        tries += traceback.format_exc()
+        # desperate measures
+        msg = "I don't know how to convert a %s (%s) into hex\n" % \
+              (`type(thing)`, `thing`)
+        #msg += "Attempts:\n" + tries
+        raise Exception(msg)

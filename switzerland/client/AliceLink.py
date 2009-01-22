@@ -126,7 +126,14 @@ class AliceLink(Protocol.Protocol):
         hash = wanted[0] # hash of forged packet (first thing in wanted)
         receipt_context = wanted[1]
         filename = self.parent.pcap_logger.log_forged_in(receipt_context, flow_id)
-        ctxt = flow.get_fo_context(receipt_context, self.parent)
+        ctxt, report = flow.get_fo_context_and_diff(receipt_context, self.parent)
+        if report:
+          log.error("Here is what we know about these modified packets:\n%r\n" %
+                    report)
+        else:
+          log.error("This packet appears to have been injected")
+          log.error("(at least, we couldn't find a packet we're sure was modified)")
+          log.error("(AND THIS CODE SHOULDN'T RUN")
         if ctxt:
           contexts[hash] = ctxt
           self.parent.pcap_logger.log_forged_out(ctxt, filename)

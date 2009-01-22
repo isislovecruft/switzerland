@@ -8,6 +8,7 @@ import logging
 from copy import copy
 import types
 import time
+import traceback
 from switzerland.lib import tweaked_cerealizer as cerealizer
 from switzerland.common import util
 from switzerland.common import Messages
@@ -92,11 +93,10 @@ class Protocol(threading.Thread):
           return 0
         except AttributeError:
           # this will be raised if a sender thread has closed our socket
-          val = `sys.exc_info()[1]`  # this is a sneaky non-string to begin with
+          val = traceback.format_exc() 
           if "NoneType" not in val or "recv" not in val:
             # but in this case, that wasn't the exception
             self.debug_note("Not staying quiet about %s" % val, seriousness=0)
-            raise
           #
           self.status_lock.acquire()
           try:
@@ -457,7 +457,14 @@ class Protocol(threading.Thread):
 # cerealized messages.
 
 # XXX This is completely insane.  Rewrite it using struct.
-protocol_version = 2
+protocol_version = 3
+
+# Protocol version history:
+
+# 2 -- what we launched with for switzerland 0.0.1 - 0.0.7
+# 3 -- introduced in the packet-diff branch: Alice and Bob no longer send the 
+#      link layer header, and we write all the log pcaps with ll type 0 (null)
+
 supported_protocol_versions = [protocol_version]
 # easier than calling chr() for four separate bytes
 binary_version=unhexlify("%04x" % protocol_version)

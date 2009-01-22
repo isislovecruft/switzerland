@@ -36,7 +36,7 @@ class AliceConfig:
         force_public_ip=False,
         force_private_ip=False,
         pcap_playback=None,
-        pcap_datalink=0,
+        pcap_datalink=1,
         logfile=default_logfile,
         pcap_logdir=default_pcap_logdir
         ):
@@ -157,7 +157,7 @@ class AliceConfig:
                             
     def check(self):
         if not self.host:
-            self.host = "switzerland.eff.org"
+            self.host = "tbird4.eff.org"
             log.info("no switzerland server specified, defaulting to %s" % self.host)
         
         # check for a valid ip address

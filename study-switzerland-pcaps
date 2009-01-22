@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+import scapy
+import sys
+import logging
+logging.basicConfig()
+
+from switzerland.common.PacketDiff import PacketDiffer
+from switzerland.common.Dummies import DummyAlice
+dummy = DummyAlice
+
+print_unmatched = True
+print_firewalled = True
+
+def check_args():
+    try:
+        assert len(sys.argv) > 1 
+        for arg in sys.argv[1:]:
+            assert "-in.pcap" in arg
+    except:
+        print "Usage:"
+        print sys.argv[0], "<-in.pcap file> [-in.pcap file...]" 
+        sys.exit(1)
+
+import re
+in_re = re.compile("-in")
+def handle_file(file):
+    file2 = in_re.sub("-out",file)
+    packets1 = scapy.rdpcap(file)
+    try:
+        packets2 = scapy.rdpcap(file2)
+    except IOError:
+        if print_unmatched:
+            print "No -out, injected: ", packets1[0].summary()
+        return
+
+    results = compare_pcaps(packets1,packets2)
+    if results == -1:
+        # firewalled
+        return
+
+    print "Sent logs: %d packets; Rec'd logs: %d packets" % (len(packets1), len(packets2))
+    if not results:
+        print "Probably a spoofed packet or 3rd party retransmission:\n"
+        print packets1[0].summary()
+    else:
+        print "------------Modified packet--------------"
+        try:
+            seq = "seq: " + `packets1[0].seq`
+        except:
+            seq = ""
+        print "Received:", packets1[0].summary(), "id:", packets1[0].id, seq
+        for n in xrange(len(results)):
+            if n > 0:
+                print "** Another packet that might have been the one sent:\n"
+            recd, sent =  results[n]
+            print "latency:", recd.time - sent.time
+            print PacketDiffer(str(sent), str(recd), dummy).diff()
+
+def compare_pcaps(packets1, packets2):
+    target = packets1[0]
+    target_ipid = target.id
+    tp =target.payload
+
+    example = packets2[0]
+    ep = example.payload
+    assert type(tp) == type(ep) == scapy.IP
+
+    if tp.src != ep.src or tp.dst != ep.dst:
+        print "Firewalled", tp.src, tp.dst, ep.src, ep.dst
+        if not print_firewalled:
+            return -1
+
+    results = []
+    for p in packets2:
+        if p.id == target_ipid:
+            results.append( (target, p) )
+    return results
+
+def main():
+    check_args()
+    for file in sys.argv[1:]:
+        handle_file(file)
+
+if __name__ == "__main__":
+    main()

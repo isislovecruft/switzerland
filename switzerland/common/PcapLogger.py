@@ -25,7 +25,7 @@ class PcapWriter:
                 # significant figures relative to other packes. we really
                 # should ask each client's NTP for the clock jitter...
     snaplen = 1600
-    linktype = 1  # XXX FIXME
+    linktype = 0  # DLT_NULL
 
     hdr = struct.pack("@IHHIIII", magic, majv, minv, timewarp, sigfigs,
                                                            snaplen, linktype)
