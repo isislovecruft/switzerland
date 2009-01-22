@@ -3,7 +3,7 @@ Foundation.  It is licensed under the GNU General Public License (GPL) version
 3.0, the text of which is below.
 
 tweaked_ceralizer.py is a slightly modified copy of Jean-Baptiste Lamy's
-cerezlier.py version 0.4.  That file may be modified or distributed under the
+cerealizer.py version 0.4.  That file may be modified or distributed under the
 terms of the GPL or the Python License, as you prefer.
 
 		    GNU GENERAL PUBLIC LICENSE

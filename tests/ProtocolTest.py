@@ -134,31 +134,32 @@ class ProtocolTestCase(unittest.TestCase):
     mm1 = (flow1[0], flow1[2], "hash")
     mm2 = (flow2[0], flow2[2], "hash")
     time.sleep(3)
-    self.server.global_flow_lock.acquire()
+    mm = self.server.mm
+    mm.global_flow_lock.acquire()
     try:
-      print "Global flow table", self.server.flow_matchmaker
+      print "Global flow table", mm.flow_matchmaker
       # XXX fix these
-      #self.assert_(self.server.global_flow_table.has_key(flow1))
+      #self.assert_(mm.global_flow_table.has_key(flow1))
       print "Hunting for", mm1, "\nand",  mm2
-      self.assert_(self.server.flow_matchmaker.has_key(mm1))
-      #self.assert_(not self.server.global_flow_table.has_key(flow2))
-      self.assert_(not self.server.flow_matchmaker.has_key(mm2))
+      self.assert_(mm.flow_matchmaker.has_key(mm1))
+      #self.assert_(not mm.global_flow_table.has_key(flow2))
+      self.assert_(not mm.flow_matchmaker.has_key(mm2))
 
     finally:
-      self.server.global_flow_lock.release()
+      mm.global_flow_lock.release()
 
     # Now tear things down
     client2.send_message("active_flows", [[], [0]])
     client1.send_message("active_flows", [[], [0]])
 
     time.sleep(2)
-    self.server.global_flow_lock.acquire()
+    mm.global_flow_lock.acquire()
     try:
-      print "Global flow table", self.server.flow_matchmaker
-      #self.assertEqual(self.server.global_flow_table, {})
-      self.assertEqual(self.server.flow_matchmaker, {})
+      print "Global flow table", mm.flow_matchmaker
+      #self.assertEqual(mm.global_flow_table, {})
+      self.assertEqual(mm.flow_matchmaker, {})
     finally:
-      self.server.global_flow_lock.release()
+      mm.global_flow_lock.release()
 
     nmf = lambda m : m[0] == "new-members"
     new_member_counts = [len(filter(nmf, c.in_log)) for c in [client1, client2]]

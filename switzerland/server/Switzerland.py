@@ -13,8 +13,8 @@ import time
 from switzerland.common import Protocol
 from switzerland.common import util
 from switzerland.common.Flow import print_flow_tuple,FlowTuple
-from switzerland.common.PcapLogger import PcapLogger
 from switzerland.server import Reconciliator
+from switzerland.server.Matchmaker import Matchmaker
 from switzerland.server.SwitzerlandLink import SwitzerlandLink
 from switzerland.server.SwitzerlandConfig import SwitzerlandConfig
 
@@ -53,8 +53,6 @@ log = errlog = logging.getLogger('switzerland')
 # purposes
 random.seed(time.time())
 
-table_header = """CURRENT FLOW TABLE:                            Okay  Drop Mod/frg Pend_t/rx Prot\n"""
-
 class SwitzerlandMasterServer:
 
   def __init__(self, config):
@@ -70,21 +68,13 @@ class SwitzerlandMasterServer:
     self.peer_lock = threading.RLock()
     self.peer_ips = {}
 
-    self.flow_matchmaker = {}
-    self.global_flow_lock = threading.RLock()
+    self.mm = Matchmaker(self)
 
     self.one_forgery = False # for debugging
     self.special_forgery_debugging = False
     if self.special_forgery_debugging and not Reconciliator.hash_archival:
       raise ValueError, "cannot do special debugging without special archival"
         
-    if self.config.logging:
-      self.log = PcapLogger(self.config.pcap_logdir)
-
-    task = util.ThreadLauncher(self.flow_printer)
-    task.setDaemon(True)
-    task.start()
-
 
   def accept_connections(self):
     self.debug_note("Server listening for connections on port " +`self.config.port`+"...")
@@ -225,7 +215,7 @@ class SwitzerlandMasterServer:
       for entry in link.flow_table.values():
         if entry != None:
           f_tuple, rec = entry
-          self.remove_flow_from_matchmaker(rec)
+          self.mm.remove_flow_from_matchmaker(rec)
     finally:
       link.flow_lock.release()
       # XXX we don't want new flows being added after this, but failing
@@ -259,7 +249,7 @@ class SwitzerlandMasterServer:
       if not self.config.keep_reconciliators:
         self.debug_note("deleting flows: %s" % deleted_flows)
         for f_id in deleted_flows:
-          self.delete_flow(link, f_id)
+          self.mm.delete_flow(link, f_id)
     except:
       link.protocol_error("Problem with flow list: %s\n" % 
                                               util.screensafe(new_flows))
@@ -275,10 +265,10 @@ class SwitzerlandMasterServer:
           opening_hash = flow[1][:-2]
         f_tuple = flow[2]
 
-        mm = self.ponder_flow(link, f_id, f_tuple, opening_hash)
-        if mm:
+        match = self.ponder_flow(link, f_id, f_tuple, opening_hash)
+        if match:
           self.debug_note("YES", seriousness=-1)
-          self.add_flow(link, f_id, f_tuple, mm)
+          self.mm.add_flow(link, f_id, f_tuple, match)
         else:
           self.debug_note("NO", seriousness=-1)
           if not self.config.sloppy:
@@ -290,6 +280,14 @@ class SwitzerlandMasterServer:
       link.protocol_error("Problem with flow list: %s\n" % 
                                             util.screensafe(new_flows))
       raise
+
+  def judgement_day(self):
+    self.mm.judgement_day()
+
+
+  def print_global_flow_table(self):
+    "(An obsolete name.)"
+    return self.mm.prettyprint_flows()
 
 
   def faking_ip(self, link, to_ip):
@@ -362,91 +360,6 @@ class SwitzerlandMasterServer:
     finally:
       link.flow_lock.release()
     return False
-
-  def delete_flow(self, link, alice_id):
-    "Remove a flow from the link and global flow tables."
-    link.flow_lock.acquire()
-    try:
-      entry = link.flow_table[alice_id]
-      if entry == None:
-        # We should never have had this flow anyway
-        del link.flow_table[alice_id]
-        return None
-      f_tuple, rec = entry
-      del link.flow_table[alice_id]
-    finally:
-      link.flow_lock.release()
-    self.remove_flow_from_matchmaker(rec)
-
-  def remove_flow_from_matchmaker(self, rec):
-    self.global_flow_lock.acquire()
-    # The other link will still have a reference to the Flows and
-    # Reconciliator, so it won't matter if its gone from the flow_matchmaker
-    try:
-      try:
-        # XXX research question: this table entry contains Flows and a
-        # Reconciliator that references those flows.  Do we need to do more
-        # to avoid garbage collection difficulties?
-        del self.flow_matchmaker[rec.m_tuple]
-      except KeyError:
-        pass
-    finally:
-      self.global_flow_lock.release()
-
-
-  def add_flow(self, link, id, f_tuple, m_tuple):
-    """
-    We have a newly reported flow from a client.  Ensure that the proper data
-    structures are in place for it.  In this instance we assume that either
-    end could be firewalled.
-    """
-
-    # This is a bit tricky.  First, we adopt the convention that Alice is
-    # always the sender for a flow, and Bob the receiver (so for a TCP
-    # session, each end is Alice in one direction and Bob in the other).
-
-    # Next, observe that both Alice and Bob will send "active-flows"
-    # messages adding the flow.  Those might arrive in either order.
-    # Furthermore, Bob might send an "active-flows", then a whole lot of
-    # "recv"s, long before Alice sends her "active-flow" -- so whichever end
-    # sends first needs to trigger the instantiation of the Flows and the
-    # Reconciliator.  
-    
-    # XXX There are some nasty special cases we don't currently handle here:
-    # 1. The first packet in a flow is mangled in transit, so the
-    # opening_hashes don't match.  The port numbers will sometimes tip us of
-    # to this
-    # 2. The first packet in a flow does not arrive first.  This shouldn't
-    # be possible for TCP, but it may well happen with other protocols.
-
-    f = f_tuple
-    self.global_flow_lock.acquire()
-    try:
-      if m_tuple not in self.flow_matchmaker:
- 
-        self.debug_note("Creating flow: %s" % `print_flow_tuple(f)`)
-        rec = Reconciliator.Reconciliator(f,m_tuple)
-        rec.add_link(link, id, f)        # it'll figure out which side we are
-
-        self.flow_matchmaker[m_tuple] = rec
-        self.debug_note("Matchmaker is now %s" %
-                        `self.flow_matchmaker`, seriousness=-2)
-      else:
-        rec = self.flow_matchmaker[m_tuple]
-        if rec.add_link(link, id, f):
-          # we have two sides to this flow now
-          if self.config.logging: 
-            self.log.new_flow(print_flow_tuple(f_tuple), rec.id)
-    finally:
-      self.global_flow_lock.release()
-    
-    # now register the flow in the link itself
-    link.flow_lock.acquire()
-    try:
-      link.flow_table[id] = (f_tuple, rec)
-    finally:
-      link.flow_lock.release()
-
 
   def peers_of(self, ip):
     """
@@ -606,96 +519,12 @@ class SwitzerlandMasterServer:
       else:
         return forgeries
 
-  def judgement_day(self):
-    """
-    Used for testing: reconcile all packets now, regardless of when the
-    latest information from the clients arrived.
-    """
-    self.global_flow_lock.acquire()
-    self.debug_note("Entering judgement day")
-    try:
-      for rec in self.flow_matchmaker.values():
-        rec.final_judgement()
-    finally:
-      self.global_flow_lock.release()
-      
-  def print_global_flow_table(self):
-    "(An obsolete name.)"
-    return self.prettyprint_flows()
-
-  def flow_printer(self, print_mms=True):
-    "Run this in a thread.  Print the global flow table from time to time"
-    while True:
-      time.sleep(21)
-      try:
-        self.prettyprint_flows()
-      except:
-        log.error("The prettyprinter would have died, but we're invincible:")
-        log.error(traceback.format_exc())
-
-  def prettyprint_flows(self, print_mms=True):
-    """
-    Pretty print the global flow tables.  Return a tuple for testing:
-    (total flow pairs, total reconciled packets, total leftovers)
-    """
-    # XXX this function is too large and ugly and too complicated.  Fix it.
-
-    errlog.info("\nCURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot")
-    self.global_flow_lock.acquire()
-    try:
-      flows = {}
-      for rec in self.flow_matchmaker.values():
-        if rec.ready:
-          flows[rec.flow] = rec
-      plist = []         # server side list of summaries
-      notifications = {} # maps link -> list of flow summaries
-      total_leftovers = 0
-      total_okay = 0
-      total_dropped = 0
-      total_forged = 0
-      n = 0
-      for mm, rec in self.flow_matchmaker.items():
-        if rec.flow in flows:
-          f = rec.flow
-          reclist = [(f, rec)]  # list will be of length 1 or 2
-          mirror = (f[2], f[3], f[0], f[1], f[4])
-          if mirror in flows: 
-            reclist.append((mirror, flows[mirror]))
-          else:
-            errlog.info("No mirror for %s", `mm`)
-
-          for flow,rec in reclist:
-            rec.lock.acquire()
-            try:
-              total_leftovers += sum(rec.leftovers())
-              total_forged += rec.forged_packets
-              total_dropped += rec.dropped_packets
-              total_okay += rec.okay_packets
-              summary = rec.prettyprint()
-              plist.append(summary)
-              for link,id in rec.src_links + rec.dest_links:
-                notifications.setdefault(link, []).append(summary)
-              del flows[flow]
-            finally:
-              rec.lock.release()
-          n += 1
-      for summary in plist:
-        errlog.info(summary)
-      if self.config.send_flow_status_updates:
-        for link, summaries in notifications.items():
-          # don't send an identical flow table to a client repeatedly
-          msg = "\n".join(summaries)
-          if link.last_status != msg:
-            link.last_tatus = msg
-            link.send_other_message("flow-status", [table_header + msg])
-    finally:
-      self.global_flow_lock.release()
-    return (n, total_okay, total_leftovers, total_forged, total_dropped)
-
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
   return (dest_ip,dest_port,src_ip,src_port,prot)
 
+
+      
 def main():
   try:
     import psyco
