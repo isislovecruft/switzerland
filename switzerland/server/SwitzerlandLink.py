@@ -174,7 +174,7 @@ class SwitzerlandLink(Protocol.Protocol):
       link.send_other_message("forged-out", [id, msgs], data_for_reply=store)
 
   def handle_fo_context(self, args, reply_seq_no):
-    meta, data = args
+    meta, contexts, reports = args
     in_reply_to, remembered = meta
     if in_reply_to != "forged-out":
       self.protocol_error("reply %d should not be a fo-context message\n" %\
@@ -192,9 +192,11 @@ class SwitzerlandLink(Protocol.Protocol):
     # Alice's handle_forged_out should preserve the order of the forgeries
     for forgery,filename in zip(forgeries, filenames):
       timestamp, hash = forgery
-      context = data[hash]
-      msgs.append((timestamp, context)) # by convention the actual forgery
-                                        # should be context[0]
+      context = contexts[hash]
+      report = reports[hash]
+      log.error("Report on forged/modified packet:\n%r\n" % report)
+      msgs.append((timestamp, context, report)) # by convention the actual forgery
+                                                # should be context[0]
       if self.parent.config.logging:
         if context:
           self.parent.mm.log.log_forged_out(context, filename)

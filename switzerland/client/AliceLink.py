@@ -122,25 +122,27 @@ class AliceLink(Protocol.Protocol):
       flow = self.lookup_flow_by_id(flow_id, "modified-out")
       self.nat_firewall_warnings(flow)
       contexts = {}
+      reports = {}
       for wanted in forgeries:
-        hash = wanted[0] # hash of forged packet (first thing in wanted)
+        hash = wanted[0]             # hash of forged packet 
         receipt_context = wanted[1]
         filename = self.parent.pcap_logger.log_forged_in(receipt_context, flow_id)
         ctxt, report = flow.get_fo_context_and_diff(receipt_context, self.parent)
         if report:
           log.error("Here is what we know about these modified packets:\n%r\n" %
                     report)
+          reports[hash] = report
         else:
           log.error("This packet appears to have been injected")
           log.error("(at least, we couldn't find a packet we're sure was modified)")
-          log.error("(AND THIS CODE SHOULDN'T RUN")
+          log.error("(AND THIS CODE SHOULDN'T RUN)")
         if ctxt:
           contexts[hash] = ctxt
           self.parent.pcap_logger.log_forged_out(ctxt, filename)
         else:
           log.error("No modified-out context for %s" % hexlify(hash))
           contexts[hash] = None
-      self.send_message("fo-context", [contexts], reply_seq_no=seq_no)
+      self.send_message("fo-context", [contexts, reports], reply_seq_no=seq_no)
       
     finally:
       self.flow_manager.lock.release()
@@ -239,8 +241,9 @@ class AliceLink(Protocol.Protocol):
 
     out_filenames = remembered
 
-    for filename, (timestamp, context) in zip(out_filenames, msgs):
+    for filename, (timestamp, context, report) in zip(out_filenames, msgs):
       if filename:
+        log.error("Report on forged/modified packet:\n%r\n" % report)
         if context:
           self.parent.pcap_logger.log_forged_out(context, filename)
         else:

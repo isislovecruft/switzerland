@@ -79,8 +79,7 @@ _amsg("active_flows", [["new flows"], ["deleted flows"]])
 _amsg("flow_stats", [("flow", {"stat": "value"})])
 _amsg("sent", ["flow id", "timestamp", "concatenated hashes"])
 _amsg("recd", ["flow id", "timestamp", "concatenated hashes"])
-_amsg("fi-context", [{"hash": [("timestamp", "hash", "data")]}], is_reply=True,
-      expects_reply=True)
+_amsg("fi-context", [{"hash": [("timestamp", "hash", "data")]}, {"hash": ["diff1","diff2"]}], is_reply=True, expects_reply=True)
 _amsg("fo-context", [{"hash": [("timestamp", "data")]}], is_reply=True)
 _amsg("rst-radar", [[("list", "of"), ("packet", "pairs")]])
 _amsg("traceroute", ["destination", "type", "results"])
@@ -98,7 +97,7 @@ _smsg("igcognito", [["list", "of", "ips"]], expects_ack=True)
 
 _smsg("forged-in", ["flow id", [("timestamp", "hash")]], expects_reply=True)
 _smsg("forged-out", ["flow id", [["context"]]], expects_reply=True, assert_len=2)
-_smsg("forged-details", ["flow id", [("timestamp", "context")]], is_reply=True)
+_smsg("forged-details", ["flow id", [("timestamp", "context", "report")]], is_reply=True)
 
 # The other side isn't reporting this flow in a way that allows us to match
 # them.
