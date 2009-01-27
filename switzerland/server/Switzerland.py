@@ -533,15 +533,11 @@ class SwitzerlandMasterServer:
     clients.  If any of them are lost to us, that should be enough to raise an
     exception that leads to cleanup.  
     """
-    def run(switz):
-      while True:
-        time.sleep(random.range(30,60))
-        for thread in self.threads:
-          t = thread.time_since_contact()
-          if t > 60:
-            thread.send_other_message("ping")
-          else:
-            print "not pinging at", t
+    while True:
+      time.sleep(random.range(30,60))
+      for thread in self.threads:
+        if thread.time_since_contact() > 60:
+          thread.send_other_message("ping")
 
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
