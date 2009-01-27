@@ -4,6 +4,7 @@ sys.path.append("../src/common")
 import switzerland.common.Protocol as Protocol
 from switzerland.common import Messages
 from switzerland.common import util
+import traceback
 import threading
 import logging
 
