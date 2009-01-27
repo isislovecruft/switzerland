@@ -215,7 +215,7 @@ class SwitzerlandLink(Protocol.Protocol):
       self.hook_callback(self, args, seq_no, reply_seq_no)
 
        
-  def send_other_message(self, msg, args, **keywords):
+  def send_other_message(self, msg, args=[], **keywords):
     """
     This is a wrapper for Protocol.send_message which is intended to be called
     from some thread other than the one started for this link.  This method is
