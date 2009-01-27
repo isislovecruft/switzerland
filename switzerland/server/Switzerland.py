@@ -108,7 +108,7 @@ class SwitzerlandMasterServer:
       # sensible order; SwitzerlandLink.initial_members and 
       self.peer_lock.acquire()
       try:
-        link = self.new_link(incoming, peer_addr)
+        self.new_link(incoming, peer_addr)
       finally:
         self.peer_lock.release()
 
@@ -144,7 +144,6 @@ class SwitzerlandMasterServer:
     
     self.debug_note("Initialising server thread")
     link.start()
-    return link
 
   def is_duplicate_alice(self, link, peer_ip):
     """
