@@ -68,6 +68,8 @@ class SwitzerlandLink(Protocol.Protocol):
       self.socket.send(Protocol.no_common_version)
       self.debug_note("Alice is using unsupported protocol version %d" 
                    % incoming_prot_ver, seriousness=11)
+      import gc
+      print "References to this linl %r" % gc.referrers(self)
       return False
     self.socket.setblocking(1)
     self.socket.send(Protocol.handshake2)
