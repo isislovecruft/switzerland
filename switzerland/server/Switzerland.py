@@ -534,7 +534,7 @@ class SwitzerlandMasterServer:
     exception that leads to cleanup.  
     """
     while True:
-      time.sleep(random.range(30,60))
+      time.sleep(random.randrange(30,60))
       for thread in self.threads:
         if thread.time_since_contact() > 60:
           thread.send_other_message("ping")
