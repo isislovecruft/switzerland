@@ -30,24 +30,12 @@ class SwitzerlandLink(Protocol.Protocol):
 
     # last_status is used by Switzerland's flow state reporting thread
     self.last_status = []
-    self.freed = False
     Protocol.Protocol.__init__(self, self.log, seriousness)
-
-  def __del__(self):
-    """
-    This method is being added to ensure that, however a SwitzerlandLink may
-    die, the corresponding structs get removed in the parent.
-    """
-    log.error("In the SwitzerlandLink destructor")
-    if not self.freed:
-      log.error("freeing resources")
-      self.free_resources()
-    
 
   def handshake(self):
     """
     Confirm that we are talking to a Switzerland client, with the appropriate
-    protocol version
+    protocol version.  If we return false the Protocl should clean up for us.
     """
     
     self.debug_note("attempting handshake with %s" % repr(self.peer))
@@ -59,7 +47,6 @@ class SwitzerlandLink(Protocol.Protocol):
       
     if msg[:len(Protocol.handshake1) - 2] != Protocol.handshake1[:-2]:
       self.debug_note("Not the start of a Switzerland session:\n"+Protocol.handshake1[:-2], seriousness=11)
-      self.close()
       return False
 
     incoming_prot_ver = Protocol.parse_version(msg[-2:])
@@ -68,8 +55,6 @@ class SwitzerlandLink(Protocol.Protocol):
       self.socket.send(Protocol.no_common_version)
       self.debug_note("Alice is using unsupported protocol version %d" 
                    % incoming_prot_ver, seriousness=11)
-      import gc
-      print "References to this linl %r" % gc.get_referrers(self)
       return False
     self.socket.setblocking(1)
     self.socket.send(Protocol.handshake2)
@@ -83,7 +68,6 @@ class SwitzerlandLink(Protocol.Protocol):
   def free_resources(self):
     "Tell our SwitzerlandMasterServer that we're going away."
     self.parent.link_closed(self)
-    self.freed = True
 
   def fake_ip(self, ip):
     "For testing purposes"

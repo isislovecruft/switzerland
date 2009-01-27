@@ -71,6 +71,8 @@ class Protocol(threading.Thread):
   def run(self):
     # minimal pre-cerealize handshake
     if not self.handshake():
+      self.free_resources()
+      self.close()
       return
     # figure out firewalling, establish circles, etc
     self.sockfile = self.socket.makefile()
@@ -457,7 +459,7 @@ class Protocol(threading.Thread):
 # cerealized messages.
 
 # XXX This is completely insane.  Rewrite it using struct.
-protocol_version = 3
+protocol_version = 77
 
 # Protocol version history:
 
