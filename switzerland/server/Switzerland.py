@@ -537,8 +537,11 @@ class SwitzerlandMasterServer:
       while True:
         time.sleep(random.range(30,60))
         for thread in self.threads:
-          if thread.time_since_contact() > 60:
+          t = thread.time_since_contact()
+          if t > 60:
             thread.send_other_message("ping")
+          else:
+            print "not pinging at", t
 
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
