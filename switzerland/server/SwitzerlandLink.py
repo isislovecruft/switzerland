@@ -3,6 +3,7 @@ import socket as s
 sys.path.append("../src/common")
 import switzerland.common.Protocol as Protocol
 from switzerland.common import Messages
+from switzerland.common import util
 import threading
 import logging
 
@@ -64,7 +65,9 @@ class SwitzerlandLink(Protocol.Protocol):
 
   def setup(self):
     "Now talking cerealized python, let's do setup."
-    pass
+    task = util.ThreadLauncher(self.check_ack_deadlines,
+                               self.parent.handle_control_c)
+    task.start()
 
   def free_resources(self):
     "Tell our SwitzerlandMasterServer that we're going away."
@@ -230,8 +233,12 @@ class SwitzerlandLink(Protocol.Protocol):
       self.send_message(msg, args, **keywords)
       return True
     except:
+      tb = traceback.format_exc()
       log.error("Error sending %s message to %s:\n%s\nArgs: %s" % 
-                   (msg, `self.peer`, traceback.format_exc(), args))
+                   (msg, `self.peer`, tb, args))
+      if "KeyboardInterrupt" in tb:
+        log.error("Saw that control-c, exiting")
+        sys.exit(1)
       try:
         self.close()
       except:

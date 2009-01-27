@@ -178,13 +178,6 @@ if not PCAP:
     del(f)
         
     
-
-try:
-    from Crypto.Cipher import ARC4
-except ImportError:
-    log_loading.info("Can't find Crypto python lib. Won't be able to decrypt WEP")
-
-
 # Workarround bug 643005 : https://sourceforge.net/tracker/?func=detail&atid=105470&aid=643005&group_id=5470
 try:
     socket.inet_aton("255.255.255.255")

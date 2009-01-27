@@ -10,6 +10,10 @@ import time
 import traceback
 import threading
 import array
+import logging
+
+log = logging.getLogger('util')
+
 
 # FIXME: It is perhaps best to move the PROTOCOLS dict to a separate file. Note
 # that doing so will require the function prot_name to be updated.
@@ -164,6 +168,8 @@ PROTOCOLS = {
 # 255: Reserved
 }
 
+
+
 if platform.system() == 'Windows':
     try:
         import win32api, win32process, win32con
@@ -240,12 +246,34 @@ def set_win32_priority(pid=None, priority=1):
     win32process.SetPriorityClass(handle, priorityclasses[priority])
 
 class ThreadLauncher(threading.Thread):
-    def __init__(self, fn):
+    def __init__(self, fn, handle_control_c=None, respawn=False):
+        "fn is run in its own thread; handle_control_c is a exit callback"
         self.fn = fn
+        self.respawn = respawn
+        if handle_control_c:
+            self.handle_control_c = handle_control_c
+        else:
+            self.handle_control_c = self.fallback_handler
         threading.Thread.__init__(self)
+        self.setDaemon(True)
+
+    def fallback_handler(self):
+        sys.stderr.write("Unhandled control-c:\n%s" % traceback.format_exc())
 
     def run(self):
-        self.fn()
+        try:
+          try:
+              self.fn()
+          except KeyboardInterrupt:
+              self.handle_control_c()
+        except:
+          if self.respawn:
+              log.error("Respawning thread after exception:\n%s" % 
+                        traceback.format_exc())
+              self.fn()
+          else:
+              raise
+          
 
 def hexhex(thing):
     "Coerce an arugment in to hexadecimal, by hook or by crook"

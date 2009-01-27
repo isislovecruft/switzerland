@@ -64,7 +64,7 @@ class SwitzerlandMasterServer:
     self.socket.bind(("",self.config.port))
     self.socket.listen(5)
     self.threads = []
-    task = util.ThreadLauncher(self.pinger)
+    task = util.ThreadLauncher(self.pinger, self.handle_control_c)
     task.setDaemon(True)
     task.start()
 
@@ -85,28 +85,7 @@ class SwitzerlandMasterServer:
       try:
         incoming, peer_addr = self.socket.accept()
       except KeyboardInterrupt:
-        errlog.info("Server Exiting...")
-        try:
-          self.socket.shutdown(s.SHUT_RDWR)
-        except:
-          errlog.info("(exception on shutdown)")
-        try:
-          try:
-            self.peer_lock.acquire()
-            for ip in self.peer_ips.values():
-              for link in ip.values():
-                try:
-                  link.close()
-                except:
-                  errlog.error("problem closing %s", `link`)
-          except:
-            errlog.error("problem iterating over links")
-            raise
-        finally:
-          self.peer_lock.release()
-        self.socket.close()
-        sys.exit(0)
-
+        self.handle_control_c()
       # it's important to have new_members calculations performed in
       # sensible order; SwitzerlandLink.initial_members and 
       self.peer_lock.acquire()
@@ -114,6 +93,31 @@ class SwitzerlandMasterServer:
         self.new_link(incoming, peer_addr)
       finally:
         self.peer_lock.release()
+
+  def handle_control_c(self):
+    "Urgent shutdown logic"
+    errlog.info("Server Exiting...")
+    try:
+      self.socket.shutdown(s.SHUT_RDWR)
+    except:
+      errlog.info("(exception on shutdown)")
+    try:
+      try:
+        self.peer_lock.acquire()
+        for ip in self.peer_ips.values():
+          for link in ip.values():
+            try:
+              link.close()
+            except:
+              errlog.error("problem closing %s", `link`)
+      except:
+        errlog.error("problem iterating over links")
+        raise
+    finally:
+      self.peer_lock.release()
+    self.socket.close()
+    sys.exit(0)
+
 
   def debug_note(self, string, seriousness=0, link=None):
     if seriousness < self.config.seriousness_threshold:

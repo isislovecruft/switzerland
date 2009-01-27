@@ -28,8 +28,8 @@ class Matchmaker:
         self.config = self.parent.config
         if self.config.logging:
             self.log = PcapLogger(self.config.pcap_logdir)
-        task = util.ThreadLauncher(self.flow_printer)
-        task.setDaemon(True)
+        task = util.ThreadLauncher(self.flow_printer, parent.handle_control_c,
+                                   respawn=True)
         task.start()
 
 
@@ -139,11 +139,7 @@ class Matchmaker:
       "Run this in a thread.  Print the global flow table from time to time"
       while True:
         time.sleep(21)
-        try:
-          self.prettyprint_flows()
-        except:
-          log.error("The prettyprinter would have died, but we're invincible:")
-          log.error(traceback.format_exc())
+        self.prettyprint_flows()
 
     def prettyprint_flows(self, print_mms=True):
       """

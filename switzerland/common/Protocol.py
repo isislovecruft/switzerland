@@ -156,7 +156,8 @@ class Protocol(threading.Thread):
       if self.closed:
         return False  # this would cramp our style
 
-      # hold status_lock to prevent another thread from closing socket before send
+      # hold status_lock to prevent another thread 
+      # from closing socket before send
 
       if m.expects_ack:
         arguments = [self.sequence_no] + arguments
@@ -331,22 +332,30 @@ class Protocol(threading.Thread):
   def check_ack_deadlines(self):
     "Check for overdue acks."
     # XXX perhaps we should actually test and call this function :)
-    # XXX actually maybe we don't need to, since (eg) sending a "ping" message
-    # to a disconnected client will trigger an exception and close the
-    # connection
-    self.ack_lock.acquire()
-    t = time.time()
-    n = 0
-    for deadline, seq_no in self.ack_timeouts:
-      if t < deadline:
-        break
+    while True:
+      time.sleep(13)
+      self.ack_lock.acquire()
+      try:
+        try:
+          t = time.time()
+          n = 0
+          for deadline, seq_no in self.ack_timeouts:
+            if t < deadline:
+              break
 
-      # We're overdue.  Time for a callback
-      self.expected_acknowledgments[seq_no]()
-      del self.ack_timeouts[n:n+1]
-      del self.expected_acknowledgments[seq_no]
-      n += 1
-    self.ack_lock.release()
+            # We're overdue.  Time for a callback
+            callback = self.expected_acknowledgments[seq_no]
+            if callback:
+              callback()
+            else:
+              log.warn("No callback for timed out ack %d" % seq_no)
+            del self.ack_timeouts[n:n+1]
+            del self.expected_acknowledgments[seq_no]
+            n += 1
+        except:
+          log.error(traceback.format_exc())
+      finally:
+        self.ack_lock.release()
     
 
   def protocol_error(self, string):
