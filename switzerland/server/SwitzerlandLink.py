@@ -38,7 +38,9 @@ class SwitzerlandLink(Protocol.Protocol):
     This method is being added to ensure that, however a SwitzerlandLink may
     die, the corresponding structs get removed in the parent.
     """
+    log.error("In the SwitzerlandLink destructor")
     if not self.freed:
+      log.error("freeing resources")
       self.free_resources()
     
 
