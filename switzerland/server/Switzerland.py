@@ -65,7 +65,6 @@ class SwitzerlandMasterServer:
     self.socket.listen(5)
     self.threads = []
     task = util.ThreadLauncher(self.pinger, self.handle_control_c)
-    task.setDaemon(True)
     task.start()
 
     self.peer_lock = threading.RLock()
@@ -541,7 +540,7 @@ class SwitzerlandMasterServer:
       time.sleep(random.randrange(3,6))
       for thread in self.threads:
         if thread.time_since_contact() > 60:
-          thread.send_other_message("ping")
+          thread.send_other_message("ping", thread.bye)
 
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."

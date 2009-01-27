@@ -351,7 +351,7 @@ class Protocol(threading.Thread):
             if callback:
               callback()
             else:
-              log.warn("No callback for timed out ack %d" % seq_no)
+              self.log.warn("No callback for timed out ack %d" % seq_no)
             del self.ack_timeouts[n:n+1]
             del self.expected_acknowledgments[seq_no]
             n += 1

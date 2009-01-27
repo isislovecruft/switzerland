@@ -69,6 +69,11 @@ class SwitzerlandLink(Protocol.Protocol):
                                self.parent.handle_control_c)
     task.start()
 
+  def bye(self):
+    "This is just a callback for failures in Switzerland's pinger thread."
+    self.free_resources()
+    self.close()
+
   def free_resources(self):
     "Tell our SwitzerlandMasterServer that we're going away."
     if not self.freed:
