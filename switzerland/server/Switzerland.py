@@ -166,7 +166,8 @@ class SwitzerlandMasterServer:
           # p.firewalled hasn't been determined yet
           link.bailout("We already have a connection from your IP.  Multiple connections from a single IP are currently disallowed!")
           return True
-      self.debug_note("But they are all firewalled, so we'll let this in")
+      #self.debug_note("But they are all firewalled, so we'll let this in")
+      # no?
       return True
     else:
       return False

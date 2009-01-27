@@ -30,7 +30,17 @@ class SwitzerlandLink(Protocol.Protocol):
 
     # last_status is used by Switzerland's flow state reporting thread
     self.last_status = []
+    self.freed = False
     Protocol.Protocol.__init__(self, self.log, seriousness)
+
+  def __del__(self):
+    """
+    This method is being added to ensure that, however a SwitzerlandLink may
+    die, the corresponding structs get removed in the parent.
+    """
+    if not self.freed:
+      self.free_resources()
+    
 
   def handshake(self):
     """
@@ -69,6 +79,7 @@ class SwitzerlandLink(Protocol.Protocol):
   def free_resources(self):
     "Tell our SwitzerlandMasterServer that we're going away."
     self.parent.link_closed(self)
+    self.freed = True
 
   def fake_ip(self, ip):
     "For testing purposes"
