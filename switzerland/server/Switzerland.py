@@ -64,6 +64,9 @@ class SwitzerlandMasterServer:
     self.socket.bind(("",self.config.port))
     self.socket.listen(5)
     self.threads = []
+    task = util.ThreadLauncher(self.pinger)
+    task.setDaemon(True)
+    task.start()
 
     self.peer_lock = threading.RLock()
     self.peer_ips = {}
@@ -524,10 +527,22 @@ class SwitzerlandMasterServer:
       else:
         return forgeries
 
+  def pinger(self):
+    """ 
+    Run this in a thread to ensure that we periodically talk to all of the
+    clients.  If any of them are lost to us, that should be enough to raise an
+    exception that leads to cleanup.  
+    """
+    def run(switz):
+      while True:
+        time.sleep(random.range(30,60))
+        for thread in self.threads:
+          if thread.time_since_contact() > 60:
+            thread.send_other_message("ping")
+
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
   return (dest_ip,dest_port,src_ip,src_port,prot)
-
 
       
 def main():

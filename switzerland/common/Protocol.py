@@ -60,6 +60,7 @@ class Protocol(threading.Thread):
     self.ack_timeouts = []     # ordered list of (deadline, sequence_no)
     self.expected_acknowledgments = {}   # callbacks for failed acks
     self.last_deadline = 0               # the last ack deadline around
+    self.last_sent = time.time()
 
     # this dict passes state from an outbound message that expects a reply
     # to the handler for the inbound reply:
@@ -193,8 +194,12 @@ class Protocol(threading.Thread):
       self.sockfile.flush()
       if self.accounting:
         self.accounting_out(msg)
+      self.last_sent = time.time()
     finally:
       self.status_lock.release()
+
+  def time_since_contact(self):
+      return time.time() - self.last_sent
 
   def process_inbound_message(self, msg):
     """
@@ -326,6 +331,9 @@ class Protocol(threading.Thread):
   def check_ack_deadlines(self):
     "Check for overdue acks."
     # XXX perhaps we should actually test and call this function :)
+    # XXX actually maybe we don't need to, since (eg) sending a "ping" message
+    # to a disconnected client will trigger an exception and close the
+    # connection
     self.ack_lock.acquire()
     t = time.time()
     n = 0
