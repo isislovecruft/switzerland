@@ -3072,47 +3072,6 @@ class TracerouteResult(SndRcvList):
                 movcenter = visual.scene.mouse.pos
                 
                 
-    def world_trace(self):
-        ips = {}
-        rt = {}
-        ports_done = {}
-        for s,r in self.res:
-            ips[r.src] = None
-            if s.haslayer(TCP) or s.haslayer(UDP):
-                trace_id = (s.src,s.dst,s.proto,s.dport)
-            elif s.haslayer(ICMP):
-                trace_id = (s.src,s.dst,s.proto,s.type)
-            else:
-                trace_id = (s.src,s.dst,s.proto,0)
-            trace = rt.get(trace_id,{})
-            if not r.haslayer(ICMP) or r.type != 11:
-                if ports_done.has_key(trace_id):
-                    continue
-                ports_done[trace_id] = None
-            trace[s.ttl] = r.src
-            rt[trace_id] = trace
-
-        trt = {}
-        for trace_id in rt:
-            trace = rt[trace_id]
-            loctrace = []
-            for i in range(max(trace.keys())):
-                ip = trace.get(i,None)
-                if ip is None:
-                    continue
-                loc = locate_ip(ip)
-                if loc is None:
-                    continue
-#                loctrace.append((ip,loc)) # no labels yet
-                loctrace.append(loc)
-            if loctrace:
-                trt[trace_id] = loctrace
-
-        tr = map(lambda x: Gnuplot.Data(x,with="lines"), trt.values())
-        g = Gnuplot.Gnuplot()
-        world = Gnuplot.File(conf.gnuplot_world,with="lines")
-        g.plot(world,*tr)
-        return g
 
     def make_graph(self,ASres=None,padding=0):
         if ASres is None:
