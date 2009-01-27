@@ -68,7 +68,7 @@ class SwitzerlandLink(Protocol.Protocol):
 
   def free_resources(self):
     "Tell our SwitzerlandMasterServer that we're going away."
-    if note self.freed:
+    if not self.freed:
       self.freed=True
       self.parent.link_closed(self)
 
