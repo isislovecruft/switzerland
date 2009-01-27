@@ -2,6 +2,7 @@
 
 import threading
 import logging
+import time
 from switzerland.common.Flow import print_flow_tuple
 from switzerland.common.PcapLogger import PcapLogger
 from switzerland.common import util
