@@ -37,13 +37,13 @@ class TimeManager:
     ntpdc.stdin.close()
     self.lines = ntpdc.stdout.readlines()
     if not self.lines or "onnection refused" in self.lines[0]:
-      log.info('ntpdc is present but ntpd does not appear to be alive: ("%s").  Will try something else...' % self.lines)
+      log.debug('ntpdc is present but ntpd does not appear to be alive: ("%s").  Will try something else...' % self.lines)
       self.get_time_error = self.ntpdate_poll
       return
 
     err = ntpdc.stderr.readlines()
     if err:
-      log.info('error running ntpdc: ("%s")' % err)
+      log.debug('error running ntpdc: ("%s")' % err)
       self.get_time_error = self.ntpdate_poll
       return
       
@@ -55,14 +55,14 @@ class TimeManager:
 
     mode = self.ntp_sysinfo["system peer mode"]
     if mode == "unspec":
-      log.info("""
+      log.debug("""
       NTP is in "unspec" mode.  This is probably because your system clock
       is wrong by seconds or more.  Switzerland won't work if your clock is
       that wrong.  Unspec mode could also mean that you're offline or that 
       you need to give NTP another minute or two to find time servers.  If 
       this doesn't work, try stopping NTP, use the ntpdate program to adjust 
       the clock and then start NTP again.""")
-      log.info("Will try something else...")
+      log.info("ntpdc is in unspec mode.  Will try something else...")
       self.get_time_error = self.ntpdate_poll
     elif mode != "client":
       log.info("Note that NTP is in mode %s", mode)
@@ -107,9 +107,9 @@ class TimeManager:
       results = filter(lambda r : r != None, results)
       if results:
         log.debug("ntpdate poll results are: %s" % results)
-        log.info("Taking the maximum error reported by %d timeservers" % 
-                 len(results))
-        log.info("Not quite as good as a working ntpd, but this should be ok")
+        log.info("Believing the maximum clock error reported by %d timeservers"\
+                  % len(results))
+        log.debug("Not quite as good as a working ntpd, but this should be ok")
         return max(results)
       else:
         log.info("We haven't succeeded in polling any NTP servers, either.")
@@ -126,7 +126,7 @@ class TimeManager:
     except KeyError:		 
       # try to use ntpdate to calculate the root dispersion by finding the max 
       # deviation as reported by 3 time servers
-      log.warning("Couldn't find root dispersion via ntpdc.  Trying ntpdate...")
+      log.warning("Couldn't find root dispersion in ntpdc output.  Trying ntpdate...")
       return self.ntpdate_poll()
 
 

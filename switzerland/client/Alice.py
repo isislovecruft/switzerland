@@ -129,6 +129,7 @@ class Alice:
         try:
             self.time_manager = TimeManager()
             self.root_dispersion = self.time_manager.get_time_error()
+            log.info("We believe this system's clock is accurate to within %f seconds" % self.root_dispersion)
         except UncertainTimeError:
             if not self.config.allow_uncertain_time:
                 print "  Please fix NTP!!\n"
