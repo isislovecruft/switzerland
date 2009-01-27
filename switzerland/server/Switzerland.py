@@ -540,7 +540,7 @@ class SwitzerlandMasterServer:
       time.sleep(random.randrange(3,6))
       for thread in self.threads:
         if thread.time_since_contact() > 60:
-          thread.send_other_message("ping", thread.bye)
+          thread.send_other_message("ping", callback=thread.bye)
 
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):
   "Switch source and dest in a flow."
