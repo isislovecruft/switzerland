@@ -8,7 +8,6 @@ import binascii
 import logging
 import traceback
 import random
-import time
 
 from switzerland.common import Protocol
 from switzerland.common import util
@@ -539,7 +538,7 @@ class SwitzerlandMasterServer:
     while True:
       time.sleep(random.randrange(3,6))
       for thread in self.threads:
-        if thread.time_since_contact() > 60:
+        if thread.time_since_contact() > self.config.client_contact_period:
           thread.send_other_message("ping", missing_ack_callback=thread.bye)
 
 def flow_mirror((src_ip,src_port,dest_ip,dest_port,prot)):

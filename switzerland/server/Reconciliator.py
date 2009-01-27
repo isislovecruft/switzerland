@@ -389,7 +389,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     )
     self.forged_packets += len(forgeries)
     if hash_archival:
-      trace_forgery_event(forgeries)
+      self.trace_forgery_event(forgeries)
     return forgeries
 
   def diagnose(self, dict):
@@ -401,7 +401,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     str += "%d 0s, %d 1s, %d 1+s" % (zeroes, ones, others)
     return str
 
-  def trace_forgery_event(forgeries):
+  def trace_forgery_event(self, forgeries):
     if forgeries:
       for f in forgeries:
         assert len(f[1]) == Protocol.hash_length -2 # XXX transient

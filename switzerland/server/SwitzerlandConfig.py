@@ -24,7 +24,8 @@ class SwitzerlandConfig:
         logfile=default_logfile,
         pcap_logdir=default_pcap_logdir,
         allow_fake_ips=False,
-        send_flow_status_updates=True
+        send_flow_status_updates=True,
+        client_contact_period=45               # controls pings to clients
         ):
         self.port = port
         self.sloppy = sloppy # Yes if we expect clients to send us flows that
@@ -39,6 +40,7 @@ class SwitzerlandConfig:
         self.logfile = logfile
         self.allow_fake_ips = allow_fake_ips
         self.send_flow_status_updates = send_flow_status_updates
+        self.client_contact_period = client_contact_period 
 
         if getopt:
             self.get_options()

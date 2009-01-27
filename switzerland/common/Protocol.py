@@ -56,7 +56,7 @@ class Protocol(threading.Thread):
     # For handling acknowledgement messages and replies (which basically
     # count as acks for most purposes)
     self.ack_lock= threading.RLock()
-    self.timeout_period = 30   # the time we'll wait for an ack/reply
+    self.timeout_period = 25   # the time we'll wait for an ack/reply
     self.ack_timeouts = []     # ordered list of (deadline, sequence_no)
     self.expected_acknowledgments = {}   # callbacks for failed acks
     self.last_deadline = 0               # the last ack deadline around

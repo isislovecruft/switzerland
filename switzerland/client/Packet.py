@@ -293,6 +293,7 @@ class Packet:
 
             if zero_ip_id: self.data[4:6] = zerozero
 
+        # self.peer_firewalled gets written in by the FlowManager
         if self.peer_firewalled:
             self.data[4:6] = zerozero
             # zero their port number
