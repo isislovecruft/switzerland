@@ -56,7 +56,7 @@ class AliceFlow(Flow):
         context packets reported by Bob will be included.  That was Jered's
         first crack at an algorithm here, and it didn't seem to work all that
         well.  So we also include any packets that match the IP ID number or
-        TCP sequence number of the actual forged in packet.  Note that the
+        TCP sequence number of the actual forged-in packet.  Note that the
         forged-in context argument is of the form: [("timestamp", "hash",
         "data")]
 
@@ -71,7 +71,7 @@ class AliceFlow(Flow):
 
         # need at least one packet of context 
         # (the first element of the context is the forged hash)
-        if not context or len(context)<2:
+        if not context or len(context) < 2:
             return (None, "No forged_in context")
         t_ts, t_hash, t_data = context[0]
         target_packet = Packet(t_ts, t_data, alice, has_ll=False)

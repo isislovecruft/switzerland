@@ -27,23 +27,6 @@ class Matchmaker:
         if self.config.logging:
             self.log = PcapLogger(self.config.pcap_logdir)
 
-
-    def remove_flow_from_matchmaker(self, rec):
-        self.global_flow_lock.acquire()
-        # The other link will still have a reference to the Flows and
-        # Reconciliator, so it won't matter if its gone from the flow_matchmaker
-        try:
-            try:
-                # XXX research question: this table entry contains Flows and a
-                # Reconciliator that references those flows.  Do we need to do
-                # more to avoid garbage collection difficulties?
-                del self.flow_matchmaker[rec.m_tuple]
-            except KeyError:
-                pass
-        finally:
-            self.global_flow_lock.release()
-
-
     def add_flow(self, link, id, f_tuple, m_tuple):
         """ 
         We have a newly reported flow from a client.  Ensure that the
@@ -95,6 +78,38 @@ class Matchmaker:
           link.flow_table[id] = (f_tuple, rec)
         finally:
           link.flow_lock.release()
+
+
+    def delete_flow(self, link, alice_id):
+        "Remove a flow from the link and global flow tables."
+        link.flow_lock.acquire()
+        try:
+            entry = link.flow_table[alice_id]
+            if entry == None:
+                # We should never have had this flow anyway
+                del link.flow_table[alice_id]
+                return None
+            f_tuple, rec = entry
+            del link.flow_table[alice_id]
+        finally:
+            link.flow_lock.release()
+        self.remove_flow_from_matchmaker(rec)
+
+
+    def remove_flow_from_matchmaker(self, rec):
+        self.global_flow_lock.acquire()
+        # The other link will still have a reference to the Flows and
+        # Reconciliator, so it won't matter if its gone from the flow_matchmaker
+        try:
+            try:
+                # XXX research question: this table entry contains Flows and a
+                # Reconciliator that references those flows.  Do we need to do
+                # more to avoid garbage collection difficulties?
+                del self.flow_matchmaker[rec.m_tuple]
+            except KeyError:
+                pass
+        finally:
+            self.global_flow_lock.release()
 
 
     def judgement_day(self):
@@ -182,19 +197,4 @@ class Matchmaker:
       finally:
         self.global_flow_lock.release()
       return (n, total_okay, total_leftovers, total_forged, total_dropped)
-
-    def delete_flow(self, link, alice_id):
-        "Remove a flow from the link and global flow tables."
-        link.flow_lock.acquire()
-        try:
-            entry = link.flow_table[alice_id]
-            if entry == None:
-                # We should never have had this flow anyway
-                del link.flow_table[alice_id]
-                return None
-            f_tuple, rec = entry
-            del link.flow_table[alice_id]
-        finally:
-            link.flow_lock.release()
-        self.remove_flow_from_matchmaker(rec)
 

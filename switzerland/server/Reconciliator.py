@@ -256,6 +256,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     return dropped
 
   def sent_by_alice(self, timestamp, hashes):
+    "Called by Switzerland.py as new sent packets are reported by Alice."
     self.lock.acquire()
     try:
       self.check_dangling()
@@ -270,6 +271,11 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
       if hash_archival:
         for hash in batch:
           if hash in forged_history:
+            # XXX This started out as a debugging sanity check, but now
+            # perhaps this opens us to a DOS attack?  How else can we convey
+            # the seriousness of this condition?  We should send error
+            # messages to alice and bob; alice should probably be disconnected
+            # because she's possibly a culprit...
             log.error("TIMING ERROR, sent packets arriving unacceptably late")
             sys.exit(1)
 
