@@ -9,10 +9,7 @@ from switzerland.client.Packet import Packet
 from switzerland.common import Protocol
 from switzerland.common.PacketDiff import PacketDiffer
 
-try:
-  import scapy
-except:
-  from switzerland.lib import scapy
+from switzerland.lib import scapy
 
 log = logging.getLogger("alice.flow")
 
