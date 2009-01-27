@@ -194,6 +194,11 @@ class SwitzerlandMasterServer:
 
   def link_closed(self, link):
     "Called from within each SwitzerlandLink's listener thread, upon closure."
+
+    # XXX This might be insufficient unless we also find and remove all of the
+    # references to this link that have been travelling around Matchmaker.py
+    # and Reconciliator.py
+
     ip, port = link.peer
     self.peer_lock.acquire()
     self.debug_note("Closing link with client "+`ip` +" "+ `port`, link)

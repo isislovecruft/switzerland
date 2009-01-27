@@ -459,7 +459,7 @@ class Protocol(threading.Thread):
 # cerealized messages.
 
 # XXX This is completely insane.  Rewrite it using struct.
-protocol_version = 77
+protocol_version = 3
 
 # Protocol version history:
 
