@@ -36,7 +36,7 @@ class AliceLink(Protocol.Protocol):
     except:
       log.error("couldn't connect to %s:%s", config.host, `config.port`)
       sys.exit(1)
-    self.socket.settimeout(None)
+    self.socket.settimeout(40)
 
     self.peer = (config.host, config.port)
     self.member_queue = []  # members to be added once we public_ip is known

@@ -18,6 +18,7 @@ class SwitzerlandLink(Protocol.Protocol):
     self.params = None
     self.clock_dispersion = 1.0 # it should be less than this!
     self.log = logging.getLogger('switzerland.link')
+    self.freed = False
 
     # So that methods in the parent class know where to find them:
     self.in_messages = Messages.switzerland_in_messages 
@@ -67,7 +68,9 @@ class SwitzerlandLink(Protocol.Protocol):
 
   def free_resources(self):
     "Tell our SwitzerlandMasterServer that we're going away."
-    self.parent.link_closed(self)
+    if note self.freed:
+      self.freed=True
+      self.parent.link_closed(self)
 
   def fake_ip(self, ip):
     "For testing purposes"
