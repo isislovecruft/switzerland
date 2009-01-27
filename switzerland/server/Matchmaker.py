@@ -4,6 +4,7 @@ import threading
 import logging
 from switzerland.common.Flow import print_flow_tuple
 from switzerland.common.PcapLogger import PcapLogger
+from switzerland.common import util
 from switzerland.server import Reconciliator
 
 errlog = logging.getLogger('matchmaker')
