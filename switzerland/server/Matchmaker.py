@@ -26,6 +26,10 @@ class Matchmaker:
         self.config = self.parent.config
         if self.config.logging:
             self.log = PcapLogger(self.config.pcap_logdir)
+        task = util.ThreadLauncher(self.flow_printer)
+        task.setDaemon(True)
+        task.start()
+
 
     def add_flow(self, link, id, f_tuple, m_tuple):
         """ 
