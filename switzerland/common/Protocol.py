@@ -110,8 +110,11 @@ class Protocol(threading.Thread):
             self.status_lock.release()
           raise
         except s.error,e:
-          self.debug_note("socket error %s"%`e`)
+          self.debug_note("socket error %r" % e)
           self.free_resources() ; self.close()
+          if "Interrupted" in "%r" % e:
+            # This seems to be a path for control-c
+            sys.exit(0)
           return 0
         except:
           # This is weird, but the return 0 above seems to trigger
@@ -353,7 +356,7 @@ class Protocol(threading.Thread):
             del self.expected_acknowledgments[seq_no]
             n += 1
         except:
-          log.error(traceback.format_exc())
+          self.log.error(traceback.format_exc())
       finally:
         self.ack_lock.release()
     
