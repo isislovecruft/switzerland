@@ -24,13 +24,19 @@ def check_args():
 import re
 in_re = re.compile("-in")
 def handle_file(file):
+    """
+    Look through a -in file (and its paired -out file, if there is one) and
+    try to determine which of the -out packets might have been modified to
+    produce the forgery.
+    """
     file2 = in_re.sub("-out",file)
     packets1 = scapy.rdpcap(file)
     try:
         packets2 = scapy.rdpcap(file2)
     except IOError:
         if print_unmatched:
-            print "No -out, injected: ", packets1[0].summary()
+            print "The -in file is not accompanied by a -out file; the packet is probably injected:"
+            print packets1[0].summary()
         return
 
     results = compare_pcaps(packets1,packets2)
@@ -38,7 +44,8 @@ def handle_file(file):
         # firewalled
         return
 
-    print "Sent logs: %d packets; Rec'd logs: %d packets" % (len(packets1), len(packets2))
+    print "Sent logs: %d packets; Rec'd logs: %d packets" % 
+          (len(packets1), len(packets2))
     if not results:
         print "Probably a spoofed packet or 3rd party retransmission:\n"
         print packets1[0].summary()

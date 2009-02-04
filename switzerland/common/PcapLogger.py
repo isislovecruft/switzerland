@@ -25,7 +25,7 @@ class PcapWriter:
                 # significant figures relative to other packes. we really
                 # should ask each client's NTP for the clock jitter...
     snaplen = 1600
-    linktype = 0  # DLT_NULL
+    linktype = 1  # DLT_ETHER
 
     hdr = struct.pack("@IHHIIII", magic, majv, minv, timewarp, sigfigs,
                                                            snaplen, linktype)
@@ -38,6 +38,9 @@ class PcapWriter:
      length = len(packet)
      pkthdr = struct.pack("@IIII", sec, usec, length, length)
      self.file.write(pkthdr)
+     # Two fake MAC addresses followed by 0x0800 for an IPv4 packet
+     ethhdr = "\xaa" * 6 + "\xbb" * 6 + "\x08\x00"
+     self.file.write(ethhdr)
      self.file.write(packet)
 
 
