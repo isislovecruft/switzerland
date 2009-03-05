@@ -243,7 +243,14 @@ class AliceLink(Protocol.Protocol):
 
     for filename, (timestamp, context, report) in zip(out_filenames, msgs):
       if filename:
-        log.error("Report on forged/modified packet:\n%r\n" % report)
+        # This nonsense ensures we're prettier for the users
+        if len(report) == 1 and type(report[0]) == str:
+          fmt = report[0]
+        elif len(report) ==1:
+          fmt = `report[0]`
+        else:
+          fmt = `report`
+        log.error("Report on forged/modified packet:\n%s\n" % fmt)
         if context:
           self.parent.pcap_logger.log_forged_out(context, filename)
         else:
