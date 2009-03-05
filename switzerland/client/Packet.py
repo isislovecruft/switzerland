@@ -25,7 +25,7 @@ track_ip_ids = True
 # fingerprinting.  But that will be complicated. 
 
 zero_ip_id = True
-normalise_tcp_options = False
+normalise_tcp_options = True
 zero_type_of_service = True
 
 # (Another strategy would be to have a "strong" and a "weak" portion of the
