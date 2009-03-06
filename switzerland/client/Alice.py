@@ -27,7 +27,8 @@ log.addHandler(startup_handler)
 
 welcome_msg = \
 """--------------------------------------------------------------------------------
-Welcome to Switzerland.  READ THE PRIVACY AND SECURITY SECTIONS OF THE README.txt!!
+Welcome to Switzerland.  
+READ THE PRIVACY AND SECURITY SECTIONS OF THE README.txt!!
 
 Once you've done that... this is a Version Zero alpha release.  It's sure to
 break at some point.  If/when that happens, please let us know by email 
