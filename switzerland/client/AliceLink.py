@@ -129,8 +129,8 @@ class AliceLink(Protocol.Protocol):
         filename = self.parent.pcap_logger.log_forged_in(receipt_context, flow_id)
         ctxt, report = flow.get_fo_context_and_diff(receipt_context, self.parent)
         if report:
-          log.error("Here is what we know about these modified packets:\n%r\n" %
-                    report)
+          log.error("Here is what we know about these modified packets:\n%s\n" %
+                    fmt_forged_report(report))
           reports[hash] = report
         else:
           log.error("This packet appears to have been injected")
@@ -244,13 +244,8 @@ class AliceLink(Protocol.Protocol):
     for filename, (timestamp, context, report) in zip(out_filenames, msgs):
       if filename:
         # This nonsense ensures we're prettier for the users
-        if len(report) == 1 and type(report[0]) == str:
-          fmt = report[0]
-        elif len(report) ==1:
-          fmt = `report[0]`
-        else:
-          fmt = `report`
-        log.error("Report on forged/modified packet:\n%s\n" % fmt)
+        log.error("Report on forged/modified packet:\n%s\n" % \
+                  fmt_forged_report(report))
         if context:
           self.parent.pcap_logger.log_forged_out(context, filename)
         else:
@@ -396,6 +391,13 @@ class AliceLink(Protocol.Protocol):
     self.send_message("ping")
     self.send_message("ping")
     self.send_message("signoff")
+
+def fmt_forged_report(report):
+  "Turn a report into a pretty string, safely"
+  if type(report) == list and len(report) == 1 and type(report[0]) == str:
+    return report[0]
+  else:
+    return `report`
       
 class LocalAliceLink(AliceLink):
   "This AliceLink variant is useful for testing."
