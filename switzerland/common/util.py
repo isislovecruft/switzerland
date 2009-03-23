@@ -183,16 +183,19 @@ class DebugMe(Exception):
 
 def writable(path):
     try:
-        # FIXME: we can come up with a more elegant solution :)
-        name = '%s%s%s' % (path, os.sep,
-               ''.join([random.choice(string.letters) for n in range(6)]))
-        f = open(name, 'w')
-    except:
-        return False
+        return os.access(path, os.W_OK)
+    except AttributeError:
+        # http://docs.python.org/library/os.html claims availability of
+        # os.access on both Unix and Windows. For any other exotic operating
+        # systems, the following hack may work.
+        try:
+            import tempfile
+            f = tempfile.TemporaryFile(dir=path)
+            f.close()
+        except OSError:
+            return False
 
-    f.close()
-    os.unlink(name)
-    return True
+        return True
 
 def prot_name(prot_num):
   """Called from outside: return the name of a protocol number, if we can."""
