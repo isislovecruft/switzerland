@@ -3,13 +3,9 @@
 import binascii
 import os
 import platform
-import random
-import string
 import sys
-import time
 import traceback
 import threading
-import array
 import logging
 
 log = logging.getLogger('util')
@@ -169,7 +165,6 @@ PROTOCOLS = {
 }
 
 
-
 if platform.system() == 'Windows':
     try:
         import win32api, win32process, win32con
@@ -198,9 +193,9 @@ def writable(path):
         return True
 
 def prot_name(prot_num):
-  """Called from outside: return the name of a protocol number, if we can."""
+    """Called from outside: return the name of a protocol number, if we can."""
 
-  return PROTOCOLS.get(int(prot_num), str(prot_num))
+    return PROTOCOLS.get(int(prot_num), str(prot_num))
 
 class VersionMismatch(Exception):
     pass
@@ -231,7 +226,7 @@ def screensafe(data_structure):
 
 def set_win32_priority(pid=None, priority=1):
     """Set The Priority of a Windows Process.
-    
+
     Priority is a value between 0-5 where 2 is normal priority.  Default sets
     the priority of the current python process but can take any valid process
     ID.
@@ -250,7 +245,8 @@ def set_win32_priority(pid=None, priority=1):
 
 class ThreadLauncher(threading.Thread):
     def __init__(self, fn, handle_control_c=None, respawn=False):
-        "fn is run in its own thread; handle_control_c is a exit callback"
+        """fn is run in its own thread; handle_control_c is a exit callback"""
+
         self.fn = fn
         self.respawn = respawn
         if handle_control_c:
@@ -265,33 +261,33 @@ class ThreadLauncher(threading.Thread):
 
     def run(self):
         try:
-          try:
-              self.fn()
-          except KeyboardInterrupt:
-              self.handle_control_c()
+            try:
+                self.fn()
+            except KeyboardInterrupt:
+                self.handle_control_c()
         except:
-          if self.respawn:
-              log.error("Respawning thread after exception:\n%s" % 
-                        traceback.format_exc())
-              self.fn()
-          else:
-              raise
-          
+            if self.respawn:
+                log.error("Respawning thread after exception:\n%s" %
+                          traceback.format_exc())
+                self.fn()
+            else:
+                raise
 
 def hexhex(thing):
-    "Coerce an arugment in to hexadecimal, by hook or by crook"
+    """Coerce an arugment in to hexadecimal, by hook or by crook"""
+
     tries = ""
     try:
         return hex(thing)
-    except:
+    except TypeError:
         tries += traceback.format_exc()
     try:
         return binascii.hexlify(thing)
-    except:
+    except TypeError:
         tries += traceback.format_exc()
     try:
         return binascii.hexlify(thing.tostring())
-    except:
+    except TypeError:
         tries += traceback.format_exc()
         # desperate measures
         msg = "I don't know how to convert a %s (%s) into hex\n" % \
