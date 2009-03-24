@@ -5,7 +5,7 @@ import socket as s
 import platform
 import os
 import errno
-from stat import *
+import stat
 
 from switzerland.common import local_ip
 from switzerland.common import util
@@ -41,7 +41,7 @@ class AliceConfig:
         pcap_logdir=default_pcap_logdir
         ):
         self.host = host
-        self.port = port 
+        self.port = port
         self.interface = interface
 
         self.use_localhost_ip = use_localhost_ip
@@ -67,10 +67,10 @@ class AliceConfig:
         if getopt:
             self.get_options()
 
-        # defaults remain in if getopt hasn't set things:
+        # Defaults remaining if getopt hasn't set things:
         if self.interface == None and getopt:
-          self.interface = local_ip.get_interface()
-          log.info("interface is now %s", self.interface)
+            self.interface = local_ip.get_interface()
+            log.info("interface is now %s", self.interface)
 
         if force_private_ip and self.private_ip == None: # could have been set by getopt?
             self.private_ip = force_private_ip
@@ -82,60 +82,60 @@ class AliceConfig:
             self.usage()
         try:
             (opts, args) = \
-                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hqv', \
-                ['server=', 'port=', 'interface=', 'ip', 'help'])
-        except:
+                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hqv',
+                    ['server=', 'port=', 'interface=', 'ip', 'help'])
+        except getopt.GetoptError:
             self.usage()
 
-        for opt in opts:
-            if opt[0] in ('-s', '--server'):
+        for opt, arg in opts:
+            if opt in ('-s', '--server'):
                 try:
-                    if ":" in opt[1]:
-                        self.host, self.port = opt[1].split(":")
+                    if ":" in arg:
+                        self.host, self.port = arg.split(":")
                         self.port = int(self.port)
                     else:
-                        self.host = opt[1]
-                except:
+                        self.host = arg
+                except ValueError:
                     self.usage(False)
-                    print "Invalid argument for the", opt[0], "flag (specify a",
+                    print "Invalid argument for the", opt, "flag (specify a",
                     print "server to connect to)"
                     sys.exit(1)
-            elif opt[0] in ('-p', '--port'):
+            elif opt in ('-p', '--port'):
                 try:
-                    self.port = int(opt[1])
-                except:
+                    self.port = int(arg)
+                except ValueError:
                     self.usage(False)
-                    print "Invalid argument for the", opt[0], "flag (need a",
+                    print "Invalid argument for the", opt, "flag (need a",
                     print "port number"
                     sys.exit(1)
-            elif opt[0] in ('-i', '--interface'):
-                self.interface = opt[1]
-            elif opt[0] in ('-l', '--ip'):
-                self.private_ip = opt[1]
-            elif opt[0] in ('-L', '--logfile'):
-                self.logfile = opt[1]
-            elif opt[0] in ('-P', '--pcap-logs'):
-                self.pcap_logdir = opt[1]
-            elif opt[0] in ('-h', '--help'):
+            elif opt in ('-i', '--interface'):
+                self.interface = arg
+            elif opt in ('-l', '--ip'):
+                self.private_ip = arg
+            elif opt in ('-L', '--logfile'):
+                self.logfile = arg
+            elif opt in ('-P', '--pcap-logs'):
+                self.pcap_logdir = arg
+            elif opt in ('-h', '--help'):
                 self.usage()
-            elif opt[0] in ('-q', '--quiet'):
+            elif opt in ('-q', '--quiet'):
                 self.quiet = True
-            elif opt[0] in ('-u', '--uncertain-time'):
+            elif opt in ('-u', '--uncertain-time'):
                 self.allow_uncertain_time = True
                 try:
-                    self.manual_clock_error = float(opt[1])
-                except:
+                    self.manual_clock_error = float(arg)
+                except ValueError:
                     self.usage(False)
-                    print "Invalid argument for the", opt[0], "flag (please",
+                    print "Invalid argument for the", opt, "flag (please",
                     print "specify the maximum error of your clock in seconds)"
                     sys.exit(1)
-            elif opt[0] in ('-v', '--verbose'):
+            elif opt in ('-v', '--verbose'):
                 self.log_level -= (logging.INFO - logging.DEBUG)
 
     def usage(self, exit=True):
-        print 
+        print
         print "%s [OPTIONS]" % sys.argv[0]
-        print 
+        print
         print "This is the client for EFF's Switzerland network traffic auditing system"
         print
         print "  -h, --help                 Print usage info"
@@ -144,7 +144,7 @@ class AliceConfig:
         print "  -i, --interface <iface>    Interface on which to monitor traffic"
         print "  -l, --ip <ip>              (Local) ip address of monitored interface"
         print "  -u, --uncertain-time       Work without NTP.  This is dangerous;"
-        print "       <time in seconds>     acurately specify the error in your system clock" 
+        print "       <time in seconds>     acurately specify the error in your system clock"
         print '  -L, --logfile <file>       Write a copy of the output to <file>. "-" for none'
         print "                             (defaults to " + default_logfile + ")"
         print "  -P, --pcap-logs <dir>      Sets the directory to which PCAPs of modified"
@@ -153,13 +153,12 @@ class AliceConfig:
         print "  -q, --quiet                Do not print output"
         print
         if exit: sys.exit(0)
-            
-                            
+
     def check(self):
         if not self.host:
             self.host = "tbird4.eff.org"
             log.info("no switzerland server specified, defaulting to %s" % self.host)
-        
+
         # check for a valid ip address
         if self.private_ip == None:
             log.error("Switzerland wasn't able to determine your local IP address.")
@@ -167,14 +166,14 @@ class AliceConfig:
             sys.exit(1)
         try:
             s.inet_aton(self.private_ip)
-        except:
+        except s.error:
             log.error("invalid local address format %s", `self.private_ip`)
-            sys.exit(1) 
+            sys.exit(1)
 
         if self.pcap_logdir and self.pcap_logdir != "-":
             try:
                 st = os.stat(self.pcap_logdir)
-                if not S_ISDIR(st[ST_MODE]): # not a directory
+                if not stat.S_ISDIR(st[stat.ST_MODE]): # not a directory
                     log.error("%s isn't a directory", self.pcap_logdir)
                     log.error('Please make this a directory, or use "-P -" for no logging')
                     sys.exit(1)
@@ -182,17 +181,17 @@ class AliceConfig:
                 if e.errno == errno.ENOENT: # no such file or directory
                     log.warn("PCAP log directory %s doesn't exist", self.pcap_logdir)
                     log.warn("trying to create it")
-                    dir=os.path.split(self.pcap_logdir)
-                    create=[dir[1]]
-                    while ((not os.path.exists(dir[0])) and (not dir[0]== os.path.dirname(dir[0]))):
-                        dir=os.path.split(dir[0])
+                    dir = os.path.split(self.pcap_logdir)
+                    create = [dir[1]]
+                    while ((not os.path.exists(dir[0])) and (not dir[0] == os.path.dirname(dir[0]))):
+                        dir = os.path.split(dir[0])
                         create.insert(0, dir[1])
                     try:
                         dir=dir[0]
                         for newdir in create:
                             dir=os.path.join(dir, newdir)
                             os.mkdir(dir)
-                    except:
+                    except OSError:
                         log.error("can't create PCAP log directory")
                         log.error('Please create it, or use "-P -" for no logging')
                         sys.exit(1)
@@ -205,5 +204,5 @@ class AliceConfig:
                 log.error("Change its permissions or specify another directory with -P")
                 log.error('Use "-P -" for no logging')
                 sys.exit(1)
- 
+
 #vim: et ts=4
