@@ -39,9 +39,13 @@ zero_type_of_service = True
 
 log = logging.getLogger('alice.packet')
 
+# Zero'd bytes (octets) of length 1 and 2.
 zero = "\x00"
 zerozero = array("c", "\x00\x00")
 
+# XXX: These variables should go; instead the PROTOCOLS dict in common/util.h
+# should be used. But since we may want to move that dict to a file of its own,
+# I'll not make the change now.
 PROT_TCP = '\x06'
 PROT_UDP = '\x11'
 PROT_SCTP = '\x84'
@@ -152,19 +156,17 @@ class Packet:
 
         # XXX remove all the magic numbers from this thing!!!
 
-        # Zero the type of service (which shouldn't routinely change,
-        # but does)
+        # Zero the type of service (which shouldn't routinely change, but does)
         if zero_type_of_service:
             self.data[1] = zero
 
-        # zero the TTL:
+        # Zero the TTL.
         self.data[8] = zero
-        # zero the header checksum (perhaps we should note if it's wrong,
-        # too)
+        # Zero the header checksum (perhaps we should note if it's wrong, too).
         self.data[10:12] = zerozero
 
         self.ip_payload = self.ip_payload_start()
-        if self.data[9] == '\x06': # This is TCP.  Clear the checksum field
+        if self.data[9] == PROT_TCP: # This is TCP.  Clear the checksum field
             # zero the TCP checksum
             self.data[self.ip_payload + 16:self.ip_payload + 18] = zerozero
             # do perverse things to the options:
@@ -180,7 +182,7 @@ class Packet:
             self.trailer_len = 0
 
     def ip_payload_start(self):
-        return ((ord(self.data[0]))&15) << 2
+        return (ord(self.data[0]) & 15) << 2
 
     def decode_flow_info(self):
         """ decode packet contents for flow tracking """
@@ -234,19 +236,23 @@ class Packet:
                         log.warn("Packet with unreasonable TCP SACK Section length:")
                         log.warn(binascii.hexlify(self.original_data))
 
-                    # some routers seem to reorder SACKs!!!  So we sort them 
+                    # Some routers seem to reorder SACKs!!!  So we sort them 
                     # before hashing :(
-                    # each SACK is a window of two 4 byte sequence numbers
+                    # Each SACK is a window of two 4-byte sequence numbers.
                     slots = range(pos + 2, pos + len, 8)
-                    sacks = [self.data[p:p + 8] for p in slots]
-                    sacks.sort()
+                    sacks = sorted(self.data[p:p + 8] for p in slots)
                     for sack, p in zip(sacks, slots):
                         self.data[p:p + 8] = sack
                 else:          # Any other TCP option
                     len = ord(self.data[pos + 1])
-                pos += len
+
                 if len == 0:
-                    pos += 1   # avoid an infinite loop vulnerability
+                    # Avoid an infinite loop vulnerability
+                    log.warn("Packet with reported TCP Option Length 0:")
+                    log.warn(binascii.hexlify(self.original_data))
+                    len = 1
+
+                pos += len
 
     def is_fragment(self):
         """ is this a fragmented packet? """
