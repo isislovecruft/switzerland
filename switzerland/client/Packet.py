@@ -211,42 +211,42 @@ class Packet:
             self.dest_ip + self.dest_port + self.proto
 
     def process_tcp_options(self):
-      """
-      Some routers may routinely do things to TCP options.  Here we will
-      have to work around those practices:
-      * We sort selective acknowledgement (SACK) fields to be 
-        reordering-invariant.
-      """
-      # >> 4 means rotate right by 4, then multiply by 4-byte chunks
-      tcp_header_length = ((ord(self.data[self.ip_payload + 12]) & 0xF0) >> 4) * 4
-      if tcp_header_length > 20:
-        # This packet contains TCP options
-        pos = self.ip_payload + 20  # start of TCP options
-        while pos < self.ip_payload + tcp_header_length:
-          kind = ord(self.data[pos])
-          if kind == 0:  # EOL
-            break
-          if kind == 1:  # NOP
-            len = 1
-          elif kind == 5: # SACK
-            len = ord(self.data[pos + 1])
-            if (len - 2) % 8 != 0:
-              log.warn("Packet with unreasonable TCP SACK Section length:")
-              log.warn(binascii.hexlify(self.original_data))
+        """
+        Some routers may routinely do things to TCP options.  Here we will
+        have to work around those practices:
+        * We sort selective acknowledgement (SACK) fields to be 
+          reordering-invariant.
+        """
+        # >> 4 means rotate right by 4, then multiply by 4-byte chunks
+        tcp_header_length = ((ord(self.data[self.ip_payload + 12]) & 0xF0) >> 4) * 4
+        if tcp_header_length > 20:
+            # This packet contains TCP options
+            pos = self.ip_payload + 20  # start of TCP options
+            while pos < self.ip_payload + tcp_header_length:
+                kind = ord(self.data[pos])
+                if kind == 0:  # EOL
+                    break
+                if kind == 1:  # NOP
+                    len = 1
+                elif kind == 5: # SACK
+                    len = ord(self.data[pos + 1])
+                    if (len - 2) % 8 != 0:
+                        log.warn("Packet with unreasonable TCP SACK Section length:")
+                        log.warn(binascii.hexlify(self.original_data))
 
-            # some routers seem to reorder SACKs!!!  So we sort them 
-            # before hashing :(
-            # each SACK is a window of two 4 byte sequence numbers
-            slots = range(pos + 2, pos + len, 8)
-            sacks = [self.data[p:p + 8] for p in slots]
-            sacks.sort()
-            for sack, p in zip(sacks, slots):
-              self.data[p:p + 8] = sack
-          else:          # Any other TCP option
-            len = ord(self.data[pos + 1])
-          pos += len
-          if len == 0:
-            pos += 1   # avoid an infinite loop vulnerability
+                    # some routers seem to reorder SACKs!!!  So we sort them 
+                    # before hashing :(
+                    # each SACK is a window of two 4 byte sequence numbers
+                    slots = range(pos + 2, pos + len, 8)
+                    sacks = [self.data[p:p + 8] for p in slots]
+                    sacks.sort()
+                    for sack, p in zip(sacks, slots):
+                        self.data[p:p + 8] = sack
+                else:          # Any other TCP option
+                    len = ord(self.data[pos + 1])
+                pos += len
+                if len == 0:
+                    pos += 1   # avoid an infinite loop vulnerability
 
     def is_fragment(self):
         """ is this a fragmented packet? """
