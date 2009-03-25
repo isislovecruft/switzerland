@@ -1,4 +1,7 @@
 #!/usr/bin/env python2.5
+
+from __future__ import with_statement 
+
 import threading
 import tempfile
 import os
@@ -137,12 +140,10 @@ class PacketListener(threading.Thread):
           self.old_kernel_state = []
           for file, value in vars:
             # save kernel state before overwriting it
-            f = open(file,"r")
-            self.old_kernel_state.append((file, f.read()))
-            f.close()
-            f = open(file,"w")
-            f.write(value)
-            f.close()
+            with open(file, 'r') as f:
+              self.old_kernel_state.append((file, f.read()))
+            with open(file, 'w') as f:
+              f.write(value)
           self.kernel_tweaked = True
 
         # on Windows, we should call pcap_setbuff from inside FastCollector.
@@ -152,9 +153,8 @@ class PacketListener(threading.Thread):
         if p == "Linux":
             for file, value in self.old_kernel_state:
                 # save kernel state before overwriting it
-                f = open(file,"w")
-                f.write(value)
-                f.close()
+                with open(file, 'w') as f:
+                    f.write(value)
             self.kernel_tweaked = False
 
     def launch_collector(self):
@@ -556,11 +556,10 @@ class PacketListener(threading.Thread):
         except:
           # XXX some platforms won't have shred.  Ideally we should use their
           # native RNGs here... also, is this a good mode for open()?
-          f = open(self.tmpfile,"w")
           blank_entry = "\x00" * entry_size
-          for n in xrange(packets):
-            f.write(blank_entry)
-          f.close()
+          with open(self.tmpfile, 'w') as f:
+            for n in xrange(packets):
+              f.write(blank_entry)
         try:
           os.unlink(self.tmpfile)
         except OSError, e:
