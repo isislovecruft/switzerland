@@ -282,13 +282,11 @@ class Packet:
         # firewalled, which we don't know when we first construct this Packet.
         # So we make them at hashing time instead...
 
-        if self.source_ip == self.private_ip:
-          outbound = True
-        else:
-          outbound = False
-          assert self.dest_ip == self.private_ip, "neither of %r is %s" % \
-            ((s.inet_ntoa(self.source_ip), s.inet_ntoa(self.dest_ip)),
-             s.inet_ntoa(self.private_ip))
+        assert self.private_ip in (self.source_ip, self.dest_ip), \
+            "private ip '%s' is neither of %s" % (s.inet_ntoa(self.private_ip),
+            tuple(map(s.inet_ntoa, (self.source_ip, self.dest_ip))))
+
+        outbound = (self.source_ip == self.private_ip)
 
         if self.alice.link.firewalled:
             # zero our port number, rewrite our ip
