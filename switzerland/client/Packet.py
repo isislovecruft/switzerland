@@ -286,9 +286,9 @@ class Packet:
           outbound = True
         else:
           outbound = False
-          assert self.dest_ip == self.private_ip, "neither of " +\
-          `(s.inet_ntoa(self.source_ip), s.inet_ntoa(self.dest_ip))` +\
-          "is " + self.private_ip
+          assert self.dest_ip == self.private_ip, "neither of %r is %s" % \
+            ((s.inet_ntoa(self.source_ip), s.inet_ntoa(self.dest_ip)),
+             s.inet_ntoa(self.private_ip))
 
         if self.alice.link.firewalled:
             # zero our port number, rewrite our ip
