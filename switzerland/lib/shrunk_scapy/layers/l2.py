@@ -6,11 +6,11 @@
 import os,struct,time
 from scapy.config import conf
 from scapy.packet import *
-from scapy.ansmachine import *
-from scapy.plist import SndRcvList
+#from scapy.ansmachine import *
+#from scapy.plist import SndRcvList
 from scapy.fields import *
-from scapy.sendrecv import srp,srp1
-from scapy.arch import get_if_hwaddr
+#from scapy.sendrecv import srp,srp1
+#from scapy.arch import get_if_hwaddr
 
 
 

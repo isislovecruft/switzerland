@@ -242,7 +242,8 @@ extensions_paths: path or list of paths where extensions are to be looked for
     L3socket = None
     L2socket = None
     L2listen = None
-    histfile = os.path.join(os.environ["HOME"], ".scapy_history")
+    #histfile = os.path.join(os.environ["HOME"], ".scapy_history")
+    histfile = None
     padding = 1
     except_filter = ""
     debug_match = 0
