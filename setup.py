@@ -173,13 +173,15 @@ def main():
     sys.argv.append("--force")
 
   setup(name = "Switzerland",
-        version = "0.0.7",
+        version = "0.1.0",
         description = "EFF Network Testing System",
         author = "Peter Eckersley, Jered Wierzbicki and Steven Lucy",
         author_email = "switzerland-devel@eff.org",
         url = "http://www.eff.org/testyourisp/switzerland",
         packages = ["switzerland", "switzerland.lib","switzerland.client",\
-                    "switzerland.common","switzerland.server"],
+                    "switzerland.common","switzerland.server",\
+                    "switzerland.lib.shrunk_scapy",\
+                    "switzerland.lib.shrunk_scapy.layers"],
         scripts = executables,
        )
   if "install" in sys.argv:
