@@ -2,11 +2,14 @@
 ## See http://www.secdev.org/projects/scapy for more informations
 ## Copyright (C) Philippe Biondi <phil@secdev.org>
 ## This program is published under a GPLv2 license
+## This copy has been modified for inclusion with the Switzerland Project
+## See http://www.eff.org/testyourisp/switzerland
+
 
 import os,time
 from data import *
 import base_classes
-import arch,themes
+import themes#,arch
 from error import log_scapy
 
 ############
@@ -225,7 +228,7 @@ extensions_paths: path or list of paths where extensions are to be looked for
     version = "2.0.0.5 beta"
     session = ""  
     stealth = "not implemented"
-    iface = arch.get_working_if()
+    #iface = "eth0" ## arch.get_working_if()
     layers = LayersList()
     commands = CommandsList()
     logLevel = LogLevel()

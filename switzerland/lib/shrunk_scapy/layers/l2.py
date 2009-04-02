@@ -1,14 +1,16 @@
-## This file is part of Scapy
+## This file is part of Scapy.
 ## See http://www.secdev.org/projects/scapy for more informations
 ## Copyright (C) Philippe Biondi <phil@secdev.org>
 ## This program is published under a GPLv2 license
+## This copy has been modified for inclusion with the Switzerland Project
+## See http://www.eff.org/testyourisp/switzerland
 
 import os,struct,time
-from scapy.config import conf
-from scapy.packet import *
+from switzerland.lib.shrunk_scapy.config import conf
+from switzerland.lib.shrunk_scapy.packet import *
 #from scapy.ansmachine import *
 #from scapy.plist import SndRcvList
-from scapy.fields import *
+from switzerland.lib.shrunk_scapy.fields import *
 #from scapy.sendrecv import srp,srp1
 #from scapy.arch import get_if_hwaddr
 
@@ -416,13 +418,13 @@ arpcachepoison(target, victim, [interval=60]) -> None
         pass
 
 
-class ARPingResult(SndRcvList):
-    def __init__(self, res=None, name="ARPing", stats=None):
-        SndRcvList.__init__(self, res, name, stats)
-
-    def show(self):
-        for s,r in self.res:
-            print r.sprintf("%Ether.src% %ARP.psrc%")
+#class ARPingResult(SndRcvList):
+#    def __init__(self, res=None, name="ARPing", stats=None):
+#        SndRcvList.__init__(self, res, name, stats)
+#
+#    def show(self):
+#        for s,r in self.res:
+#            print r.sprintf("%Ether.src% %ARP.psrc%")
 
 
 
@@ -464,39 +466,39 @@ def promiscping(net, timeout=2, fake_bcast="ff:ff:ff:ff:ff:fe", **kargs):
     return ans,unans
 
 
-class ARP_am(AnsweringMachine):
-    function_name="farpd"
-    filter = "arp"
-    send_function = staticmethod(sendp)
-
-    def parse_options(self, IP_addr=None, iface=None, ARP_addr=None):
-        self.IP_addr=IP_addr
-        self.iface=iface
-        self.ARP_addr=ARP_addr
-
-    def is_request(self, req):
-        return (req.haslayer(ARP) and
-                req.getlayer(ARP).op == 1 and
-                (self.IP_addr == None or self.IP_addr == req.getlayer(ARP).pdst))
-    
-    def make_reply(self, req):
-        ether = req.getlayer(Ether)
-        arp = req.getlayer(ARP)
-        iff,a,gw = conf.route.route(arp.psrc)
-        if self.iface != None:
-            iff = iface
-        ARP_addr = self.ARP_addr
-        IP_addr = arp.pdst
-        resp = Ether(dst=ether.src,
-                     src=ARP_addr)/ARP(op="is-at",
-                                       hwsrc=ARP_addr,
-                                       psrc=IP_addr,
-                                       hwdst=arp.hwsrc,
-                                       pdst=arp.pdst)
-        return resp
-
-    def sniff(self):
-        sniff(iface=self.iface, **self.optsniff)
+#class ARP_am(AnsweringMachine):
+#    function_name="farpd"
+#    filter = "arp"
+#    send_function = staticmethod(sendp)
+#
+#    def parse_options(self, IP_addr=None, iface=None, ARP_addr=None):
+#        self.IP_addr=IP_addr
+#        self.iface=iface
+#        self.ARP_addr=ARP_addr
+#
+#    def is_request(self, req):
+#        return (req.haslayer(ARP) and
+#                req.getlayer(ARP).op == 1 and
+#                (self.IP_addr == None or self.IP_addr == req.getlayer(ARP).pdst))
+#    
+#    def make_reply(self, req):
+#        ether = req.getlayer(Ether)
+#        arp = req.getlayer(ARP)
+#        iff,a,gw = conf.route.route(arp.psrc)
+#        if self.iface != None:
+#            iff = iface
+#        ARP_addr = self.ARP_addr
+#        IP_addr = arp.pdst
+#        resp = Ether(dst=ether.src,
+#                     src=ARP_addr)/ARP(op="is-at",
+#                                       hwsrc=ARP_addr,
+#                                       psrc=IP_addr,
+#                                       hwdst=arp.hwsrc,
+#                                       pdst=arp.pdst)
+#        return resp
+#
+#    def sniff(self):
+#        sniff(iface=self.iface, **self.optsniff)
 
 @conf.commands.register
 def etherleak(target, **kargs):

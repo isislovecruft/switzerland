@@ -9,7 +9,7 @@ from switzerland.client.Packet import Packet
 from switzerland.common import Protocol
 from switzerland.common.PacketDiff import PacketDiffer
 
-from switzerland.lib import scapy
+from switzerland.lib.shrunk_scapy.layers.inet import IP
 
 log = logging.getLogger("alice.flow")
 
@@ -140,7 +140,7 @@ class AliceFlow(Flow):
             matches = matches[:-after_max] 
         if not diff_reports:
             injected = "Packet appears to have been injected:\n"
-            injected += scapy.IP(t_data).summary()
+            injected += IP(t_data).summary()  #scapy.IP
             diff_reports = [injected]
         return (matches, diff_reports)
 

@@ -10,7 +10,9 @@ except ImportError:
 
     try:
         from switzerland.client import Alice
-    except ImportError:
+    except ImportError, ie:
+        print >> sys.stderr, \
+              ie.message
         print >> sys.stderr, \
               'Error: cannot load client. Please check your $PYTHONPATH.'
         sys.exit(1)

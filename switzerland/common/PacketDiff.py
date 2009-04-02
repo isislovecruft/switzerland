@@ -141,9 +141,9 @@ class PacketDiffer:
             a_tcp_opts = self.a_pkt[sa+20:sa+self.a_tcp_hdrlen]
             b_tcp_opts = self.b_pkt[sb+20:sb+self.b_tcp_hdrlen]
             if a_tcp_opts != b_tcp_opts:
-                import scapy
-                a = scapy.TCP(self.a_pkt[sa:])
-                b = scapy.TCP(self.b_pkt[sb:])
+                from switzerland.lib.shrunk_scapy.layers.inet import TCP
+                a = TCP(self.a_pkt[sa:]) # scapy.TCP
+                b = TCP(self.b_pkt[sb:])
                 self.modified_field("TCP options", `a.options`, `b.options`, \
                                     nohex=True)
                 #self.diff_tcp_opts(a_tcp_opts, b_tcp_opts)

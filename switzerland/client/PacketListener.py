@@ -28,15 +28,11 @@ from switzerland.client import Packet
 from switzerland.client import FlowManager
 
 try:
-  import scapy
+  from switzerland.lib.shrunk_scapy.layers.l2 import Ether
   have_scapy = True
-except:
-  try:
-    from switzerland.lib import scapy
-    have_scapy = True
-  except:
-    print "No scapy... that's okay, we don't really need it"
-    have_scapy = False
+except Exception, e:
+  print "No scapy... that's okay, we don't really need it"
+  have_scapy = False
 
 double_check = False
 if double_check:
@@ -378,7 +374,7 @@ class PacketListener(threading.Thread):
         self.process_packet(timestamp, data)
         if double_check:
           print "Pos is now 0x%x" % self.pos
-          print scapy.Ether(data).summary()
+          print Ether(data).summary()
 
         #if count % 10 == 0:
         #  # at this point we aren't interested in normal playback termination
@@ -452,7 +448,7 @@ class PacketListener(threading.Thread):
         msg = "Packet parser failed on this packet (raw hex):\n"
         msg += hexlify(data) + "\n"
         if have_scapy:
-          msg += "Scapy analysis\n" + `scapy.Ether(data).summary()` + "\n"
+          msg += "Scapy analysis\n" + `Ether(data).summary()` + "\n"
         import traceback  
         msg += "The error was:\n" + traceback.format_exc()
         log.warn(msg)
