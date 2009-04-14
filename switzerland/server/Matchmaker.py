@@ -194,7 +194,7 @@ class Matchmaker:
             # don't send an identical flow table to a client repeatedly
             msg = "\n".join(summaries)
             if link.last_status != msg:
-              link.last_tatus = msg
+              link.last_status = msg
               link.send_other_message("flow-status", [table_header + msg])
       finally:
         self.global_flow_lock.release()
