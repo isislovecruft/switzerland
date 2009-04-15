@@ -238,8 +238,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
       try:
         assert timestamp >= self.newest_information_from_a, 'expecting timestamp to be monotonically increasing, %f < %f' % (timestamp, self.newest_information_from_a)
       except:
-        util.debugger()
-        raise
+        self.monotonicity_error()
       self.newest_information_from_a = timestamp
       forged = self.__check_for_forgeries()
     finally:
@@ -254,8 +253,7 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
       try:
         assert timestamp >= self.newest_information_from_b, 'expecting timestamp to be monotonically increasing %f < %f' % (timestamp, self.newest_information_from_b)
       except:
-        util.debugger()
-        raise
+        self.monotonicity_error()
       self.newest_information_from_b = timestamp
       dropped = self.check_for_drops()
     finally:
@@ -268,9 +266,12 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     try:
       self.check_dangling()
       assert not self.finalized, 'packets arriving in finalized reconciliator'
-      assert timestamp >= self.newest_information_from_a, \
-        'expecting timestamp to be monotonically increasing %f < %f' % \
-        (timestamp, self.newest_information_from_a)
+      try:
+        assert timestamp >= self.newest_information_from_a, \
+          'expecting timestamp to be monotonically increasing %f < %f' % \
+          (timestamp, self.newest_information_from_a)
+      except:
+        self.monotonicity_error()
       self.newest_information_from_a = timestamp
 
       batch = makebatch(timestamp,hashes,True,self)
@@ -304,9 +305,12 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     try:
       self.check_dangling()
       assert not self.finalized, 'not expecting finalized'
-      assert timestamp >= self.newest_information_from_b, \
-        'expecting timestamp to be monotonically increasing %f < %f' % \
-        (timestamp, self.newest_information_from_b)
+      try:
+        assert timestamp >= self.newest_information_from_b, \
+          'expecting timestamp to be monotonically increasing %f < %f' % \
+          (timestamp, self.newest_information_from_b)
+      except:
+        self.monotonicity_error()
       self.newest_information_from_b  = timestamp
 
       batch = makebatch(timestamp,hashes,False,self)
@@ -322,6 +326,27 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     finally:
       self.lock.release()
     return forged
+
+  def monotonicity_error(self):
+    """
+    PacketListener.py in the client sometimes observes small amounts of
+    monotonicity, but the arrival of batches to the server which are
+    out-of-order is a much more serious condition. It can in theory happen
+    just because of very bad luck on top of the small monotonicities, but
+    should be very rare.
+
+    (Question: batches have a whole-batch timestamp; is that the first or last
+    packet in the batch?)
+    """
+    if self.ready:
+      log.error("Flow causing monotonicity error:\n" + self.prettyprint())
+    else:
+      log.error("Monotonicity error in unready flow %r (%r, %r)" % (self.flow, \
+                self.dest_flow, self.src_flow))
+      log.error("Innards of reconciliator:\n%r\n%r\n%r\n%r" % (self.a_to_b, \
+                self.b_from_a, self.sent_packets, self.recd_packets))
+    raise
+
 
   def check_dangling(self):
     """

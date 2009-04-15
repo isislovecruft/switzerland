@@ -70,7 +70,8 @@ class Reporter(threading.Thread):
       try:
         while True:
             self.batch_to_process.acquire()
-            self.batch_to_process.wait(Reporter.batch_wait_timeout) # wait for a full batch
+            # wait for a full batch
+            self.batch_to_process.wait(Reporter.batch_wait_timeout) 
             # now either there's a full batch or we timed out waiting
 
             # This looks crazy, but it prevents lots of exceptions during

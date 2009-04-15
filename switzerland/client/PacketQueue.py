@@ -64,7 +64,8 @@ class PacketQueue:
                 break
 
     def append(self, packet):
-        """Add incoming packet to current working batch."""
+        """Add incoming packet to current working batch.  Return true if the
+        batch is full."""
 
         assert isinstance(packet, Packet.Packet), 'expecting Packet'
 

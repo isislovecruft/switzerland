@@ -20,7 +20,7 @@ fi_context_after = 1 # packets after forgery to send with a fi-context reply
 fi_context_cutoff_time = 10 # maximum time after forgery to consider relevant for fi-context reply
 hash_length = 6
 class Protocol(threading.Thread):
-  "Both Alice and the Switzerland server inheret ther Links from this."
+  "Both Alice and the Switzerland server inheret their Link classes from this."
 
   def __init__(self, log, seriousness=0, accounting=True, private_ip=False):
     """Alice will connect to a server here, Switzerland will get a socket from
@@ -239,7 +239,6 @@ class Protocol(threading.Thread):
         reply_data = self.reply_data_table[reply_seq_no]
       except:
         raise
-        #util.debugger()
       del self.reply_data_table[reply_seq_no]
       args.append(reply_data)
     if m.expects_ack or m.expects_reply:
@@ -359,12 +358,16 @@ class Protocol(threading.Thread):
       finally:
         self.ack_lock.release()
     
+  def free_resources(self):
+    # Links can override this if they need to do any memory freeing stuff
+    pass
 
   def protocol_error(self, string):
     "This may diverge between Alice and Switz in the future."
     self.debug_note("Switzerland protocol error:\n" + string)
     self.status_lock.acquire()
     try:
+      self.free_resources()
       self.close()
     finally:
       self.status_lock.release()

@@ -445,6 +445,11 @@ class SwitzerlandMasterServer:
         finally:
           link.flow_lock.release()
         return
+      except AssertionError:
+        # Various things could cause this...
+        link.protocol_error("Assertion violated while handling sent/recd\n" +\
+                            traceback.format_exc())
+        raise
     finally:
       rec.lock.release()
     if forgeries:
