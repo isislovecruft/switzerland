@@ -334,7 +334,6 @@ class Protocol(threading.Thread):
 
   def check_ack_deadlines(self):
     "Check for overdue acks."
-    # XXX perhaps we should actually test and call this function :)
     while True:
       time.sleep(13)
       self.ack_lock.acquire()

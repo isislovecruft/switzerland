@@ -63,7 +63,7 @@ class SwitzerlandMasterServer:
     self.socket.bind(("",self.config.port))
     self.socket.listen(5)
     self.threads = []
-    task = util.ThreadLauncher(self.pinger, self.handle_control_c)
+    task = util.ThreadLauncher(self.pinger, self.handle_control_c, respawn=True)
     task.start()
 
     self.peer_lock = threading.RLock()
@@ -269,11 +269,14 @@ class SwitzerlandMasterServer:
     try:
       for flow in new_flows:
         f_id = flow[0]
+        assert len(flow[1]) == Protocol.hash_length
         if ipids_in_matchmaker:
           opening_hash = flow[1]
         else:
           opening_hash = flow[1][:-2]
         f_tuple = flow[2]
+        assert len(f_tuple) == 5
+        assert type(opening_hash) == str
 
         match = self.ponder_flow(link, f_id, f_tuple, opening_hash)
         if match:
@@ -286,7 +289,7 @@ class SwitzerlandMasterServer:
                             `(link.peer[0],print_flow_tuple(f_tuple))`)
 
     except:
-      errlog.debug("OH NOES %s", sys.exc_info()[:2])
+      errlog.debug("OH NOES %s", traceback.format_exc())
       link.protocol_error("Problem with flow list: %s\n" % 
                                             util.screensafe(new_flows))
       raise

@@ -25,7 +25,6 @@ else:
     import posix
 
 from switzerland.client import Packet
-from switzerland.client import FlowManager
 
 try:
   from switzerland.lib.shrunk_scapy.layers.l2 import Ether
@@ -71,8 +70,7 @@ class PacketListener(threading.Thread):
         pass packets off to FlowManager. """
 
     def __init__(self, parent):
-        """ flow_manager: FlowManager to receive packets
-            flow_cv: condition variable to notify reporting thread when batches full """
+        """self.parent.fm: FlowManager to receive packets"""
         threading.Thread.__init__(self)
         self.parent = parent
         self._zcat_pipe = None
@@ -458,9 +456,7 @@ class PacketListener(threading.Thread):
         
       if dummy:
         return
-      #if double_check:
-      #  assert packet.ip_id == ip_id, "%s != %s" % (`packet.ip_id`, `ip_id`)
-      if packet.is_fragment(): #skip fragmented packets
+      if packet.is_fragment(): # skip fragmented packets
           if not self.frag_warn:
               log.warn("We saw fragments! This may result in false drop reports.")
               self.frag_warn = True

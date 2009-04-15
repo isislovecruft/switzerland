@@ -67,7 +67,8 @@ class SwitzerlandLink(Protocol.Protocol):
   def setup(self):
     "Now talking cerealized python, let's do setup."
     task = util.ThreadLauncher(self.check_ack_deadlines,
-                               self.parent.handle_control_c)
+                               self.parent.handle_control_c,
+                               respawn=True)
     task.start()
 
   def bye(self):

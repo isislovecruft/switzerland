@@ -125,6 +125,9 @@ class Reconciliator:
 
   def add_link(self, link, id, f_tuple):
     "Figure out whether this link is alice or bob, and remember it"
+    if f_tuple == None:
+      log.error("add_link should not be called with f_tuple=None!!!!")
+      return False
     self.lock.acquire()
     try:
       ip = s.inet_aton(link.peer[0])
