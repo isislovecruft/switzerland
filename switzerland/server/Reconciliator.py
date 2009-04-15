@@ -343,8 +343,8 @@ CURRENT FLOW TABLE:                            okay  drop mod/frg pend t/rx prot
     else:
       log.error("Monotonicity error in unready flow %r (%r, %r)" % (self.flow, \
                 self.dest_flow, self.src_flow))
-      log.error("Innards of reconciliator:\n%r\n%r\n%r\n%r" % (self.a_to_b, \
-                self.b_from_a, self.sent_packets, self.recd_packets))
+    log.error("Innards of reconciliator:\n%r\n%r\n%r\n%r" % (self.a_to_b, \
+              self.b_from_a, self.sent_packets, self.recd_packets))
     raise
 
 
