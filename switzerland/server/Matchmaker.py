@@ -179,6 +179,7 @@ class Matchmaker:
                 total_forged += rec.forged_packets
                 total_dropped += rec.dropped_packets
                 total_okay += rec.okay_packets
+                assert rec.ready    # debugging weird errors
                 summary = rec.prettyprint()
                 plist.append(summary)
                 for link,id in rec.src_links + rec.dest_links:

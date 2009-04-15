@@ -150,6 +150,10 @@ class Reconciliator:
         skew1 = max([l.get_clock_dispersion() for l,id in self.src_links])
         skew2 = max([l.get_clock_dispersion() for l,id in self.dest_links])
         self.max_clock_skew = (skew1 + skew2) + clock_safety_margin
+        if not (self.src_flow and self.dest_flow):
+          # This is debugging for "weird error"s
+          log.error("Was about to ready a one-sided flow!!!")
+          return False
         self.ready = True
         log.debug("We now have both sides of flow %s", print_flow_tuple(self.flow))
         return True # have both sides
