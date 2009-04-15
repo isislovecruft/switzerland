@@ -4,7 +4,7 @@ import logging
 logging.basicConfig()
 
 from switzerland.lib import scapy
-from switzerland.common.PacketDiff import PacketDiffer
+from switzerland.client.PacketDiff import PacketDiffer
 from switzerland.common.Dummies import DummyAlice
 dummy = DummyAlice
 

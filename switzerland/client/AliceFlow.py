@@ -7,7 +7,7 @@ from switzerland.client import PacketQueue
 from switzerland.common.Flow import Flow
 from switzerland.client.Packet import Packet
 from switzerland.common import Protocol
-from switzerland.common.PacketDiff import PacketDiffer
+from switzerland.client.PacketDiff import PacketDiffer
 
 from switzerland.lib.shrunk_scapy.layers.inet import IP
 
