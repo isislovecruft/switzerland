@@ -269,7 +269,8 @@ class ThreadLauncher(threading.Thread):
             if self.respawn:
                 log.error("Respawning thread after exception:\n%s" %
                           traceback.format_exc())
-                self.fn()
+                self.run()  # XXX perhaps this is a tiny slow 
+                            # stack memory leak but the alternatives are ugly
             else:
                 raise
 
