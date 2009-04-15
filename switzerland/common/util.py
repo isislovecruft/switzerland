@@ -260,19 +260,21 @@ class ThreadLauncher(threading.Thread):
         sys.stderr.write("Unhandled control-c:\n%s" % traceback.format_exc())
 
     def run(self):
-        try:
+        keep_running = True
+        while keep_running:
+            keep_running = False
             try:
-                self.fn()
-            except KeyboardInterrupt:
-                self.handle_control_c()
-        except:
-            if self.respawn:
-                log.error("Respawning thread after exception:\n%s" %
-                          traceback.format_exc())
-                self.run()  # XXX perhaps this is a tiny slow 
-                            # stack memory leak but the alternatives are ugly
-            else:
-                raise
+                try:
+                    self.fn()
+                except KeyboardInterrupt:
+                    self.handle_control_c()
+            except:
+                if self.respawn:
+                    log.error("Respawning thread after exception:\n%s" %
+                              traceback.format_exc())
+                    keep_running = True
+                else:
+                    raise
 
 def hexhex(thing):
     """Coerce an arugment in to hexadecimal, by hook or by crook"""
