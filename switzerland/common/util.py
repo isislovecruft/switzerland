@@ -220,8 +220,8 @@ def screensafe(data_structure):
     print."""
 
     str = repr(data_structure)
-    if len(str) > 53:
-        str = str[:50] + "..."
+    if len(str) > 103:
+        str = str[:100] + "..."
     return str
 
 def set_win32_priority(pid=None, priority=1):

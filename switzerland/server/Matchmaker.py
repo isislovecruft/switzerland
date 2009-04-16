@@ -90,13 +90,17 @@ class Matchmaker:
         "Remove a flow from the link and global flow tables."
         link.flow_lock.acquire()
         try:
-            entry = link.flow_table[alice_id]
-            if entry == None:
-                # We should never have had this flow anyway
+            try:
+                entry = link.flow_table[alice_id]
+                if entry == None:
+                    # We should never have had this flow anyway
+                    del link.flow_table[alice_id]
+                    return None
+                f_tuple, rec = entry
                 del link.flow_table[alice_id]
+             except KeyError:
+                log.warn("Attempted delete_flow %d but it's already gone"%alice_id)
                 return None
-            f_tuple, rec = entry
-            del link.flow_table[alice_id]
         finally:
             link.flow_lock.release()
         self.remove_flow_from_matchmaker(rec)
