@@ -57,7 +57,7 @@ class Protocol(threading.Thread):
     # count as acks for most purposes)
     self.ack_lock= threading.RLock()
     self.timeout_period = 25   # the time we'll wait for an ack/reply
-    self.ack_timeouts = []     # ordered list of (deadline, sequence_no)
+    self.ack_timeouts = []     # ordered list of (deadline, sequence_no, msg_type)
     self.expected_acknowledgments = {}   # callbacks for failed acks
     self.last_deadline = 0               # the last ack deadline around
     self.last_sent = time.time()
@@ -152,7 +152,7 @@ class Protocol(threading.Thread):
     # a sequence number magically becomes the first argument if it is required
     m = self.out_messages[msg_type]
 
-    # we have to acquire this early because to guarantee sequence_no consistency
+    # we have to acquire this early to guarantee sequence_no consistency
 
     self.status_lock.acquire()
     try:
@@ -164,7 +164,7 @@ class Protocol(threading.Thread):
 
       if m.expects_ack:
         arguments = [self.sequence_no] + arguments
-        self.register_ack(missing_ack_callback)
+        self.register_ack(missing_ack_callback, msg_type)
         self.sequence_no +=1
       elif m.expects_reply:
         arguments = [self.sequence_no] + arguments
@@ -297,7 +297,7 @@ class Protocol(threading.Thread):
     
     return True     # tricksy
 
-  def register_ack(self, callback):
+  def register_ack(self, callback, msg_type):
     "Organise to understand the ack when it arrives."
     self.ack_lock.acquire()
     deadline = time.time() + self.timeout_period
@@ -305,13 +305,10 @@ class Protocol(threading.Thread):
       self.debug_note("Deadlines are out of order! %f %f" % \
       (deadline, self.last_deadline), seriousness = 2)
     else:
-      self.ack_timeouts.append((deadline, self.sequence_no))
+      self.ack_timeouts.append((deadline, self.sequence_no, msg_type))
 
     self.expected_acknowledgments[self.sequence_no] = callback
     self.ack_lock.release()
-
-    # only this thread (the sender) may change this
-    self.sequence_no += 1
 
   def process_ack(self, seq_no):
     self.debug_note("Received ack for " + `seq_no`)
@@ -319,7 +316,7 @@ class Protocol(threading.Thread):
     self.ack_lock.acquire()
 
     for n in xrange(len(self.ack_timeouts)):
-      deadline, sequence = self.ack_timeouts[n]
+      deadline, sequence, msg_type = self.ack_timeouts[n]
       if sequence == seq_no:
         del self.ack_timeouts[n:n+1]
         break
@@ -333,14 +330,14 @@ class Protocol(threading.Thread):
 
   def check_ack_deadlines(self):
     "Check for overdue acks."
-    while True:
+    while not self.closed:
       time.sleep(13)
       self.ack_lock.acquire()
       try:
         try:
           t = time.time()
           n = 0
-          for deadline, seq_no in self.ack_timeouts:
+          for deadline, seq_no, msg_type in self.ack_timeouts:
             if t < deadline:
               break
 
@@ -349,7 +346,8 @@ class Protocol(threading.Thread):
             if callback:
               callback()
             else:
-              self.log.warn("No callback for timed out ack %d" % seq_no)
+              self.log.warn("No callback for timed out ack %d (%s)" % \
+                           (seq_no, msg_type))
             del self.ack_timeouts[n:n+1]
             del self.expected_acknowledgments[seq_no]
             n += 1
