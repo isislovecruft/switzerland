@@ -98,7 +98,7 @@ class Matchmaker:
                     return None
                 f_tuple, rec = entry
                 del link.flow_table[alice_id]
-             except KeyError:
+            except KeyError:
                 log.warn("Attempted delete_flow %d but it's already gone"%alice_id)
                 return None
         finally:
