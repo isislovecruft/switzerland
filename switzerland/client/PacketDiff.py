@@ -7,7 +7,7 @@ import difflib
 
 from switzerland.client import Packet
 from binascii import hexlify
-from util import hexhex
+from switzerland.common.util import hexhex
 
 # PacketDiff.py -- figure out which fields in a packet have been modified
 # in transit. 
