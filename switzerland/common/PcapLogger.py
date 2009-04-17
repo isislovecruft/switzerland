@@ -55,7 +55,7 @@ class PcapLogger:
   def __init__(self, log_dir):
     self.lock = threading.RLock()
     self.make_or_check_directory(log_dir, "log dir")
-    ts = self.timestamp()
+    #ts = self.timestamp()
     self.log_dir = log_dir     
     # XXX do not expect this to be secure if log_dir is world writeable
     # on a multi-user system

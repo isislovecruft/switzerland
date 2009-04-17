@@ -4,7 +4,6 @@ import socket as s     # make all the constants less crazy
 import sys
 import threading
 import time
-import binascii
 import logging
 import traceback
 import random
