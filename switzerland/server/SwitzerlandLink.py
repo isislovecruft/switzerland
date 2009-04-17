@@ -73,6 +73,7 @@ class SwitzerlandLink(Protocol.Protocol):
 
   def bye(self):
     "This is just a callback for failures in Switzerland's pinger thread."
+    log.warn("Ping timeout for %r, closing link" % (self.peer,))
     self.free_resources()
     self.close()
 
