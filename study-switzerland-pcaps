@@ -3,7 +3,8 @@ import sys
 import logging
 logging.basicConfig()
 
-from switzerland.lib import scapy
+import switzerland.lib.shrunk_scapy.utils as scapy_utils
+import switzerland.lib.shrunk_scapy.layers.inet as scapy_inet
 from switzerland.client.PacketDiff import PacketDiffer
 from switzerland.common.Dummies import DummyAlice
 dummy = DummyAlice
@@ -30,9 +31,9 @@ def handle_file(file):
     produce the forgery.
     """
     file2 = in_re.sub("-out",file)
-    packets1 = scapy.rdpcap(file)
+    packets1 = scapy_utils.rdpcap(file)
     try:
-        packets2 = scapy.rdpcap(file2)
+        packets2 = scapy_utils.rdpcap(file2)
     except IOError:
         if print_unmatched:
             print "The -in file is not accompanied by a -out file; the packet is probably injected:"
@@ -44,7 +45,7 @@ def handle_file(file):
         # firewalled
         return
 
-    print "Sent logs: %d packets; Rec'd logs: %d packets" % 
+    print "Sent logs: %d packets; Rec'd logs: %d packets" % \
           (len(packets1), len(packets2))
     if not results:
         print "Probably a spoofed packet or 3rd party retransmission:\n"
@@ -70,7 +71,7 @@ def compare_pcaps(packets1, packets2):
 
     example = packets2[0]
     ep = example.payload
-    assert type(tp) == type(ep) == scapy.IP
+    assert type(tp) == type(ep) == scapy_inet.IP
 
     if tp.src != ep.src or tp.dst != ep.dst:
         print "Firewalled", tp.src, tp.dst, ep.src, ep.dst

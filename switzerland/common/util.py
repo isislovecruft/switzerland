@@ -285,11 +285,11 @@ def hexhex(thing):
     except TypeError:
         tries += traceback.format_exc()
     try:
-        return binascii.hexlify(thing)
+        return "0x" + binascii.hexlify(thing)
     except TypeError:
         tries += traceback.format_exc()
     try:
-        return binascii.hexlify(thing.tostring())
+        return "0x" + binascii.hexlify(thing.tostring())
     except TypeError:
         tries += traceback.format_exc()
         # desperate measures

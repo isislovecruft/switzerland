@@ -77,9 +77,9 @@ class Reporter(threading.Thread):
             # This looks crazy, but it prevents lots of exceptions during
             # multi-threaded shutdown (the previous line is a long wait)
             try:
-              now = int(time.time())
+                now = int(time.time())
             except:
-              return
+                return
 
             # scan batches
             for flow in self.flow_manager.flows.values():
