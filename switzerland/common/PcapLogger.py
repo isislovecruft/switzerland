@@ -39,7 +39,9 @@ class PcapWriter:
      pkthdr = struct.pack("@IIII", sec, usec, length, length)
      self.file.write(pkthdr)
      # Two fake MAC addresses followed by 0x0800 for an IPv4 packet
-     ethhdr = "\xaa" * 6 + "\xbb" * 6 + "\x08\x00"
+     ethhdr = "\xa7\x1c\xe0\x0a\x71\xce"
+     ethhdr += "\xb0\xb0\x00\x00\x0b\x0b"
+     ethhdr += "\x08\x00"
      self.file.write(ethhdr)
      self.file.write(packet)
 
