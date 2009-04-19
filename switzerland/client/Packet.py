@@ -26,6 +26,7 @@ track_ip_ids = True
 
 zero_ip_id = True
 normalise_tcp_options = True
+tolerate_mss_tweaks = normalise_tcp_options and True
 zero_type_of_service = True
 
 # (Another strategy would be to have a "strong" and a "weak" portion of the
@@ -230,6 +231,16 @@ class Packet:
                     break
                 if kind == 1:  # NOP
                     len = 1
+                elif kind == 2: # MSS
+                    if tolerate_mss_tweaks:
+                        # Allow NATs to change the low order byte of the MSS
+                        # field
+                        len = ord(self.data[pos + 1])
+                        if len == 4:
+                            self.data[pos+3] = chr(ord(self.data[pos+3]) & 0xf0)
+                        else:
+                            log.warn("Packet with dubious MSS length %d" % len)
+                            log.warn(binascii.hexlify(self.original_data))
                 elif kind == 5: # SACK
                     len = ord(self.data[pos + 1])
                     if (len - 2) % 8 != 0:
