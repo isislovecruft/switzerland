@@ -237,7 +237,7 @@ class Packet:
                         # field
                         len = ord(self.data[pos + 1])
                         if len == 4:
-                            self.data[pos+3] = chr(ord(self.data[pos+3]) & 0xf0)
+                            self.data[pos + 3] = zero
                         else:
                             log.warn("Packet with dubious MSS length %d" % len)
                             log.warn(binascii.hexlify(self.original_data))
