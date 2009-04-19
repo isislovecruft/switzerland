@@ -91,11 +91,12 @@ class Protocol(threading.Thread):
             self.accounting_in(msg)
           self.process_inbound_message(msg)
         except cerealizer.EndOfFile:
-          self.log.info("Session with %s closing.", self.peer)
+          self.log.info("Session with %s closed by other side.", self.peer)
           self.close() ; self.free_resources()
           return 0
         except AttributeError:
           # this will be raised if a sender thread has closed our socket
+          log.info("Connection shutdown by peer.")
           val = traceback.format_exc() 
           if "NoneType" not in val or "recv" not in val:
             # but in this case, that wasn't the exception

@@ -1,6 +1,9 @@
 import threading
 import time
+import traceback
+import logging
 
+log = logging.getLogger('alice.cleaner')
 class Cleaner(threading.Thread):
     """Periodically clean up stale packets and expired flows."""
 
@@ -18,5 +21,6 @@ class Cleaner(threading.Thread):
         except:
             # Exit-time crash avoidance.
             if self.parent.quit_event.set != None:
+                log.info("Cleaner exception:\n" + traceback.format_exc())
                 self.parent.quit_event.set()
 

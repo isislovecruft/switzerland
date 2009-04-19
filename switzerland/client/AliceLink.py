@@ -46,10 +46,14 @@ class AliceLink(Protocol.Protocol):
     # we are still blocking the caller thread
 
   def run(self):
+    excepted = False
     try:
       Protocol.Protocol.run(self)
     except:
       print traceback.format_exc()
+      excepted=True
+    if not excepted:
+      log.info("Adieu...")
     self.quit_event.set()
     self.ready.set() # to hurry Alice up
 
