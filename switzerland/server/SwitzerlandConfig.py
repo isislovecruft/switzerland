@@ -54,13 +54,13 @@ class SwitzerlandConfig:
             self.usage()
 
         for opt in opts:
-            if opt[0] == '-p' or opt[0] == 'port':
+            if opt[0] == '-p' or opt[0] == '--port':
                 self.port = int(opt[1])
-            elif opt[0] == '-h' or opt[0] == 'help':
+            elif opt[0] == '-h' or opt[0] == '--help':
                 self.usage()
-            elif opt[0] == '-L' or opt[0] == 'logfile':
+            elif opt[0] == '-L' or opt[0] == '--logfile':
                  self.logfile = opt[1]
-            elif opt[0] == '-P' or opt[0] == 'pcap-logs':
+            elif opt[0] == '-P' or opt[0] == '--pcap-logs':
                  self.pcap_logdir = opt[1]
 
 
