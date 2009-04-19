@@ -7,6 +7,7 @@ import time
 import logging
 import traceback
 import random
+import platform
 
 from switzerland.common import Protocol
 from switzerland.common import util
