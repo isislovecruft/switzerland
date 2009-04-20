@@ -68,7 +68,7 @@ class AliceFlow(Flow):
 
         # need at least one packet of context 
         # (the first element of the context is the forged hash)
-        if not context or len(context) < 2:
+        if not context or len(context) < 1:
             return (None, "No forged_in context")
         t_ts, t_hash, t_data = context[0]
         target_packet = Packet(t_ts, t_data, alice, has_ll=False)
