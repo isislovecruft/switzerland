@@ -58,7 +58,7 @@ class PacketBatch:
     def contains_hash(self, hash):
         """Does batch contain a packet with the given hash?"""
 
-        for p in self:packets:
+        for p in self.packets:
             if p.get_hash()[:-2] == hash:
                 return True
 
