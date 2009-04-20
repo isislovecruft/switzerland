@@ -96,7 +96,7 @@ class Protocol(threading.Thread):
           return 0
         except AttributeError:
           # this will be raised if a sender thread has closed our socket
-          log.info("Connection shutdown by peer.")
+          self.log.info("Connection shutdown by peer.")
           val = traceback.format_exc() 
           if "NoneType" not in val or "recv" not in val:
             # but in this case, that wasn't the exception
