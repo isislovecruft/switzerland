@@ -8,7 +8,7 @@ from switzerland.common.PcapLogger import PcapLogger
 from switzerland.common import util
 from switzerland.server import Reconciliator
 
-errlog = logging.getLogger('matchmaker')
+log = errlog = logging.getLogger('matchmaker')
 errlog.setLevel(logging.WARN)
 
 table_header = """CURRENT FLOW TABLE:                            Okay  Drop Mod/frg Pend_t/rx Prot\n"""
