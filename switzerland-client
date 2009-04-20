@@ -17,4 +17,7 @@ except ImportError:
               'Error: cannot load client. Please check your $PYTHONPATH.'
         sys.exit(1)
 
-Alice.main()
+try:
+    Alice.main()
+except KeyboardInterrupt:
+    pass

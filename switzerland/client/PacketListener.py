@@ -550,8 +550,11 @@ class PacketListener(threading.Thread):
         except:
           # XXX some platforms won't have shred.  Ideally we should use their
           # native RNGs here... also, is this a good mode for open()?
-          blank_entry = "\x00" * entry_size
+          if not self.tmpfile:
+            log.error("tmpfile already gone")
+            return
           f = open(self.tmpfile, 'w')
+          blank_entry = "\x00" * entry_size
           for n in xrange(packets):
             f.write(blank_entry)
           f.close()
