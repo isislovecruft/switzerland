@@ -82,8 +82,10 @@ class AliceConfig:
             self.usage()
         try:
             (opts, args) = \
-                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:hqv',
-                    ['server=', 'port=', 'interface=', 'ip', 'help'])
+                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:f:hqv',
+                    ['server=', 'port=', 'interface=', 'ip=', 'help',
+                    'private-ip=', 'public-ip=', 'logfile=', 'pcap-logs=',
+                    'quiet', 'uncertain-time', 'verbose'])
         except getopt.GetoptError:
             self.usage()
 
@@ -100,6 +102,8 @@ class AliceConfig:
                     print "Invalid argument for the", opt, "flag (specify a",
                     print "server to connect to)"
                     sys.exit(1)
+            elif opt in ('-f', '--public-ip'):
+                self.force_public_ip = arg
             elif opt in ('-p', '--port'):
                 try:
                     self.port = int(arg)
@@ -110,7 +114,7 @@ class AliceConfig:
                     sys.exit(1)
             elif opt in ('-i', '--interface'):
                 self.interface = arg
-            elif opt in ('-l', '--ip'):
+            elif opt in ('-l', '--ip', '--private-ip'):
                 self.private_ip = arg
             elif opt in ('-L', '--logfile'):
                 self.logfile = arg
@@ -142,7 +146,10 @@ class AliceConfig:
         print "  -s, --server <host[:port]> Switzerland server [and port]"
         print "  -p, --port <port number>   Switzerland server port"
         print "  -i, --interface <iface>    Interface on which to monitor traffic"
-        print "  -l, --ip <ip>              (Local) ip address of monitored interface"
+        print "  -l, --private-ip <ip>      (LAN) ip address of monitored interface"
+        print "  -f, --public-ip <ip>       Force a public IP address.  Useful if you want to"
+        print "                             tunnel to a server using ssh, tor,  a proxy, etc. "
+        print "                             NB:this is disallowed by the default server config"
         print "  -u, --uncertain-time       Work without NTP.  This is dangerous;"
         print "       <time in seconds>     acurately specify the error in your system clock"
         print '  -L, --logfile <file>       Write a copy of the output to <file>. "-" for none'
