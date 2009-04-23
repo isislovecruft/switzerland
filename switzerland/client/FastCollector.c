@@ -35,7 +35,8 @@ char errbuf[PCAP_ERRBUF_SIZE];
 #define PLAYBACK_SLEEP 1000
 
 #define MAX_PACKET_SIZE 1600
-#define PACKETS 25000
+//#define PACKETS 25000
+long PACKETS = 25000;
 #define ENTRY_SIZE sizeof(PacketEntry)
 #define BUFFER_SIZE (PACKETS * ENTRY_SIZE)
 
@@ -309,6 +310,12 @@ static void get_args(int argc, char **argv) {
       switch (arg[1]) {
         case 'i': live = 1; break;
         case 'f': live = 0; break;
+        case 'b': 
+          if (sscanf(arg+2, "%ld", &PACKETS) != 1) {
+            fprintf(stderr, "use -bPACKETS, eg -b100000\n");
+            exit(1);
+          }
+          break;
         case 'd': delete_file = 1; break;
         default:
           fprintf(stderr, "invalid/unrecognized argument: -%c\n", *arg);
@@ -331,11 +338,12 @@ int main(int argc,char *argv[])
 {
   assert(sizeof(PacketEntry) == 1616 &&
       "Your compiler didn't pack struct packet_entry like we foolishly expected, bailing");
-  open_buffer();
   get_args(argc, argv);
+  open_buffer();
   atexit(cleanup);
   pc_global = start_capture(iface_or_file);
   printf("pcap_datalink: %d\n", pcap_datalink(pc_global));
+  //fprintf(stderr,"buffer size %ld\n", PACKETS);
   fflush(stdout);
   catch_control_c();
   main_loop(pc_global);

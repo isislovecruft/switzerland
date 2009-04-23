@@ -47,9 +47,6 @@ valid_size = 2 # the field is actually 1 byte, but stay word aligned
 packlen_size = struct.calcsize("H")
 padding2_size = 4
 ts_size = struct.calcsize("d")
-entry_size = packet_size + packlen_size + ts_size + valid_size + padding2_size
-packets = 25000
-buffer_size = packets * entry_size
 
 # now some syntactic sugar... 
 # but XXX this could be cleaned up a great deal!
@@ -71,6 +68,10 @@ class PacketListener(threading.Thread):
         """self.parent.fm: FlowManager to receive packets"""
         threading.Thread.__init__(self)
         self.parent = parent
+        self.packets_in_buf = parent.config.packet_buffer_size
+        self.entry_size = packet_size + packlen_size + ts_size + valid_size + \
+                          padding2_size
+        self.buffer_size = self.packets_in_buf * self.entry_size
         self._zcat_pipe = None
         self._zcat = None
         self.tmpfile = None
@@ -177,16 +178,17 @@ class PacketListener(threading.Thread):
             mode = '-i' # interactive
             if not self.live:
               mode = '-f'
+            sz = "-b%ld" % self.packets_in_buf
             log.debug("Launching packet collector: "+ `[self.sniffer_thread, mode, self.target]`)
             try:
               self.sniff = Popen(
-                [self.sniffer_thread, mode, self.target], shell=use_shell,
+                [self.sniffer_thread, mode, sz, self.target], shell=use_shell,
                 stdout=PIPE, stdin=PIPE, stderr=PIPE
               )         
             except:
               # try bin/FastCollector
               self.sniff = Popen(
-                [self.sniffer_thread2, mode, self.target], shell=use_shell,
+                [self.sniffer_thread2, mode, sz, self.target], shell=use_shell,
                 stdout=PIPE, stdin=PIPE, stderr=PIPE
               )         
           except:
@@ -211,7 +213,7 @@ class PacketListener(threading.Thread):
         log.debug("Opening tempfile %s" % self.tmpfile)
         self.file = open(self.tmpfile, "a+b")
         fd = self.file.fileno()
-        self.mem = mmap.mmap(fd, buffer_size, access=mmap.ACCESS_WRITE)
+        self.mem = mmap.mmap(fd, self.buffer_size, access=mmap.ACCESS_WRITE)
 
         self.parent.config.pcap_datalink = self.get_pcap_datalink()
         log.debug("Got pcap_datalink: %s" % `self.parent.config.pcap_datalink`)
@@ -431,7 +433,7 @@ class PacketListener(threading.Thread):
         data = self.mem[self.pos:self.pos+len]
         # mark this packet as read
         self.mem[base_pos] = "\x00"
-        self.pos = (self.pos + packet_size) % buffer_size
+        self.pos = (self.pos + packet_size) % self.buffer_size
         return (timestamp, data)
       finally:
         self.lock.release()
@@ -543,6 +545,10 @@ class PacketListener(threading.Thread):
         except:
           pass          # it's probably already dead
         time.sleep(0.3) # give the FastCollector time to exit
+        if self.packets_in_buf > 25000:   # the old/default value
+          log.info("Closing packet capture thread...")
+          # this takes longer with large buffers!
+          time.sleep (0.5 * self.packets_in_buf / 25000.0)
         try:
           cmd = ["shred", "-n", "1", self.tmpfile]
           shred = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -554,8 +560,8 @@ class PacketListener(threading.Thread):
             log.error("tmpfile already gone")
             return
           f = open(self.tmpfile, 'w')
-          blank_entry = "\x00" * entry_size
-          for n in xrange(packets):
+          blank_entry = "\x00" * self.entry_size
+          for n in xrange(self.packets_in_buf):
             f.write(blank_entry)
           f.close()
         try:

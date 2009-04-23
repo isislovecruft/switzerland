@@ -63,6 +63,7 @@ class AliceConfig:
         self.pcap_logdir = pcap_logdir
         self.logfile = logfile
         self.quiet = False
+        self.packet_buffer_size = 25000
 
         if getopt:
             self.get_options()
@@ -82,10 +83,10 @@ class AliceConfig:
             self.usage()
         try:
             (opts, args) = \
-                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:f:hqv',
+                getopt.gnu_getopt(sys.argv[1:], 's:p:i:l:u:L:P:f:b:hqv',
                     ['server=', 'port=', 'interface=', 'ip=', 'help',
                     'private-ip=', 'public-ip=', 'logfile=', 'pcap-logs=',
-                    'quiet', 'uncertain-time', 'verbose'])
+                    'quiet', 'uncertain-time', 'verbose', 'buffer='])
         except getopt.GetoptError:
             self.usage()
 
@@ -114,6 +115,13 @@ class AliceConfig:
                     sys.exit(1)
             elif opt in ('-i', '--interface'):
                 self.interface = arg
+            elif opt in ('-b', '--buffer'):
+                try:
+                    self.packet_buffer_size = int(arg)
+                    assert(self.packet_buffer_size > 1)
+                except:
+                    print "Invalid packet buffer size (suggestion: 25000 or more)"
+                    sys.exit(1)
             elif opt in ('-l', '--ip', '--private-ip'):
                 self.private_ip = arg
             elif opt in ('-L', '--logfile'):
