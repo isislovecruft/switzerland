@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 
 from binascii import hexlify, unhexlify
 import socket as s     # make all the constants less crazy
