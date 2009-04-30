@@ -4,10 +4,11 @@ import sys
 import struct
 import logging
 import difflib
+from pprint import pformat
 
 from switzerland.client import Packet
-from binascii import hexlify
 from switzerland.common.util import hexhex
+from switzerland.lib.shrunk_scapy.layers.inet import TCP
 
 # PacketDiff.py -- figure out which fields in a packet have been modified
 # in transit. 
@@ -51,14 +52,14 @@ class PacketDiffer:
             result += "Sent packet is %d bytes longer than the received packet;" 
             result %= len_a - len_b
             result += "the extra data from position %d is:\n" % len_b
-            result += hexlify(self.a_pkt[len_b:]) + "\n"
+            result += hexhex(self.a_pkt[len_b:]) + "\n"
             result += "(or in ASCII...)\n"
             result += self.a_pkt[len_b:]
         elif len_b < len_a:
             result += "Received packet is %d bytes longer than the sent packet;"
             result %= len_a - len_b
             result += "the extra data from position %d is:\n" % len_a
-            result += hexlify(self.b_pkt[len_a:]) + "\n"
+            result += hexhex(self.b_pkt[len_a:]) + "\n"
 
         self.conclusions += result
 
@@ -141,7 +142,6 @@ class PacketDiffer:
             a_tcp_opts = self.a_pkt[sa+20:sa+self.a_tcp_hdrlen]
             b_tcp_opts = self.b_pkt[sb+20:sb+self.b_tcp_hdrlen]
             if a_tcp_opts != b_tcp_opts:
-                from switzerland.lib.shrunk_scapy.layers.inet import TCP
                 a = TCP(self.a_pkt[sa:]) # scapy.TCP
                 b = TCP(self.b_pkt[sb:])
                 self.modified_field("TCP options", `a.options`, `b.options`, \
@@ -153,7 +153,6 @@ class PacketDiffer:
         if a_payload != b_payload:
             self.modified_field("TCP payload", a_payload, b_payload, nohex=True)
             representation = "----- Attempting line-based diff:  -----\n" 
-            from pprint import pformat
             diff = difflib.Differ().compare(b_payload.splitlines(1), 
                                             a_payload.splitlines(1))
             representation += pformat(list(diff))
