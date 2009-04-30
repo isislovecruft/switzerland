@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import sys
-from threading import RLock
-import socket as s
 import logging
-from binascii import hexlify
 import time
 import traceback
+import socket as s
+from threading import RLock
+from binascii import hexlify
 
 from switzerland.common import Protocol
 from switzerland.common import util

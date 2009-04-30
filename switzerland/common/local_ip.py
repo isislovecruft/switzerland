@@ -2,7 +2,8 @@ from subprocess import *
 import socket
 import sys
 import platform
-
+if platform.system() == 'Windows':
+  import _winreg as winreg
 
 def get_interface():
   os_type = platform.system()
@@ -111,16 +112,16 @@ def get_darwin_interface():
 
 def get_windows_connection_names():
   """ return a map from pretty connection name -> interface device guid """
-  import _winreg as r
-  k = r.OpenKey(r.HKEY_LOCAL_MACHINE, 'SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}')
-  (nsk, blah, blah) = r.QueryInfoKey(k)
+  magic = 'SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}'
+  k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, magic)
+  (nsk, blah, blah) = winreg.QueryInfoKey(k)
   connections = {}
   for i in xrange(0,nsk):
-    dev = r.EnumKey(k,i)
+    dev = winreg.EnumKey(k,i)
     if len(dev) == 38 and dev[0]=='{': # guid
       try:
-        sk = r.OpenKey(k, dev+'\Connection')
-        name = r.QueryValueEx(sk, 'Name')
+        sk = winreg.OpenKey(k, dev+'\Connection')
+        name = winreg.QueryValueEx(sk, 'Name')
         connections[name[0]] = dev
       except:
         pass
@@ -138,18 +139,17 @@ def get_windows_interface():
   devices = get_windows_connection_names().values()
 
   # 3. scan registry to figure out which has ip
-  import _winreg as r
   for dev in devices:
     try:
       kn = "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\"+dev
-      k = r.OpenKey(r.HKEY_LOCAL_MACHINE, kn)
-      enable_dhcp = r.QueryValueEx(k, 'EnableDHCP')[0]
+      k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, kn)
+      enable_dhcp = winreg.QueryValueEx(k, 'EnableDHCP')[0]
       if enable_dhcp:
-        dhcp_ip = r.QueryValueEx(k, 'DhcpIPAddress')[0]
+        dhcp_ip = winreg.QueryValueEx(k, 'DhcpIPAddress')[0]
         if dhcp_ip == ip:
             return "\\Device\\NPF_"+dev
       else:
-        static_ip = r.QueryValueEx(k, 'IPAddress')[0][0]
+        static_ip = winreg.QueryValueEx(k, 'IPAddress')[0][0]
         if static_ip == ip:
             return "\\Device\\NPF_"+dev
     except:

@@ -6,6 +6,7 @@ import logging
 import traceback
 import platform
 import os
+import re
 
 log = logging.getLogger('alice.time_manager')
 
@@ -71,7 +72,6 @@ class TimeManager:
   def query_timeserver(self, timeserver):
     '''Query a timeserver using ntpdate and return the clock delta'''
     try:
-      import re
       regex = re.compile("offset (-?[0-9]+\.[0-9]+) sec")
       executable = "ntpdate"
       # try bin/ntpdate if ntpdate doesn't work

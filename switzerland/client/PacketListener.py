@@ -15,6 +15,10 @@ import signal
 import traceback
 from subprocess import Popen, PIPE
 
+if platform.system() == 'Windows':
+    import msvcrt
+    from win32pipe import PeekNamedPipe
+
 # hack: import util first to make sure we can import win32api
 from switzerland.common import util
 if platform.system() == 'Windows':
@@ -25,11 +29,11 @@ else:
 from switzerland.client import Packet
 
 try:
-  from switzerland.lib.shrunk_scapy.layers.l2 import Ether
-  have_scapy = True
+    from switzerland.lib.shrunk_scapy.layers.l2 import Ether
+    have_scapy = True
 except Exception, e:
-  print "No scapy... that's okay, we don't really need it"
-  have_scapy = False
+    print "No scapy... that's okay, we don't really need it"
+    have_scapy = False
 
 double_check = False
 if double_check:
@@ -355,7 +359,6 @@ class PacketListener(threading.Thread):
       count = 0
 
       if platform.system() == 'Windows':
-        import msvcrt
         self.check_for_sniffer_error = self.check_for_sniffer_error_win32
         self.sniff.fd_stderr = self.sniff.stderr.fileno()
         self.sniff.os_stderr = msvcrt.get_osfhandle(self.sniff.fd_stderr)
@@ -451,7 +454,6 @@ class PacketListener(threading.Thread):
         msg += hexlify(data) + "\n"
         if have_scapy:
           msg += "Scapy analysis\n" + `Ether(data).summary()` + "\n"
-        import traceback  
         msg += "The error was:\n" + traceback.format_exc()
         log.warn(msg)
         self.parent.link.send_message("error-cont", [msg])
@@ -476,7 +478,6 @@ class PacketListener(threading.Thread):
       Windows doesn't have "select" for pipes, so we have to resort to dirty tricks
       adapted from http://mail.python.org/pipermail/python-list/2006-August/396531.html
       """
-      from win32pipe import PeekNamedPipe
       if self.half_done:
         return True
       try:
