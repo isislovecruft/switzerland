@@ -45,7 +45,17 @@ Semantics:
    but we should really try some other matchmaking strategies in cases where
    the existing algorithm isn't working.
 
+   This is scheduled to be improved in release 0.2.0
+
  - We need to be more consistent in our responses to crazy NATs.
+
+ - We don't reassemble fragmented packets.  This means that packets which are
+   fragmented in transit will be reported as dropped, when in fact they should
+   arrive correctly
+
+ - Severely mangled packets may be reported as "injected".  For instance, if
+   a packet is so truncated that our parser chokes on it, switzerland may not
+   correctly report the packet as "modified".
 
 Performance:
 

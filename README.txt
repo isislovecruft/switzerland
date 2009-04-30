@@ -88,8 +88,8 @@ Under ideal conditions, you will have the ntp daemon installed and running, and
 it will have set your clock to the correct time.  Switzerland will try to use a
 program called 'ntpdc' to query your ntp daemon to ask it about the clock
 accuracy.  If ntpdc is not installed on your system, or it can't connect to the
-ntp daemon (usually because it's not running), then Switzerland will issue some
-warnings. Switzerland will then try to use the program 'ntpdate' (if installed)
+ntp daemon (usually because it's not running), then Switzerland will tell you
+about it. Switzerland will then try to use the program 'ntpdate' (if installed)
 to figure out the accuracy of your clock.  If ntpdate fails (usually because
 you don't have it installed) then Switzerland will really complain and then
 quit.
@@ -303,6 +303,7 @@ Switzerland/             : source code
     FlowManager.py       : thread to track active flows
     Packet.py            : an IP datagram
     PacketBatch.py       : group of IP datagrams
+    PacketDiff.py        : figure out what changed inside a modified packet
     PacketListener.py    : thread to listen for incoming packets
     PacketQueue.py       : a queue of batches in the same flow
     Reporter.py          : thread to report traffic to server
