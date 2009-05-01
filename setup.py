@@ -148,41 +148,6 @@ def ntpdate_runs():
     print "No ntpdate executable in the PATH..."
     return False
 
-def add_bindir_to_path():
-  "make sure bin directory is in path. assume this is only a problem on windows"
-  if OPERATING_SYSTEM == "Windows":
-    script_dir = distutils.sysconfig.get_config_var('prefix') + os.sep + 'scripts'
-    import _winreg as winreg
-    environment = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
-    k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, environment, 0, winreg.KEY_WRITE | winreg.KEY_READ)
-    (path, type) = winreg.QueryValueEx(k, 'Path')
-    
-    if not script_dir in path.split(os.pathsep):
-      new_path = ""
-      if path.endswith(os.pathsep): # sometimes windows likes to stick an extra ; at the end
-        new_path = path + script_dir + os.pathsep
-      else: # other times it's sane...
-        new_path = path + os.pathsep + script_dir
-      print "adding "+script_dir+" to your windows %path% so switzerland can find its packet sniffer"
-      winreg.SetValueEx(k, 'Path', 0, type, new_path)      
-      (path, type) = winreg.QueryValueEx(k, 'Path')
-      if not script_dir in path.split(os.pathsep):
-        print "... well, I tried, but it didn't work.  "\
-              "put " + script_dir + " in your path to run switzerland."
-      else:
-        # now they'll get the new path when they reboot...
-        # to update the path for the current session, we have to broadcast a window message!
-        import win32gui, win32con
-        print "telling open applications that your path changed (so you don't have to reboot)"
-        rc, dwReturnValue = win32gui.SendMessageTimeout(win32con.HWND_BROADCAST,\
-          win32con.WM_SETTINGCHANGE,\
-          0, "Environment", win32con.SMTO_ABORTIFHUNG, 5000)
-        print "ok, I updated your path, but you'll have to open a new command-shell"
-        print "(DOS doesn't have 'export', and we didn't want to make you run a batch file)"
-      
-    else:
-      print script_dir + " is already in your windows path, should be good to go"
-
 def main():
   check_version()
   executables = ["switzerland-client","switzerland-server", "study-switzerland-pcaps"]
@@ -192,6 +157,7 @@ def main():
       executables = [e + ".py" for e in executables]
       if not ntpdate_runs():
         executables.append("bin\\ntpdate.exe")
+      executables.append('win32_postinstall.py')
   bin = find_binary()
   if bin: 
     if bin != dest:
@@ -216,7 +182,7 @@ def main():
                     "switzerland.common","switzerland.server",\
                     "switzerland.lib.shrunk_scapy",\
                     "switzerland.lib.shrunk_scapy.layers"],
-        scripts = executables,
+        scripts = executables
        )
   if "install" in sys.argv:
     if not bin:
@@ -228,7 +194,9 @@ def main():
       compile %s yourself.  Once you've done that, make sure you put it somewhere 
       in your system PATH.  Then run Switzerland!""" % source
     else:
-      add_bindir_to_path()
+      if OPERATING_SYSTEM == "Windows":
+        print "running post-installation script"
+        import win32_postinstall
       print "Switzerland installed successfully!"
 
 main()
