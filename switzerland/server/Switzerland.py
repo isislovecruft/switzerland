@@ -270,7 +270,8 @@ class SwitzerlandMasterServer:
     try:
       for flow in new_flows:
         f_id = flow[0]
-        assert len(flow[1]) == Protocol.hash_length
+        assert len(flow[1]) == Protocol.hash_length, \
+               "hashlen is not %d in %r" % (Protocol.hash_length, flow)
         if ipids_in_matchmaker:
           opening_hash = flow[1]
         else:

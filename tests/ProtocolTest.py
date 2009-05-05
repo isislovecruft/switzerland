@@ -123,16 +123,16 @@ class ProtocolTestCase(unittest.TestCase):
     flow1 = self.random_flow(self.localhost, self.ip)
     flow2 = Switzerland.flow_mirror(flow1)
     #self.assertEqual(flow2, (ip,port2_s,localhost, port_s, prot_s))
-    client1.send_message("active_flows", [[(0, "hash", flow1)], []])
+    client1.send_message("active_flows", [[(0, "hash00", flow1)], []])
     # This trick should get us two useable Alice IPs
     client2 = AliceLink(threading.Event(), None, self.net_config)
     client2.start()
     client2.ready.wait()
     client2.send_message("ping")
-    client2.send_message("active_flows", [[(0, "hash", flow1)], []])
+    client2.send_message("active_flows", [[(0, "hash00", flow1)], []])
     
-    mm1 = (flow1[0], flow1[2], "hash")
-    mm2 = (flow2[0], flow2[2], "hash")
+    mm1 = (flow1[0], flow1[2], "hash00")
+    mm2 = (flow2[0], flow2[2], "hash00")
     time.sleep(3)
     mm = self.server.mm
     mm.global_flow_lock.acquire()
