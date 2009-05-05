@@ -19,8 +19,11 @@ if loaded_everything == False:
 import os
 
 script_dir = distutils.sysconfig.get_config_var('prefix') + os.sep + 'scripts'
+
 environment = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
+
 k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, environment, 0, winreg.KEY_WRITE | winreg.KEY_READ)
+
 (path, type) = winreg.QueryValueEx(k, 'Path')
     
 if not script_dir in path.split(os.pathsep):
@@ -29,7 +32,7 @@ if not script_dir in path.split(os.pathsep):
         new_path = path + script_dir + os.pathsep
     else: # other times it's sane...
         new_path = path + os.pathsep + script_dir
-    print "adding "+script_dir+" to your windows %path% so switzerland can find its packet sniffer"
+    print "adding "+script_dir+" to your windows %PATH% so switzerland can find its packet sniffer"
     winreg.SetValueEx(k, 'Path', 0, type, new_path)      
     (path, type) = winreg.QueryValueEx(k, 'Path')
     if not script_dir in path.split(os.pathsep):
