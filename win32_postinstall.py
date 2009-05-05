@@ -1,8 +1,21 @@
 #!/usr/bin/env python
 
 import distutils.sysconfig
-import _winreg as winreg
-import win32gui, win32con
+import sys
+
+loaded_everything = True
+try:
+    import _winreg as winreg
+    import win32gui, win32con, win32pipe, win32process
+except ImportError, e:
+    loaded_everything = False
+    print "Missing python win32 extensions, please install: "\
+          "http://sourceforge.net/project/showfiles.php?group_id=78018"
+
+if loaded_everything == False:
+    print "not doing post-install steps because not all dependencies were available\n"
+    sys.exit(2)
+
 import os
 
 script_dir = distutils.sysconfig.get_config_var('prefix') + os.sep + 'scripts'
