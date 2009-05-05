@@ -39,10 +39,10 @@ try:
     import win32gui, win32con, win32pipe, win32process
 except ImportError, e:
     loaded_everything = False
-    print "Missing python win32 extensions, please install: "\
-          "http://sourceforge.net/project/showfiles.php?group_id=78018"
+    print "Missing python win32 extensions, please install from:"
+    print "http://sourceforge.net/project/showfiles.php?group_id=78018"
+    print "and then rerun this installer to configure switzerland properly"
 
-if loaded_everything == True:
+if loaded_everything:
     fix_path()
-else:
-    print "not doing post-install steps because not all dependencies were available\n"
+
