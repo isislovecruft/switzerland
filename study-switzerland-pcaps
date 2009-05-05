@@ -3,10 +3,12 @@ import sys
 import logging
 logging.basicConfig()
 
-import switzerland.lib.shrunk_scapy.utils as scapy_utils
-import switzerland.lib.shrunk_scapy.layers.inet as scapy_inet
 from switzerland.client.PacketDiff import PacketDiffer
-from switzerland.common.Dummies import DummyAlice
+from switzerland.common.Dummies    import DummyAlice
+
+import switzerland.lib.shrunk_scapy.utils       as scapy_utils
+import switzerland.lib.shrunk_scapy.layers.inet as scapy_inet
+
 dummy = DummyAlice
 
 print_unmatched = True
@@ -36,7 +38,8 @@ def handle_file(file):
         packets2 = scapy_utils.rdpcap(file2)
     except IOError:
         if print_unmatched:
-            print "The -in file is not accompanied by a -out file; the packet is probably injected:"
+            print "The -in file is not accompanied by a -out file;",
+            print "the packet is probably injected:"
             print packets1[0].summary()
         return
 
