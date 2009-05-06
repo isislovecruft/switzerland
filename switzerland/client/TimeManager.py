@@ -79,6 +79,12 @@ class TimeManager:
         Popen(executable, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
       except:
         executable = os.path.join("bin", "ntpdate")
+        try:
+          Popen(executable, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+        except:
+          log.error('''Can't even find a copy of "ntpdate" :(''')
+          raise UncertainTimeError, "Cannot find an ntpdate executable"
+
       if platform.system() == "Windows":
         cmd = [executable,"-b","-q",timeserver]
         cmd = " ".join(cmd)
@@ -95,6 +101,9 @@ class TimeManager:
       delta = float(match.group(1))
       return abs(delta)
 
+    except UncertainTimeError:
+      # let this pass upwards
+      raise
     except:
       log.warn("Weird but possibly non-fatal error:\n"+traceback.format_exc())
       return None
@@ -114,6 +123,9 @@ class TimeManager:
       else:
         log.info("We haven't succeeded in polling any NTP servers, either.")
         raise UncertainTimeError
+    except UncertainTimeError:
+      # let this pass upwards
+      raise
     except:
       log.debug("ntpdate_poll error:\n%s" % traceback.format_exc())
       raise UncertainTimeError
