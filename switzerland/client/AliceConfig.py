@@ -171,7 +171,7 @@ class AliceConfig:
 
     def check(self):
         if not self.host:
-            self.host = "tbird4.eff.org"
+            self.host = "switzerland.eff.org"
             log.info("no switzerland server specified, defaulting to %s" % self.host)
 
         # check for a valid ip address
