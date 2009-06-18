@@ -2,6 +2,23 @@
 from switzerland.client.Alice import Alice
 from switzerland.client.AliceConfig import AliceConfig
 
+class xAliceConfig:
+    def __init__(self):
+        pass
+
+class xAlice:
+    def __init__(self, config):
+        pass
+ 
+class xPeer:
+    def __init__(self):
+        pass
+
+class xFlow:
+    def __init__(self):
+        pass
+     
+
 class AliceAPI:
     """
     Interface to Alice to protect GUIs from internal changes
@@ -11,13 +28,11 @@ class AliceAPI:
         self.alice = alice
 
     def AliceConfig(self):
-        return self.alice.config
+        "A factory function for AliceConfig objects".
+        return xAliceConfig()
     
-    def Alice(self):
-        return self.alice
-    
-    def connectServer(self):
-        pass
+    def connectServer(self, config):
+        return xAlice(config)
     
     def disconnectServer(self):
         pass
