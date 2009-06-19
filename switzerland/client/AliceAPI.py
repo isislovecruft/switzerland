@@ -1,6 +1,6 @@
 
 from switzerland.client.Alice import Alice
-from switzerland.client.AliceConfig import AliceConfig
+from switzerland.client.AliceConfig import AliceConfig,alice_options
 
 def ClientConfig(self):
     "A factory function for the API's xAliceConfig objects".
@@ -12,10 +12,30 @@ def connectServer(self, config):
 class xAliceConfig:
     def __init__(self):
         self.actual_config = AliceConfig()
+        self.extract_options_for_api()
+
     def tweakable_options(self):
-        return []
+        return self.tweakable_options
+
     def immutable_options(self):
-        return []
+        return self.immutable_options
+
+    def extract_options_for_api(self):
+        """
+        AliceAPI will feed these to code that may want to know about options
+        it can change
+        """
+        tweakable = self.tweakable_options = []
+        immutable = self.immutable_options = []
+        for opt, info in alice_options.items():
+            default, type, mutable, visible = info
+            if visible:
+                if mutable:
+                    tweakable.append((opt,type))
+                else:
+                    immutable.append((opt,type))
+
+
     def set_option(self,option,value):
         pass
 
