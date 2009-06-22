@@ -3,16 +3,21 @@ from switzerland.client.Alice import Alice
 from switzerland.client.AliceConfig import AliceConfig,alice_options
 
 def ClientConfig(self):
-    "A factory function for the API's xAliceConfig objects".
+    "A factory function for the API's xAliceConfig objects."
     return xAliceConfig()
 
 def connectServer(self, config):
     return xAlice(config)
+
+class ConfigError(Exception):
+    pass
     
 class xAliceConfig:
     def __init__(self):
         self.actual_config = AliceConfig()
         self.extract_options_for_api()
+        self.in_use = False # this AliceConfig instance is in use by a client
+                            # that's connected to a server
 
     def tweakable_options(self):
         return self.tweakable_options
@@ -35,13 +40,24 @@ class xAliceConfig:
                 else:
                     immutable.append((opt,type))
 
-
     def set_option(self,option,value):
-        pass
+        if option not in self.tweakable_options:
+            if option not in self.immutable_options:
+                raise KeyError, "%s is not a valid option name" % option
+            elif self.in_use:
+                raise ConfigError, "Trying to set an immutable variable for a running client"
+
+        type = alice_options[option][1]
+
+        # XXX check the type here
+        self.actual_alice.__dict__[option] = value
+        
+        
 
 class xAlice:
     def __init__(self, config):
         assert isinstance(config, xAliceConfig)
+        config.in_use = True
         self.actual_alice = Alice(config.actual_config)
     def disconnect(self):
         pass
@@ -62,7 +78,7 @@ class xPeer:
         return ""
     def active_flows(self):
         return []
-    def old_flows(self)
+    def old_flows(self):
         return []
 
 
@@ -72,8 +88,10 @@ class xFlow:
         self.flow_tuple = self.actual_flow.summary()[3]
 
     def get_pair(self):
-        "Return the matching flow in the other direction, or None if there
-        isn't one."
+        """
+        Return the matching flow in the other direction, or None if there
+        isn't one.
+        """
         return None
 
     def is_active(self):
@@ -94,7 +112,7 @@ class xFlow:
     def get_new_modified(self):
         return 0
 
-class xPacket
+class xPacket:
     def __init__(self):
         pass
 
