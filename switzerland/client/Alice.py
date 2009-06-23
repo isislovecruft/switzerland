@@ -64,13 +64,11 @@ class Alice:
         self.listener = PacketListener.PacketListener(self)
         self.link = linkobj(self.quit_event, self, config)
         self.reporter = Reporter.Reporter(self)
-        self.gui = WebGUI.WebGUI(self)
     
         self.cleaner.setDaemon(True)
         self.listener.setDaemon(True)
         self.reporter.setDaemon(True)
         self.link.setDaemon(True)
-        self.gui.setDaemon(True)
 
         # XXX we need a privacy setting to disable this, since it might in some
         # cases create link between separate client sessions at separate IPs.
