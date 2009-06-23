@@ -2,17 +2,13 @@
 from switzerland.client.Alice import Alice
 from switzerland.client.AliceConfig import AliceConfig,alice_options
 
-def ClientConfig(self):
-    "A factory function for the API's xAliceConfig objects."
-    return xAliceConfig()
-
 def connectServer(self, config):
     return xAlice(config)
 
 class ConfigError(Exception):
     pass
     
-class xAliceConfig:
+class ClientConfig:
     def __init__(self):
         self.actual_config = AliceConfig()
         self.extract_options_for_api()
@@ -20,41 +16,44 @@ class xAliceConfig:
                             # that's connected to a server
 
     def tweakable_options(self):
-        return self.tweakable_options
+        return self.tweakable
 
     def immutable_options(self):
-        return self.immutable_options
+        return self.immutable
 
     def extract_options_for_api(self):
         """
         AliceAPI will feed these to code that may want to know about options
         it can change
         """
-        tweakable = self.tweakable_options = []
-        immutable = self.immutable_options = []
+        self.tweakable = []
+        self.immutable = []
         for opt, info in alice_options.items():
             default, type, mutable, visible = info
             if visible:
                 if mutable:
-                    tweakable.append((opt,type))
+                    self.tweakable.append((opt,type))
                 else:
-                    immutable.append((opt,type))
+                    self.immutable.append((opt,type))
 
     def set_option(self, option, value):
-        if option not in self.tweakable_options:
-            if option not in self.immutable_options:
-                raise KeyError, "%s is not a valid option name" % option
-            elif self.in_use:
-                raise ConfigError, "Trying to set an immutable variable for a running client"
+        try:
+            default, type, mutable, visible = alice_options[option]
+        except:
+            raise KeyError, '"%s" is not a valid option name' % option
 
-        type = alice_options[option][1]
+        if not visible:
+            raise ConfigError, "trying to set a hidden option"
+
+        if self.in_use and not mutable:
+            raise ConfigError, "Trying to set an immutable variable for a running client"
 
         # XXX check the type here
         self.actual_config.__dict__[option] = value
 
     def get_option(self, option):
         if option not in alice_options:
-            raise KeyError, "%s is not a valid option name" % option
+            raise KeyError, '"%s" is not a valid option name' % option
         return self.actual_config.__dict__[option]
 
 class xAlice:
