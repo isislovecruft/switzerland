@@ -40,7 +40,7 @@ class xAliceConfig:
                 else:
                     immutable.append((opt,type))
 
-    def set_option(self,option,value):
+    def set_option(self, option, value):
         if option not in self.tweakable_options:
             if option not in self.immutable_options:
                 raise KeyError, "%s is not a valid option name" % option
@@ -50,9 +50,12 @@ class xAliceConfig:
         type = alice_options[option][1]
 
         # XXX check the type here
-        self.actual_alice.__dict__[option] = value
-        
-        
+        self.actual_config.__dict__[option] = value
+
+    def get_option(self, option):
+        if option not in alice_options:
+            raise KeyError, "%s is not a valid option name" % option
+        return self.actual_config.__dict__[option]
 
 class xAlice:
     def __init__(self, config):
