@@ -15,7 +15,7 @@ class line_graph:
                     canvas_context="jg",
                     width=600, 
                     height=400,
-                    graph_xbins=100, 
+                    graph_xbins=50, 
                     graph_ybins=50):  
                     
         self.graph_xbins = graph_xbins
@@ -26,12 +26,15 @@ class line_graph:
         self.max_timestamp = None
         self.min_timestamp = None
         self.bin_size = None
+        self.y_hist_max = None
         
         self.gui_flows = None
         # JavaScript canvas context name
         self.canvas_context = canvas_context
         # HTML element ID of canvas element
         self.canvas_id = canvas_id
+        self.draw_colors = ["#ff0000", "#0000ff", "#009933", "#660066", 
+            "#ff6600", "#6699ff", "#ffcc33", "#00cc00", "#cc3300", "#606060"]
     
     # flow = xFlow object
     # packet_type = dropped, injected, modified
@@ -51,14 +54,26 @@ class line_graph:
         return histogram
     
             
+    def get_y_hist_max(self, include_total=True):
+        all_packcount = list()
+        for ip in self.gui_flows:
+            if include_total:
+                all_packcount.extend([p[1] for p in singleton_webgui.packet_data[ip]['total count']])
+            else:
+                all_packcount.extend(self.histograms[ip]['modified'])
+                all_packcount.extend(self.histograms[ip]['injected'])
+                all_packcount.extend(self.histograms[ip]['dropped'])
+                
+        self.y_hist_max = max(all_packcount)
+        
     # Pass in all flows and get bin size used if all of these were
     # plotted on same graph
     # flows = list of xFlows objects
-    def get_hist_bin_size(self):
+    def get_hist_xbin_size(self):
         
         # Find min and max timestamp
         all_timestamps = list()
-        all_packcount = list()
+        
         for ip in self.gui_flows :
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
@@ -69,12 +84,12 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['modified']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
             print "total count", singleton_webgui.packet_data[ip]['total count']
-            all_packcount.extend([p[1] for p in singleton_webgui.packet_data[ip]['total count']])
+
         
         self.max_timestamp = max(all_timestamps)
         self.min_timestamp = min(all_timestamps)
         print "max ts", self.max_timestamp, "min ts", self.min_timestamp
-        self.y_hist_max = max(all_packcount)
+        
         range_timestamp = self.max_timestamp - self.min_timestamp
 
         # Divide by number of bins (~100?)
@@ -88,23 +103,27 @@ class line_graph:
         # Return bin size (in seconds) 
         return self.bin_size
     
-    def make_graph_data(self, name, histogram):
+    def make_graph_data(self, name, histogram, point_shape="circle"):
         
         i = 0
-        html = self.canvas_context + ".beginPath();\n"
+        html = "/* " + name + " " + point_shape + "*/\n"
+        html = html + self.canvas_context + ".beginPath();\n"
+        phtml = ""
         
         # For each bin in histogram
         for b in histogram:
             # Get x from histogram bin
             # Get y from histogram value
             x = str(int(i * (self.width/self.graph_xbins))) 
-            y = str(self.height - int(b * (self.height/self.graph_ybins))) 
+            y = str(self.height - int(b * (self.height/self.y_hist_max))) 
             if i == 0:
                 html = html + self.canvas_context + ".moveTo(" + x + "," + y + ");\n"
             else:
-                html = html + self.canvas_context + ".lineTo(" + x + "," + y + ");\n"    
+                html = html + self.canvas_context + ".lineTo(" + x + "," + y + ");\n"
+            phtml = phtml + self.make_point_html(x, y, point_shape)
             i = i + 1
-        html = html + self.canvas_context + ".stroke();\n\n"        
+        html = html + self.canvas_context + ".stroke();\n\n"  
+        #html = html + phtml      
 
         # Return canvas-formatted graph data (for line drawing)
         return html
@@ -151,7 +170,46 @@ class line_graph:
                 singleton_webgui.packet_data[flow_ip]['total count'].extend([(time.time(),  f.get_new_packet_count()) ])
                 
         
+    def make_point_html(self, x, y, shape="circle"):
+        
+        if shape == "triangle":
+            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
+            html = html + self.canvas_context + ".beginPath();\n"
+            html = html + self.canvas_context + ".moveTo(-2, -2);\n"
+            html = html + self.canvas_context + ".lineTo(-2, 2);\n"
+            html = html + self.canvas_context + ".lineTo(0, 2);\n"
+            html = html + self.canvas_context + ".fill();\n"
+            html = html + self.canvas_context + ".translate(0,0);\n"
+            
+        elif shape == "x":
+            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
+            html = html + self.canvas_context + ".beginPath();\n"
+            html = html + self.canvas_context + ".moveTo(-2, -2);\n"
+            html = html + self.canvas_context + ".lineTo(2, 2);\n"
+            html = html + self.canvas_context + ".moveTo(-2, 2);\n"
+            html = html + self.canvas_context + ".lineTo(2, -2);\n"
+            html = html + self.canvas_context + ".stroke();\n"
+            html = html + self.canvas_context + ".translate(0,0);\n"
+            
+        elif shape == "square":
+            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
+            html = html + self.canvas_context + ".fillRect(-2, -2, 2, 2);\n"  
+            html = html + self.canvas_context + ".translate(0,0);\n"        
     
+        elif shape == "circle":
+            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
+            html = html + self.canvas_context + ".beginPath();\n"
+            html = html + self.canvas_context + ".arc(0, 0, -2, -2);\n"
+            html = html + self.canvas_context + ".fill();\n"
+            html = html + self.canvas_context + ".translate(0,0);\n"
+        
+        else:
+            pass
+        
+        
+        return html
+        
+        
     def make_graph(self):
         self.update_packet_data()
         # Update which flows we care about
@@ -165,8 +223,9 @@ class line_graph:
                 self.gui_flows[flow_ip] = f
         
         # Get bin size for all flows
-        self.get_hist_bin_size()
+        self.get_hist_xbin_size()
         self.histograms = dict()
+
         
         graph_data_html = ""
         line_names = dict()
@@ -178,17 +237,22 @@ class line_graph:
             self.histograms[ip]['injected'] = self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
             self.histograms[ip]['modified'] = self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
         
+        i = 0
         # Get maximum y value (# of packets)
-        self.y_hist_max = find_max(self.histograms)
+        self.get_y_hist_max(False)
+        print "y max", self.y_hist_max
         
         for ip in self.gui_flows:
             line_name = ip.replace(":","_")
             line_name = line_name.replace(".","_")
             # Make graph data
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'])
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'])
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'])
+            graph_data_html = graph_data_html + self.canvas_context + '''.fillStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''
+            graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
+            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
+            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
+            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
             line_names[line_name] = line_name
+            i = i + 1
             
         html = '''
 <canvas id="''' + self.canvas_id + '''" width="''' + str(self.width+10) + '''" height="''' + str(self.height+10) + '''">       
