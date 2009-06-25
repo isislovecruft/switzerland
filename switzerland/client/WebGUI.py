@@ -98,14 +98,12 @@ class line_graph:
             # Get x from histogram bin
             # Get y from histogram value
             x = str(int(i * (self.width/self.graph_xbins))) 
-            y = str(600 - int(b * (self.height/self.graph_ybins))) 
+            y = str(self.height - int(b * (self.height/self.graph_ybins))) 
             if i == 0:
                 html = html + self.canvas_context + ".moveTo(" + x + "," + y + ");\n"
             else:
                 html = html + self.canvas_context + ".lineTo(" + x + "," + y + ");\n"    
             i = i + 1
-            
-        html = html + self.canvas_context + ".closePath();\n\n"       
         html = html + self.canvas_context + ".stroke();\n\n"        
 
         # Return canvas-formatted graph data (for line drawing)

@@ -1,6 +1,7 @@
 
 import time
 import random
+import logging
 
 def ClientConfig(self):
     '''A factory function for the API's xAliceConfig objects.'''
@@ -11,10 +12,11 @@ def connectServer(self, config):
     
 class xAliceConfig:
     def __init__(self):
-        #self.actual_config = AliceConfig()
-        self.extract_options_for_api()
         # Fake for no AliceConfig
         self.option_hash = dict()
+        #self.actual_config = AliceConfig()
+        self.extract_options_for_api()
+
 
     def tweakable_options(self):
         return self.tweakable_options
@@ -23,6 +25,12 @@ class xAliceConfig:
         return self.immutable_options
 
     def extract_options_for_api(self):
+        # These might turn into functions?
+        hostname = "hostname"
+        path = "path"
+        string = "string"
+        ip = "ip"
+
         """
         AliceAPI will feed these to code that may want to know about options
         it can change
@@ -52,7 +60,7 @@ class xAliceConfig:
         ("filter_packets", bool),
         ("force_public_ip", bool),
         ("force_private_ip", bool),
-        ("packet_buffer_size", int)
+        ("packet_buffer_size", int),
         ("quiet", bool)]
 
 
@@ -82,8 +90,10 @@ class xAlice:
         
         assert isinstance(config, xAliceConfig)
         #self.actual_alice = Alice(config.actual_config)
+        
     def disconnect(self):
         pass
+        
     def get_server_info(self):
         temp_time = time.time() - self.start_time
         temp_last = time.time() - self.last_message_time
@@ -92,8 +102,8 @@ class xAlice:
         'connection time': temp_time, 
         'message_count': self.message_count, 
         'last_message': temp_last}
-
         return info
+
     def get_client_info(self):
         info = {'public_ip': '5.6.7.8', 
         'private_ip': '192.168.1.2', 
@@ -145,31 +155,34 @@ class xFlow:
     
     def rand_packet_list(self, starttime, mult=1):
         packets = list()
-        tcount = self.last_packet_count_time()
+        tcount = starttime
         tnow = time.time()
         while (tcount < tnow) :
             packets.append((tcount, xPacket()))
             tcount = tcount + random.random() * mult
-        
+        return packets
     
     def get_new_packet_count(self):
         return random.randint(1000,5000)
-        return packets
+        
 
     def get_new_byte_count(self):
         return random.randint(10000,50000)
 
     def get_new_dropped(self):
-        packets = rand_packet_list(self.last_dropped_time)
+        packets = self.rand_packet_list(self.last_dropped_time)
         self.last_dropped_time = time.time()
+        return packets
 
     def get_new_injected(self):
-        packets = rand_packet_list(self.last_injected_time)
+        packets = self.rand_packet_list(self.last_injected_time)
         self.last_injected_time = time.time()
+        return packets
  
     def get_new_modified(self):
-        packets = rand_packet_list(self.last_modified_time)
+        packets = self.rand_packet_list(self.last_modified_time)
         self.last_modified_time = time.time()
+        return packets
 
 class xPacket:
     def __init__(self):
