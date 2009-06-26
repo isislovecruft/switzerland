@@ -123,7 +123,7 @@ class line_graph:
             phtml = phtml + self.make_point_html(x, y, point_shape)
             i = i + 1
         html = html + self.canvas_context + ".stroke();\n\n"  
-        #html = html + phtml      
+        html = html + phtml      
 
         # Return canvas-formatted graph data (for line drawing)
         return html
@@ -172,36 +172,33 @@ class line_graph:
         
     def make_point_html(self, x, y, shape="circle"):
         
+        html = ""
+        x = int(x)
+        y = int(y)
+
         if shape == "triangle":
-            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
             html = html + self.canvas_context + ".beginPath();\n"
-            html = html + self.canvas_context + ".moveTo(-2, -2);\n"
-            html = html + self.canvas_context + ".lineTo(-2, 2);\n"
-            html = html + self.canvas_context + ".lineTo(0, 2);\n"
+            html = html + self.canvas_context + ".moveTo(" + str(x - 3) + ", " + str(y + 2) + ");\n"
+            html = html + self.canvas_context + ".lineTo(" + str(x + 3) + ", " + str(y + 2) + ");\n"
+            html = html + self.canvas_context + ".lineTo(" + str(x) + ", " + str(y - 3) + ");\n"
             html = html + self.canvas_context + ".fill();\n"
-            html = html + self.canvas_context + ".translate(0,0);\n"
             
         elif shape == "x":
-            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
             html = html + self.canvas_context + ".beginPath();\n"
-            html = html + self.canvas_context + ".moveTo(-2, -2);\n"
-            html = html + self.canvas_context + ".lineTo(2, 2);\n"
-            html = html + self.canvas_context + ".moveTo(-2, 2);\n"
-            html = html + self.canvas_context + ".lineTo(2, -2);\n"
+            html = html + self.canvas_context + ".moveTo(" + str(x - 3) + ", " + str(y - 3) + ");\n"
+            html = html + self.canvas_context + ".lineTo(" + str(x + 3) + ", " + str(y + 3) + ");\n"
+            html = html + self.canvas_context + ".moveTo(" + str(x - 3) + ", " + str(y + 3) + ");\n"
+            html = html + self.canvas_context + ".lineTo(" + str(x + 3) + ", " + str(y - 3) + ");\n"
             html = html + self.canvas_context + ".stroke();\n"
-            html = html + self.canvas_context + ".translate(0,0);\n"
             
         elif shape == "square":
-            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
-            html = html + self.canvas_context + ".fillRect(-2, -2, 2, 2);\n"  
-            html = html + self.canvas_context + ".translate(0,0);\n"        
+            pass
+            #html = html + self.canvas_context + ".fillRect(" + str(x - 2) + ", " + str(y - 2) + ", " + str(x + 2) + ", " + str(y + 2) + ");\n"        
     
         elif shape == "circle":
-            html = self.canvas_context + ".translate(" + x + "," + y + ");\n"
             html = html + self.canvas_context + ".beginPath();\n"
-            html = html + self.canvas_context + ".arc(0, 0, -2, -2);\n"
+            html = html + self.canvas_context + ".arc(" + str(x) + ", " + str(y) + ", 3, 0, Math.PI*2, true);\n"
             html = html + self.canvas_context + ".fill();\n"
-            html = html + self.canvas_context + ".translate(0,0);\n"
         
         else:
             pass
@@ -250,7 +247,7 @@ class line_graph:
             graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
+            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "circle")
             line_names[line_name] = line_name
             i = i + 1
             
