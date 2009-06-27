@@ -13,20 +13,29 @@ class line_graph:
     def __init__(   self, 
                     canvas_id="cid",
                     canvas_context="jg",
-                    width=600, 
+                    width=800, 
                     height=400,
                     graph_xbins=50, 
-                    graph_ybins=50):  
+                    graph_ybins=20):  
                     
         self.graph_xbins = graph_xbins
+        self.graph_xbins_actual = graph_xbins
         self.graph_ybins = graph_ybins
         self.width = width
         self.height = height
         # These get set automatically when the data gets processed
         self.max_timestamp = None
         self.min_timestamp = None
-        self.bin_size = None
+        self.bin_size = None # in seconds
+        self.bin_pixels = None
+        self.y_bin_pixels = None
         self.y_hist_max = None
+        self.y_margin = 5
+        self.x_margin = 5
+        self.x_axis_margin = 20
+        self.y_axis_margin = 20
+        self.graph_height = height - (self.y_axis_margin + 2 * self.y_margin)
+        self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
         
         self.gui_flows = None
         # JavaScript canvas context name
@@ -40,7 +49,7 @@ class line_graph:
     # packet_type = dropped, injected, modified
     def make_histogram(self, packet_list):
         histogram = list()
-        for i in range(0,self.graph_xbins):
+        for i in range(0,self.graph_xbins_actual):
             histogram.append(0)
             
         # Count packets into bins
@@ -97,7 +106,11 @@ class line_graph:
                 
         # Adjust to nice round number
         binlog = math.log10(self.bin_size)
-        self.bin_size = round(self.bin_size + (5 * 10**(binlog-1)) ,int(-math.floor(binlog))) 
+        self.bin_size = round(self.bin_size ,int(-math.floor(binlog))) 
+        if (self.bin_size < 1):
+            self.bin_size = 1
+            
+        self.graph_xbins_actual = (int(range_timestamp) / self.bin_size) + 1
         
         print "rough bin size", str(range_timestamp / self.graph_xbins), "bin size", self.bin_size
         # Return bin size (in seconds) 
@@ -106,42 +119,41 @@ class line_graph:
     def make_graph_data(self, name, histogram, point_shape="circle"):
         
         i = 0
+        self.bin_pixels = int(self.graph_width/self.graph_xbins_actual)
+        self.y_pix_per_packet = int(self.graph_height/self.y_hist_max)
+        
         html = "/* " + name + " " + point_shape + "*/\n"
-        html = html + self.canvas_context + ".beginPath();\n"
-        phtml = ""
+        xhtml = "var x_" + name + " = new Array("
+        yhtml = "var y_" + name + " = new Array("
         
         # For each bin in histogram
         for b in histogram:
             # Get x from histogram bin
             # Get y from histogram value
-            x = str(int(i * (self.width/self.graph_xbins))) 
-            y = str(self.height - int(b * (self.height/self.y_hist_max))) 
-            if i == 0:
-                html = html + self.canvas_context + ".moveTo(" + x + "," + y + ");\n"
-            else:
-                html = html + self.canvas_context + ".lineTo(" + x + "," + y + ");\n"
-            phtml = phtml + self.make_point_html(x, y, point_shape)
+            
+            x = str(i * (self.bin_pixels) + self.x_axis_margin + self.x_margin)  
+            y = str(self.height - (b * (self.y_pix_per_packet) + self.y_axis_margin + self.y_margin))
+            xhtml = xhtml + x + ","
+            yhtml = yhtml + y + ","
             i = i + 1
-        html = html + self.canvas_context + ".stroke();\n\n"  
-        html = html + phtml      
-
-        # Return canvas-formatted graph data (for line drawing)
-        return html
-    
-    def make_total_pkt_count_graph_data(self, name, tuples):
-        i = 0
-        xhtml = "var x_" + name + " = new Array("
-        yhtml = "var y_" + name + " = new Array("
-        for t in tuples:
-            xhtml = xhtml + str(t[0] * (self.width/self.graph_xbins)) + ","
-            yhtml = yhtml + str(t[1] * (self.y_hist_max/self.graph_ybins)) + ","
-        
+            
         xhtml = xhtml[:-1]
         yhtml = yhtml[:-1]
         xhtml = xhtml + ");"
         yhtml = yhtml + ");"
-        html = xhtml + "\n" + yhtml + "\n"    
         
+        html = xhtml + "\n" + yhtml + "\n"  
+        html = html + "make_line(" + self.canvas_context + ", x_" + name + ", y_" + name +", '" + point_shape +"')\n"
+        # Return canvas-formatted graph data (for line drawing)
+        return html
+    
+ 
+        
+    def delete_old_packets(self, packet_list, cutoff_time) :
+        for packet in packet_list:
+            if packet[0] < cutoff_time:
+                packet_list.remove(packet)
+  
     def update_packet_data(self):
         # For each active flow
         peers = singleton_webgui.x_alice.get_peers()
@@ -164,48 +176,126 @@ class line_graph:
                 
                 # Each active flow has 4 lists of packets: dropped, injected, 
                 # modified, total count
+                cutoff_time = time.time() - singleton_webgui.save_window
+                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['dropped'], cutoff_time)
+                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['injected'], cutoff_time)
+                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['modified'], cutoff_time)
                 singleton_webgui.packet_data[flow_ip]['dropped'].extend(f.get_new_dropped())
                 singleton_webgui.packet_data[flow_ip]['injected'].extend(f.get_new_injected())
                 singleton_webgui.packet_data[flow_ip]['modified'].extend(f.get_new_modified())    
                 singleton_webgui.packet_data[flow_ip]['total count'].extend([(time.time(),  f.get_new_packet_count()) ])
                 
-        
-    def make_point_html(self, x, y, shape="circle"):
-        
-        html = ""
-        x = int(x)
-        y = int(y)
-
-        if shape == "triangle":
-            html = html + self.canvas_context + ".beginPath();\n"
-            html = html + self.canvas_context + ".moveTo(" + str(x - 3) + ", " + str(y + 2) + ");\n"
-            html = html + self.canvas_context + ".lineTo(" + str(x + 3) + ", " + str(y + 2) + ");\n"
-            html = html + self.canvas_context + ".lineTo(" + str(x) + ", " + str(y - 3) + ");\n"
-            html = html + self.canvas_context + ".fill();\n"
-            
-        elif shape == "x":
-            html = html + self.canvas_context + ".beginPath();\n"
-            html = html + self.canvas_context + ".moveTo(" + str(x - 3) + ", " + str(y - 3) + ");\n"
-            html = html + self.canvas_context + ".lineTo(" + str(x + 3) + ", " + str(y + 3) + ");\n"
-            html = html + self.canvas_context + ".moveTo(" + str(x - 3) + ", " + str(y + 3) + ");\n"
-            html = html + self.canvas_context + ".lineTo(" + str(x + 3) + ", " + str(y - 3) + ");\n"
-            html = html + self.canvas_context + ".stroke();\n"
-            
-        elif shape == "square":
-            pass
-            #html = html + self.canvas_context + ".fillRect(" + str(x - 2) + ", " + str(y - 2) + ", " + str(x + 2) + ", " + str(y + 2) + ");\n"        
     
-        elif shape == "circle":
-            html = html + self.canvas_context + ".beginPath();\n"
-            html = html + self.canvas_context + ".arc(" + str(x) + ", " + str(y) + ", 3, 0, Math.PI*2, true);\n"
-            html = html + self.canvas_context + ".fill();\n"
+    def js_graph_functions(self):
+        html = '''
+<script type="text/javascript">    
+
+    function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height, 
+            x_bins, y_bins, bin_pixels, bin_size, y_pix_per_packet) {
+            
+        var graph_height = height - (2 * y_mar + y_ax_mar);
+        var graph_width = width - (2 * x_mar + x_ax_mar);
         
-        else:
-            pass
+        ctx.strokeStyle = 'black';
+        ctx.textAlign = 'center';
+
+        ctx.beginPath();
+        ctx.moveTo(x_mar + x_ax_mar, y_mar);
+        ctx.lineTo(x_mar + x_ax_mar, height - (y_mar + y_ax_mar));
+        ctx.lineTo(width - (x_mar), height - (y_mar + y_ax_mar));
         
+        var y_bin_pixels = graph_height / y_bins;
         
-        return html
+        for (i = 0; i < y_bins; i++) {
+            var y = y_mar + y_ax_mar + (y_bin_pixels * i);
+            ctx.moveTo((x_mar + x_ax_mar - 5), graph_height - y);
+            ctx.lineTo((x_mar + x_ax_mar + 5), graph_height - y);   
+            if (i % 5 == 0) {
+                ctx.save();
+                var label = i * y_bin_pixels / y_pix_per_packet;
+                var len = ctx.mozMeasureText(label); 
+                ctx.translate(x_mar , height - y);
+                ctx.mozTextStyle = "8pt Arial, Helvetica"
+                ctx.mozDrawText(Math.round(label*10)/10);
+                ctx.restore();
+            }       
+        }
         
+        for (i = 0; i < x_bins; i++){
+            var x = x_mar + x_ax_mar + (bin_pixels * i);
+            ctx.moveTo(x, height - (y_mar + y_ax_mar - 5));
+            ctx.lineTo(x, height - (y_mar + y_ax_mar + 5));
+            
+            if (i % 5 == 0) {
+                ctx.save();
+                var label = bin_size * i;
+                var len = ctx.mozMeasureText(label); 
+                ctx.translate(x - len/2 , height - (y_mar + y_ax_mar - 14));
+                ctx.mozTextStyle = "8pt Arial, Helvetica"
+                ctx.mozDrawText(label);
+                ctx.restore();
+            }
+            //ctx.fillText(bin_pixels * i, x, y_ax_mar - 12);
+        }
+        
+
+        ctx.stroke();
+    }
+
+    function make_point(ctx, x, y, shape){
+        switch(shape) {
+        
+        case "x":
+            ctx.beginPath();
+            ctx.moveTo(x-3, y-3);
+            ctx.lineTo(x+3, y+3);
+            ctx.moveTo(x-3, y+3);
+            ctx.lineTo(x+3, y-3);
+            ctx.stroke();
+            break;
+        case "circle":
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI*2, true);
+            ctx.fill();
+            break;
+        case "triangle":
+            ctx.beginPath();
+            ctx.moveTo(x-3, y+2);
+            ctx.lineTo(x+3, y+2);
+            ctx.lineTo(x, y-3);
+            ctx.fill();  
+            break;
+        case "square":
+            ctx.beginPath();
+            ctx.moveTo(x-3, y-3);
+            ctx.lineTo(x+3, y-3);
+            ctx.lineTo(x+3, y+3);
+            ctx.lineTo(x-3, y+3);
+            ctx.fill(); 
+            break;
+        }
+    }
+    
+    function make_line(ctx, x_array, y_array, shape){
+        if (x_array.length != y_array.length) {
+            alert("Lengths of data arrays do not match!");
+            return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(x_array[0], y_array[0]);       
+        for (var i = 0; i < x_array.length; i++){ 
+            ctx.lineTo(x_array[i], y_array[i]);
+        }
+        ctx.stroke();
+        make_point(ctx, x_array[0], y_array[0], shape);        
+        for (var i = 0; i < x_array.length; i++){ 
+            make_point(ctx, x_array[i], y_array[i], shape); 
+        }
+    }
+</script>
+            
+        '''
+        return html        
         
     def make_graph(self):
         self.update_packet_data()
@@ -247,12 +337,12 @@ class line_graph:
             graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "circle")
+            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
             line_names[line_name] = line_name
             i = i + 1
             
         html = '''
-<canvas id="''' + self.canvas_id + '''" width="''' + str(self.width+10) + '''" height="''' + str(self.height+10) + '''">       
+<canvas id="''' + self.canvas_id + '''" width="''' + str(self.width) + '''" height="''' + str(self.height) + '''">       
     Canvas is not supported.
 </canvas>
 <script type="text/javascript">
@@ -261,6 +351,18 @@ class line_graph:
         var canvas_''' + self.canvas_id + ''' = document.getElementById("''' + self.canvas_id + '''");
         if (canvas_''' + self.canvas_id + '''.getContext) {            
             var ''' + self.canvas_context + ''' = canvas_''' + self.canvas_id + '''.getContext('2d');
+            draw_axes(''' + self.canvas_context + ''', 
+                    ''' + str(self.x_margin) + ''', 
+                    ''' + str(self.y_margin) + ''', 
+                    ''' + str(self.x_axis_margin) + ''', 
+                    ''' + str(self.y_axis_margin) + ''', 
+                    ''' + str(self.width) + ''', 
+                    ''' + str(self.height) + ''', 
+                    ''' + str(self.graph_xbins_actual) + ''', 
+                    ''' + str(self.graph_ybins) + ''', 
+                    ''' + str(self.bin_pixels)  + ''',
+                    ''' + str(self.bin_size) + ''',
+                    ''' + str(self.y_pix_per_packet) + ''');
 ''' + graph_data_html + '''  
         } else {
             alert('You need Safari or Firefox 1.5+ to see this demo.');
@@ -315,32 +417,32 @@ def find_min( struct):
 class info_utility:
     
     def display_client_info(self):
-        html = '''<table>'''
+        html = '''<table>\n'''
         info_hash = singleton_webgui.x_alice.get_client_info()
         for key in info_hash:
             html = html + '''<tr><td>''' + key + '''</td><td>''' 
             html = html + str(info_hash[key]) + '''</td></tr>'''
-        html = html + '''</table>'''
+        html = html + '''</table>\n'''
         return html
     
     def display_server_info(self):
-        html = '''<table>'''
+        html = '''<table>\n'''
         info_hash = singleton_webgui.x_alice.get_server_info()
         for key in info_hash:
             html = html + '''<tr><td>''' + key + '''</td><td>''' 
-            html = html + str(info_hash[key])  + '''</td></tr>'''
-        html = html + '''</table>'''
+            html = html + str(info_hash[key])  + '''</td></tr>\n'''
+        html = html + '''</table>\n'''
         return html
     
     def display_peer_list(self):
-        html = '''<table>'''
+        html = '''<table>\n'''
         for peer in singleton_webgui.x_alice.get_peers():
             for f in peer.active_flows():
                 html = html + '''<tr><td>''' + str(f.flow_tuple[0]) + '''</td>'''
                 html = html + '''<td>''' + str(f.flow_tuple[1]) + '''</td>''' 
                 html = html + '''<td>''' + str(f.flow_tuple[2]) + '''</td>''' 
-                html = html + '''<td>''' + str(f.flow_tuple[3]) + '''</td></tr>'''
-        html = html + '''</table>'''
+                html = html + '''<td>''' + str(f.flow_tuple[3]) + '''</td></tr>\n'''
+        html = html + '''</table>\n'''
         return html
 
     
@@ -351,8 +453,8 @@ class index:
         page = page + i.display_client_info()
         page = page + i.display_server_info()
         page = page + i.display_peer_list()
-        
-        graph = line_graph()
+        graph = line_graph()        
+        page = page + graph.js_graph_functions()
         page = page + graph.make_graph()
         page = page + '''
         </body>
@@ -364,22 +466,22 @@ class index:
 class config:
     def GET(self):  
         page = '''<p>Tweakable Options</p>
-                    <form name="frmMutableOpt" id="frmMutableOpt"><table>'''
+                    <form name="frmMutableOpt" id="frmMutableOpt">\n<table>\n'''
                     
         for opt in singleton_webgui.x_alice_config.tweakable_options:
             page = page + '''<tr><td>''' + opt + '''</td>'''
             page = page + '''<td><input name="''' + opt +  '''"''' 
             page = page + ''' value="''' + WebGUI.x_alice_config.get_option(opt) 
-            page = page + '''"/></td></tr>'''
+            page = page + '''"/></td></tr>\n'''
         
-        page = page + '''</table><br/>
-                    <input type="submit" value="Save changes"/></form>
-                    <p>Immutable Options</p>
-                    <table>'''
+        page = page + '''</table>\n<br/>\n
+                    <input type="submit" value="Save changes"/></form>\n
+                    <p>Immutable Options</p>\n
+                    <table>\n'''
                     
         for opt in WebGUI.x_alice_config.immutable_options:
             page = page + '''<tr><td>''' + opt + '''</td>'''
-            page = page + '''<td>''' + WebGUI.x_alice_config.get_option(opt) + '''</td></tr>'''
+            page = page + '''<td>''' + WebGUI.x_alice_config.get_option(opt) + '''</td></tr>\n'''
          
         return page
     
@@ -391,6 +493,7 @@ class WebGUI():
         self.x_alice_config = xAliceConfig()
         self.x_alice = xAlice(self.x_alice_config)
         self.packet_data = dict()
+        self.save_window = 60 * 60  # Number of seconds to save (1 hour default)
         self.urls = (
             '/', 'index', 
             '', 'index',
