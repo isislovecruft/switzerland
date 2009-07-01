@@ -118,7 +118,17 @@ xPacket
 =======
 
 Methods:
-- get_summary()
+- timestamp(): return unix time when packet was seen by sniffer.
+- get_summary_string(): return arbitrary one-line summary of packet
+  contents. NOTE, format and exact contents of string unreliable and likely
+  to change with library revisions.
+- get_summary_fields(): return dictionary of fields relevant to a one-line
+  summary of this packet:
+  - ip_id
+  - tcp_flags: [ rst, psh, ... ]
+  - tcp_seqno
+  - payload_size
+  - TODO add more fields
 - get_details()
 - get_raw_bytes()
 
