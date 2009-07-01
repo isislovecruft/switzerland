@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 
+import time
 from switzerland.client.Alice import Alice
 from switzerland.client.AliceConfig import AliceConfig,alice_options
 
-def connectServer(self, config):
+def connectServer(config):
     return xAlice(config)
 
 class ConfigError(Exception):
@@ -58,17 +60,40 @@ class ClientConfig:
 
 class xAlice:
     def __init__(self, config):
-        assert isinstance(config, xAliceConfig)
+        assert isinstance(config, ClientConfig)
         config.in_use = True
+        self.config = config
         self.actual_alice = Alice(config.actual_config)
+        self.sinfo = {}
+        self.cinfo = {}
+        link = self.actual_alice.link
+        self.sinfo["server"]=link.peer[0]
+        self.sinfo["ip"]=link.server_ip
+
     def disconnect(self):
-        pass
+        pass # XXX
+
     def get_server_info(self):
-        info = {}
-        return info
+        link = self.actual_alice.link
+        self.sinfo["connection time"] = time.time() - link.time_connected
+        self.sinfo["message count"  ] = (link.messages_out, link.messages_in)
+        self.sinfo["last message"   ] = time.time() - link.last_sent
+        return self.sinfo
+
     def get_client_info(self):
-        info = {}
-        return info
+        link = self.actual_alice.link
+
+        # This is not "efficient" but, like, whatever:
+        if "public_ip" in link.__dict__:
+            self.cinfo["public ip"] = link.public_ip
+        else:
+            self.cinfo["public ip"] = None
+
+        self.cinfo["network interface"] = self.actual_alice.config.interface
+        self.cinfo["ntp method"] = self.actual_alice.time_manager.method
+        self.cinfo["clock dispersion"] = self.actual_alice.root_dispersion
+        return self.cinfo
+
     def get_peers(self):
         return []
 
@@ -87,7 +112,7 @@ class xPeer:
 class xFlow:
     def __init__(self, actual_flow):
         self.actual_flow = actual_flow
-        self.flow_tuple = self.actual_flow.summary()[3]
+        self.flow_tuple = self.actual_flow.summary()[2]
 
     def get_pair(self):
         """

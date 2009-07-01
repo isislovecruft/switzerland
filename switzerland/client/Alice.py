@@ -148,6 +148,7 @@ class Alice:
                 #log.warn("NTP is not working:\n"+traceback.format_exc())
                 log.warn("but allow_uncertain_time is set so we're defaulting the clock error to %f" % self.config.manual_clock_error)
                 self.root_dispersion = self.config.manual_clock_error
+                self.time_manager.method = "blind faith"
         self.params["clock dispersion"] = self.root_dispersion
 
     def shutdown(self):

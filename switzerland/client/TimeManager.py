@@ -18,6 +18,7 @@ class TimeManager:
   def __init__(self):
     
     self.ntp_sysinfo = {}
+    self.method = "none"  # what we tell the user about how ntp is working
 
     # get_time_error is the function Alice will call to get an estimate
     # of the inaccuracy of her clock.  Ideally we use ntpd's measure of
@@ -54,7 +55,7 @@ class TimeManager:
       val = line[pos+1:].strip()
       self.ntp_sysinfo[key]=val
 
-    mode = self.ntp_sysinfo["system peer mode"]
+    self.mode = self.ntp_sysinfo["system peer mode"]
     if mode == "unspec":
       log.debug("""
       NTP is in "unspec" mode.  This is probably because your system clock
@@ -119,6 +120,7 @@ class TimeManager:
         log.info("Believing the maximum clock error reported by %d timeservers"\
                   % len(results))
         log.debug("Not quite as good as a working ntpd, but this should be ok")
+        self.method = "ntpdate -q"
         return max(results)
       else:
         log.info("We haven't succeeded in polling any NTP servers, either.")
@@ -134,6 +136,7 @@ class TimeManager:
     try:
         
       mode = self.ntp_sysinfo["system peer mode"]
+      self.method = "ntpd, root dispersion measured with ntpdc (%s mode)" % mode
       return float(self.ntp_sysinfo["root dispersion"].split()[0])
     except KeyError:		 
       # try to use ntpdate to calculate the root dispersion by finding the max 

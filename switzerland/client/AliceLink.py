@@ -27,18 +27,24 @@ class AliceLink(Protocol.Protocol):
     self.quit_event = quit_event
     self.dangling_note = False
     self.forged_notification = True
+    try:
+      self.server_ip = s.gethostbyname(config.host)
+    except:
+      log.error("DNS error looking up %s" % config.host)
+      sys.exit(1)
 
     self.socket = s.socket(s.AF_INET, s.SOCK_STREAM)
     log.info("Connecting to %s:%s", config.host, `config.port`)
     self.socket.settimeout(10.0)
     try:
-      self.socket.connect((config.host, config.port))
+      self.socket.connect((self.server_ip, config.port))
     except:
       log.error("couldn't connect to %s:%s", config.host, `config.port`)
       sys.exit(1)
     self.socket.settimeout(40)
 
     self.peer = (config.host, config.port)
+    self.time_connected = time.time()
     self.member_queue = []  # members to be added once we public_ip is known
 
     Protocol.Protocol.__init__(self, log, config.seriousness, private_ip=config.private_ip)
