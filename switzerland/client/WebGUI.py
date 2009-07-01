@@ -7,6 +7,7 @@ import math
 from AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow
 
 singleton_webgui = None
+debug_output = False
 
 
 class line_graph:
@@ -18,21 +19,24 @@ class line_graph:
                     graph_xbins=50, 
                     graph_ybins=20):  
                     
+        self.use_round_numbers = True
         self.graph_xbins = graph_xbins
         self.graph_xbins_actual = graph_xbins
         self.graph_ybins = graph_ybins
+        self.graph_ybins_actual = graph_ybins
         self.width = width
         self.height = height
         # These get set automatically when the data gets processed
         self.max_timestamp = None
         self.min_timestamp = None
-        self.bin_size = None # in seconds
-        self.bin_pixels = None
-        self.y_bin_pixels = None
         self.y_hist_max = None
+        self.x_bin_size = None # in seconds
+        self.y_bin_size = None # in packets
+        self.x_bin_pixels = None
+        self.y_bin_pixels = None
         self.y_margin = 5
-        self.x_margin = 5
-        self.x_axis_margin = 20
+        self.x_margin = 10
+        self.x_axis_margin = 25
         self.y_axis_margin = 20
         self.graph_height = height - (self.y_axis_margin + 2 * self.y_margin)
         self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
@@ -55,9 +59,15 @@ class line_graph:
         # Count packets into bins
         for packet_ts in [p[0] for p in packet_list]:
             i =  packet_ts - self.min_timestamp
-            i = int(i/self.bin_size)
-            print "bin number", i
-            histogram[i] = histogram[i] + 1
+            i = int(i/self.x_bin_size)
+            if i < len(histogram):
+                histogram[i] = histogram[i] + 1
+            else:
+                if debug_output:
+                    ''' This data is preserved for the next reload '''
+                    print "index", i, "out of range"
+                else:
+                    pass
             
         # Return histogram
         return histogram
@@ -66,12 +76,14 @@ class line_graph:
     def get_y_hist_max(self, include_total=True):
         all_packcount = list()
         for ip in self.gui_flows:
+            print "get_y_hist_max gui flow", ip
             if include_total:
                 all_packcount.extend([p[1] for p in singleton_webgui.packet_data[ip]['total count']])
             else:
                 all_packcount.extend(self.histograms[ip]['modified'])
                 all_packcount.extend(self.histograms[ip]['injected'])
                 all_packcount.extend(self.histograms[ip]['dropped'])
+            print all_packcount
                 
         self.y_hist_max = max(all_packcount)
         
@@ -100,27 +112,46 @@ class line_graph:
         print "max ts", self.max_timestamp, "min ts", self.min_timestamp
         
         range_timestamp = self.max_timestamp - self.min_timestamp
-
-        # Divide by number of bins (~100?)
-        self.bin_size = range_timestamp / self.graph_xbins
-                
-        # Adjust to nice round number
-        binlog = math.log10(self.bin_size)
-        self.bin_size = round(self.bin_size ,int(-math.floor(binlog))) 
-        if (self.bin_size < 1):
-            self.bin_size = 1
-            
-        self.graph_xbins_actual = (int(range_timestamp) / self.bin_size) + 1
-        
-        print "rough bin size", str(range_timestamp / self.graph_xbins), "bin size", self.bin_size
+        print "x calculations"
+        if self.use_round_numbers:
+            (self.graph_xbins_actual, self.x_bin_size) = self.get_round_bin_size(range_timestamp, self.graph_xbins)
+        else:
+            self.x_bin_size = self.get_bin_size(range_timestamp,self.graph_xbins)
+        print "rough bin size", str(range_timestamp / self.graph_xbins), "bin size", self.x_bin_size
         # Return bin size (in seconds) 
-        return self.bin_size
+        return self.x_bin_size
     
+    def get_bin_size(self, range, bins):
+        bin_size = float(range) / float(bins)
+        bin_size = math.ceil(bin_size) 
+        if bin_size < 1:
+            bin_size = 1
+        return bin_size
+    
+    def get_round_bin_size(self, range, bins):
+        est_bin_size = float(range) / float(bins)
+        print "range:", range, "bins:", bins, "est bin size:", est_bin_size
+        binlog = int(-math.floor(math.log10(est_bin_size)))
+        actual_bin_size = math.ceil(est_bin_size) 
+        if actual_bin_size == 0:
+            actual_bin_size = 1
+        actual_bins = math.ceil((int(range) / est_bin_size))
+        print "actual bins:", actual_bins
+        return (actual_bins, actual_bin_size)    
+
+        
     def make_graph_data(self, name, histogram, point_shape="circle"):
         
         i = 0
-        self.bin_pixels = int(self.graph_width/self.graph_xbins_actual)
-        self.y_pix_per_packet = int(self.graph_height/self.y_hist_max)
+        self.x_bin_pixels = int(self.graph_width/self.graph_xbins_actual)
+        print "width:", self.graph_width, "xbins_actual:", self.graph_xbins_actual, "x_bin_pixels:", self.x_bin_pixels
+        if self.use_round_numbers:
+            (self.graph_ybins_actual, self.y_bin_size) = self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
+        else:
+            self.y_bin_size = self.x_bin_size = self.get_bin_size(self.y_hist_max,self.graph_ybins)
+            
+        self.y_bin_pixels = int(self.graph_height/self.graph_ybins_actual)
+        
         
         html = "/* " + name + " " + point_shape + "*/\n"
         xhtml = "var x_" + name + " = new Array("
@@ -131,8 +162,10 @@ class line_graph:
             # Get x from histogram bin
             # Get y from histogram value
             
-            x = str(i * (self.bin_pixels) + self.x_axis_margin + self.x_margin)  
-            y = str(self.height - (b * (self.y_pix_per_packet) + self.y_axis_margin + self.y_margin))
+            x = str(i * (self.x_bin_pixels) + self.x_axis_margin + self.x_margin)
+            y = b * self.y_bin_pixels / self.y_bin_size
+            print "y:", y 
+            y = str(self.height - (y + self.y_axis_margin + self.y_margin))
             xhtml = xhtml + x + ","
             yhtml = yhtml + y + ","
             i = i + 1
@@ -191,7 +224,7 @@ class line_graph:
 <script type="text/javascript">    
 
     function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height, 
-            x_bins, y_bins, bin_pixels, bin_size, y_pix_per_packet) {
+            x_bins, y_bins, x_bin_pixels, x_bin_size, y_bin_pixels, y_bin_size) {
             
         var graph_height = height - (2 * y_mar + y_ax_mar);
         var graph_width = width - (2 * x_mar + x_ax_mar);
@@ -204,15 +237,16 @@ class line_graph:
         ctx.lineTo(x_mar + x_ax_mar, height - (y_mar + y_ax_mar));
         ctx.lineTo(width - (x_mar), height - (y_mar + y_ax_mar));
         
-        var y_bin_pixels = graph_height / y_bins;
         
+        
+        // Draw the y axis numbers and hash marks
         for (i = 0; i < y_bins; i++) {
             var y = y_mar + y_ax_mar + (y_bin_pixels * i);
-            ctx.moveTo((x_mar + x_ax_mar - 5), graph_height - y);
-            ctx.lineTo((x_mar + x_ax_mar + 5), graph_height - y);   
+            ctx.moveTo((x_mar + x_ax_mar - 5), height - y);
+            ctx.lineTo((x_mar + x_ax_mar + 5), height - y);   
             if (i % 5 == 0) {
                 ctx.save();
-                var label = i * y_bin_pixels / y_pix_per_packet;
+                var label = i * y_bin_size;
                 var len = ctx.mozMeasureText(label); 
                 ctx.translate(x_mar , height - y);
                 ctx.mozTextStyle = "8pt Arial, Helvetica"
@@ -220,21 +254,23 @@ class line_graph:
                 ctx.restore();
             }       
         }
-        
+    
+        // Draw the x axis numbers and hash marks
         for (i = 0; i < x_bins; i++){
-            var x = x_mar + x_ax_mar + (bin_pixels * i);
+            var x = x_mar + x_ax_mar + (x_bin_pixels * i);
             ctx.moveTo(x, height - (y_mar + y_ax_mar - 5));
             ctx.lineTo(x, height - (y_mar + y_ax_mar + 5));
             
             if (i % 5 == 0) {
                 ctx.save();
-                var label = bin_size * i;
+                var label = x_bin_size * i;
                 var len = ctx.mozMeasureText(label); 
                 ctx.translate(x - len/2 , height - (y_mar + y_ax_mar - 14));
                 ctx.mozTextStyle = "8pt Arial, Helvetica"
-                ctx.mozDrawText(label);
+                ctx.mozDrawText(Math.round(label*10)/10);
                 ctx.restore();
             }
+            // FF 3.5 standard instead of ctx.MozDrawText
             //ctx.fillText(bin_pixels * i, x, y_ax_mar - 12);
         }
         
@@ -342,27 +378,30 @@ class line_graph:
             i = i + 1
             
         html = '''
+
 <canvas id="''' + self.canvas_id + '''" width="''' + str(self.width) + '''" height="''' + str(self.height) + '''">       
     Canvas is not supported.
 </canvas>
+''' + self.dump_graph_info() + '''
 <script type="text/javascript">
 <!--
     function drawgraph_''' + self.canvas_id + '''() {
         var canvas_''' + self.canvas_id + ''' = document.getElementById("''' + self.canvas_id + '''");
         if (canvas_''' + self.canvas_id + '''.getContext) {            
             var ''' + self.canvas_context + ''' = canvas_''' + self.canvas_id + '''.getContext('2d');
-            draw_axes(''' + self.canvas_context + ''', 
-                    ''' + str(self.x_margin) + ''', 
+            draw_axes(''' + self.canvas_context + ''',  // canvas context
+                    ''' + str(self.x_margin) + ''',     
                     ''' + str(self.y_margin) + ''', 
-                    ''' + str(self.x_axis_margin) + ''', 
-                    ''' + str(self.y_axis_margin) + ''', 
-                    ''' + str(self.width) + ''', 
-                    ''' + str(self.height) + ''', 
-                    ''' + str(self.graph_xbins_actual) + ''', 
-                    ''' + str(self.graph_ybins) + ''', 
-                    ''' + str(self.bin_pixels)  + ''',
-                    ''' + str(self.bin_size) + ''',
-                    ''' + str(self.y_pix_per_packet) + ''');
+                    ''' + str(self.x_axis_margin) + ''',        // left hand margin for axis info
+                    ''' + str(self.y_axis_margin) + ''',        // bottom margin for axis info
+                    ''' + str(self.width) + ''',                // canvas element width
+                    ''' + str(self.height) + ''',               // canvas element height
+                    ''' + str(self.graph_xbins_actual) + ''',   // number of x histogram bins
+                    ''' + str(self.graph_ybins) + ''',          // number of y levels
+                    ''' + str(self.x_bin_pixels)  + ''',        // number of pixels per x bin
+                    ''' + str(self.x_bin_size) + ''',           // number of seconds per x bin
+                    ''' + str(self.y_bin_pixels) + ''', 
+                    ''' + str(self.y_bin_size) + ''');          // number of packets per y bin 
 ''' + graph_data_html + '''  
         } else {
             alert('You need Safari or Firefox 1.5+ to see this demo.');
@@ -375,9 +414,25 @@ class line_graph:
         '''    
         # Finally, plot to canvas 
         return html   
-
-
-
+    
+    def dump_graph_info(self):
+        html = '''        <br>
+        self.graph_height ''' + str(self.graph_height) + '''<br>
+        self.graph_width ''' + str(self.graph_width) + '''<br>
+        self.graph_xbins ''' + str(self.graph_xbins) + '''<br>
+        self.graph_xbins_actual ''' + str(self.graph_xbins_actual) + '''<br>
+        self.graph_ybins ''' + str(self.graph_ybins) + '''<br>
+        self.graph_ybins_actual ''' + str(self.graph_ybins_actual) + '''<br>
+        self.y_hist_max ''' + str(self.y_hist_max) + '''<br>
+        ''' + str(self.max_timestamp - self.min_timestamp)+ '''<br>
+        self.x_bin_pixels ''' + str(self.x_bin_pixels) + '''<br>
+        self.x_bin_size ''' + str(self.x_bin_size) + '''<br>
+        self.y_bin_pixels ''' + str(self.y_bin_pixels) + '''<br>
+        self.y_bin_size ''' + str(self.y_bin_size) + '''<br>
+        <br>
+        '''
+        return html
+    
 def find_max( struct):
     if isinstance(struct, dict):
         return find_max(struct.values())
@@ -421,7 +476,7 @@ class info_utility:
         info_hash = singleton_webgui.x_alice.get_client_info()
         for key in info_hash:
             html = html + '''<tr><td>''' + key + '''</td><td>''' 
-            html = html + str(info_hash[key]) + '''</td></tr>'''
+            html = html + str(info_hash[key]) + '''</td></tr>\n'''
         html = html + '''</table>\n'''
         return html
     
@@ -448,7 +503,7 @@ class info_utility:
     
 class index:
     def GET(self):
-        page = '''<html><head><title>Switzerland</title></head><body>'''
+        page = '''<html><head><title>Switzerland</title></head><body>\n'''
         i = info_utility()
         page = page + i.display_client_info()
         page = page + i.display_server_info()
@@ -482,6 +537,8 @@ class config:
         for opt in WebGUI.x_alice_config.immutable_options:
             page = page + '''<tr><td>''' + opt + '''</td>'''
             page = page + '''<td>''' + WebGUI.x_alice_config.get_option(opt) + '''</td></tr>\n'''
+        
+        page = page + "<table>\n"
          
         return page
     
