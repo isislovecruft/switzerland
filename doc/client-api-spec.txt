@@ -1,0 +1,124 @@
+Notes for all API definitions
+=============================
+
+The calls that get data should return data in a structured format such as XML,
+JSON, or delimited. (If it's web.py code making these API calls, it might make
+more sense for the return types to be python data structures.  Then the web.py
+code can produce web 1.0 type output for the browser.  If certain features seem
+to work much better in javascript, we should look at ways to efficiently
+transform the output.)
+
+In this document, structured data is represented using python [list] and
+(tuple) syntax.
+
+NOTE: We could do a global search-and-replace from all instances of the word
+``Alice'' to ``Client''.
+
+Global methods
+==============
+
+- get_client_config(): return an xAliceConfig object.
+- connect_server(xAliceConfig): return an xAlice object.
+
+xAliceConfig 
+============
+
+Methods:
+- set_option(option_name, value): set the new value for option_name. May
+  raise an exception:
+  - TypeError: if value is the wrong type for this option
+  - AliceAPI.ConfigError: if value failed some other requirement, such as
+    a directory path which neither exists nor is creatable
+  - KeyError: if option_name is not a valid variable
+- get_option(option_name): get value for option_name.
+  XXX can we also get away with just referring to the .option_name attribute
+    of the xAliceConfig object?  Probably...
+
+Attributes:
+- tweakable_options: [config options] which can be changed at any time
+- immutable_options: [config options] which require connection restart to be
+  changed.  Each option is a tuple of (name, type), where name is a string
+  and type is one of:
+        str | int | float | ''IP'' | ''hostname'' | ``path'' | bool | portno
+
+xAlice
+======
+
+Methods:
+- disconnect(): disconnect from the server
+- get_server_info(): returns a dictionary of server information entries,
+  including at least the following entries:
+    - ``hostname'' : may be an ip address
+    - ``ip'' : definitely an ip address
+    - ``connection time'' : seconds
+    - ``message count'' : a tuple of (sent, received)
+    - ``last message'' : seconds since last communication
+- get_client_info(): returns a dictionary of client status information,
+  including at least the following entries:
+    - ``public ip''
+    - ``private ip''
+    - ``network interface''
+    - ``ntp method''
+    - ``clock dispersion'' (estimated clock accuracy)
+- get_peers(): returns a list of xPeer objects.
+  XXX based on switzerland.client.FlowManger.Peer, but also with
+      flow-related attributes?)
+
+xPeer
+=====
+
+Methods:
+- traceroute(): return a string representing the route that our packets take
+  to this xPeer. May change from call to call.
+- new_flows(): return a list of xFlow objects corresponding to flows created
+  since the last call to this method.
+
+Attributes:
+- firewalled: True if the xPeer is connected from behind a NAT firewall.
+  Note: this should be a constant; if a xPeer disconnects and then
+  reconnects, such that this might change, there should be a new xPeer
+  object.
+
+xFlow
+=====
+
+Methods:
+- get_pair(): returns another flow object in the opposite direction, or None
+  if there isn't one
+- is_active(): returns true or false
+
+    NOTE: the get_new* methods do not have a ``since time t'' parameter,
+    since it seems more efficient to calculate these as deltas.
+
+- get_new_packet_count(): returns total packets sent/recd (at our end) since
+  the last call to this method
+- get_new_byte_count(): returns total bytes sent/recd since the last call to
+  this method
+- get_new_dropped_packets(): returns [ (timestamp, xPacket) ] for packets
+  that have been identified as dropped since the last call to this method.
+- get_new_injected_packets(): returns [ (timestamp, xPacket) ] for packets
+  that have been identified as spoofed/injected/forged since the last call
+  to this method.
+- get_new_modified_packets(): returns [ (timestamp, received xPacket,
+  [(possible sent xPacket, differences)])] for packets that appear to have
+  been modified since the last call to this method
+  - differences is a list: [(what_differs, before, after)].
+  - what_differs: string description of some noted difference
+  - before: string representation of the original value
+  - after: string representation of the modified value
+
+Attributes:
+- flow_tuple: (source_ip, source_port, dest_ip, dest_port, protocol).
+  XXX specify which binary format this will use... probably best to make it
+  as human readable as possible (eg, ips are ``1.2.13.214'' rather than 4
+  bytes, and the protocol is ``tcp'' rather than a protocol number if we
+  succeeded in looking it up)
+
+xPacket
+=======
+
+Methods:
+- get_summary()
+- get_details()
+- get_raw_bytes()
+
