@@ -2,12 +2,15 @@
 import web
 import time
 import math
+import sys
+sys.path.append("..") 
 
 #from AliceAPI import xAlice, xAliceConfig, xPeer, xFlow
 from AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow
 
 singleton_webgui = None
 debug_output = False
+canvas_message = "Your browser does not support canvas."
 
 
 class line_graph:
@@ -42,6 +45,7 @@ class line_graph:
         self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
         
         self.gui_flows = None
+        
         # JavaScript canvas context name
         self.canvas_context = canvas_context
         # HTML element ID of canvas element
@@ -96,6 +100,7 @@ class line_graph:
         all_timestamps = list()
         
         for ip in self.gui_flows :
+            print "xx ip", ip
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
             # only need the mins and maxes.
@@ -179,177 +184,108 @@ class line_graph:
         html = html + "make_line(" + self.canvas_context + ", x_" + name + ", y_" + name +", '" + point_shape +"')\n"
         # Return canvas-formatted graph data (for line drawing)
         return html
-    
  
         
     def delete_old_packets(self, packet_list, cutoff_time) :
         for packet in packet_list:
             if packet[0] < cutoff_time:
                 packet_list.remove(packet)
-  
-    def update_packet_data(self):
-        # For each active flow
+
+    def flow_key(self, f):
+        return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) + "|" + str(f.flow_tuple[4])         
+    
+    def update_active_flows(self):
         peers = singleton_webgui.x_alice.get_peers()
         for p in peers:
-            flows = p.active_flows()
-            for f in flows:
-                # If flow does not exist in dictionary object, add
-                flow_ip = str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3])
-                if singleton_webgui.packet_data.get(flow_ip) :
-                    pass
-                else:
-                    singleton_webgui.packet_data[flow_ip] = dict()
-                    singleton_webgui.packet_data[flow_ip]['dropped'] = list()
-                    singleton_webgui.packet_data[flow_ip]['injected'] = list()
-                    singleton_webgui.packet_data[flow_ip]['modified'] = list()
-                    singleton_webgui.packet_data[flow_ip]['total count'] = list()
-                
-                print flow_ip
-                
-                
-                # Each active flow has 4 lists of packets: dropped, injected, 
-                # modified, total count
-                cutoff_time = time.time() - singleton_webgui.save_window
-                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['dropped'], cutoff_time)
-                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['injected'], cutoff_time)
-                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['modified'], cutoff_time)
-                singleton_webgui.packet_data[flow_ip]['dropped'].extend(f.get_new_dropped())
-                singleton_webgui.packet_data[flow_ip]['injected'].extend(f.get_new_injected())
-                singleton_webgui.packet_data[flow_ip]['modified'].extend(f.get_new_modified())    
-                singleton_webgui.packet_data[flow_ip]['total count'].extend([(time.time(),  f.get_new_packet_count()) ])
-                
-    
-    def js_graph_functions(self):
-        html = '''
-<script type="text/javascript">    
-
-    function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height, 
-            x_bins, y_bins, x_bin_pixels, x_bin_size, y_bin_pixels, y_bin_size) {
+            flows = p.new_flows()
+            if isinstance(flows, list):
+                print "flows is a list"
+                for f in flows:
+                    ip = self.flow_key(f)
+                    print ip
+                    if singleton_webgui.active_flows.get(ip):
+                        pass
+                    else:
+                        singleton_webgui.active_flows[ip] = f
+        for f in singleton_webgui.active_flows:
+            if singleton_webgui.active_flows[f].is_active():
+                pass
+            else:
+                del singleton_webgui.active_flows[f]
             
-        var graph_height = height - (2 * y_mar + y_ax_mar);
-        var graph_width = width - (2 * x_mar + x_ax_mar);
-        
-        ctx.strokeStyle = 'black';
-        ctx.textAlign = 'center';
+    def update_packet_data(self):
+        # For each active flow
+        self.update_active_flows()
+        peers = singleton_webgui.x_alice.get_peers()
 
-        ctx.beginPath();
-        ctx.moveTo(x_mar + x_ax_mar, y_mar);
-        ctx.lineTo(x_mar + x_ax_mar, height - (y_mar + y_ax_mar));
-        ctx.lineTo(width - (x_mar), height - (y_mar + y_ax_mar));
-        
-        
-        
-        // Draw the y axis numbers and hash marks
-        for (i = 0; i < y_bins; i++) {
-            var y = y_mar + y_ax_mar + (y_bin_pixels * i);
-            ctx.moveTo((x_mar + x_ax_mar - 5), height - y);
-            ctx.lineTo((x_mar + x_ax_mar + 5), height - y);   
-            if (i % 5 == 0) {
-                ctx.save();
-                var label = i * y_bin_size;
-                var len = ctx.mozMeasureText(label); 
-                ctx.translate(x_mar , height - y);
-                ctx.mozTextStyle = "8pt Arial, Helvetica"
-                ctx.mozDrawText(Math.round(label*10)/10);
-                ctx.restore();
-            }       
-        }
-    
-        // Draw the x axis numbers and hash marks
-        for (i = 0; i < x_bins; i++){
-            var x = x_mar + x_ax_mar + (x_bin_pixels * i);
-            ctx.moveTo(x, height - (y_mar + y_ax_mar - 5));
-            ctx.lineTo(x, height - (y_mar + y_ax_mar + 5));
+        for flow_ip in singleton_webgui.active_flows:
+            # If flow does not exist in dictionary object, add
+            f = singleton_webgui.active_flows[flow_ip]
+            if singleton_webgui.packet_data.get(flow_ip) :
+                pass
+            else:
+                print "Adding", flow_ip
+                singleton_webgui.packet_data[flow_ip] = dict()
+                singleton_webgui.packet_data[flow_ip]['dropped'] = list()
+                singleton_webgui.packet_data[flow_ip]['injected'] = list()
+                singleton_webgui.packet_data[flow_ip]['modified'] = list()
+                singleton_webgui.packet_data[flow_ip]['total count'] = list()
             
-            if (i % 5 == 0) {
-                ctx.save();
-                var label = x_bin_size * i;
-                var len = ctx.mozMeasureText(label); 
-                ctx.translate(x - len/2 , height - (y_mar + y_ax_mar - 14));
-                ctx.mozTextStyle = "8pt Arial, Helvetica"
-                ctx.mozDrawText(Math.round(label*10)/10);
-                ctx.restore();
-            }
-            // FF 3.5 standard instead of ctx.MozDrawText
-            //ctx.fillText(bin_pixels * i, x, y_ax_mar - 12);
-        }
-        
-
-        ctx.stroke();
-    }
-
-    function make_point(ctx, x, y, shape){
-        switch(shape) {
-        
-        case "x":
-            ctx.beginPath();
-            ctx.moveTo(x-3, y-3);
-            ctx.lineTo(x+3, y+3);
-            ctx.moveTo(x-3, y+3);
-            ctx.lineTo(x+3, y-3);
-            ctx.stroke();
-            break;
-        case "circle":
-            ctx.beginPath();
-            ctx.arc(x, y, 3, 0, Math.PI*2, true);
-            ctx.fill();
-            break;
-        case "triangle":
-            ctx.beginPath();
-            ctx.moveTo(x-3, y+2);
-            ctx.lineTo(x+3, y+2);
-            ctx.lineTo(x, y-3);
-            ctx.fill();  
-            break;
-        case "square":
-            ctx.beginPath();
-            ctx.moveTo(x-3, y-3);
-            ctx.lineTo(x+3, y-3);
-            ctx.lineTo(x+3, y+3);
-            ctx.lineTo(x-3, y+3);
-            ctx.fill(); 
-            break;
-        }
-    }
-    
-    function make_line(ctx, x_array, y_array, shape){
-        if (x_array.length != y_array.length) {
-            alert("Lengths of data arrays do not match!");
-            return;
-        }
-        ctx.beginPath();
-        ctx.moveTo(x_array[0], y_array[0]);       
-        for (var i = 0; i < x_array.length; i++){ 
-            ctx.lineTo(x_array[i], y_array[i]);
-        }
-        ctx.stroke();
-        make_point(ctx, x_array[0], y_array[0], shape);        
-        for (var i = 0; i < x_array.length; i++){ 
-            make_point(ctx, x_array[i], y_array[i], shape); 
-        }
-    }
-</script>
+            print flow_ip
             
-        '''
-        return html        
+            # Each active flow has 4 lists of packets: dropped, injected, 
+            # modified, total count
+            cutoff_time = time.time() - singleton_webgui.save_window
+            self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['dropped'], cutoff_time)
+            self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['injected'], cutoff_time)
+            self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['modified'], cutoff_time)
+            singleton_webgui.packet_data[flow_ip]['dropped'].extend(f.get_new_dropped_packets())
+            singleton_webgui.packet_data[flow_ip]['injected'].extend(f.get_new_injected_packets())
+            singleton_webgui.packet_data[flow_ip]['modified'].extend(f.get_new_modified_packets())    
+            singleton_webgui.packet_data[flow_ip]['total count'].extend([(time.time(),  f.get_new_packet_count()) ])
+                
+    def make_legend(self):
+        i = 0
+        html = "<table>\n"
+        shtml = '''<script type="text/javascript">
+
+function gen_legend_''' + self.canvas_id + '''() {
+'''
+        for ip in self.gui_flows:
+            line_name = ip.replace(":","_")
+            line_name = line_name.replace(".","_")
+            html = html + '''<tr><td><canvas id="leg_''' + line_name + '''_dr" height="20" width="50">''' + canvas_message + '''</canvas></td><td>'''
+            html = html + '''</td><td>'''  + ip + ''' dropped</td></tr>\n'''
+            html = html + '''<tr><td><canvas id="leg_''' + line_name + '''_in" height="20" width="50">''' + canvas_message + '''</canvas></td><td>'''
+            html = html + '''</td><td>'''  + ip + ''' inserted</td></tr>\n'''
+            html = html + '''<tr><td><canvas id="leg_''' + line_name + '''_mo" height="20" width="50">''' + canvas_message + '''</canvas></td><td>'''
+            html = html + '''</td><td>'''  + ip + ''' modified</td></tr>\n'''
+            shtml = shtml + '''legend_entry("leg_''' + line_name + '''_dr", 50, 20, "''' + self.draw_colors[i%len(self.draw_colors)] + '''", "x");\n'''
+            shtml = shtml + '''legend_entry("leg_''' + line_name + '''_in", 50, 20, "''' + self.draw_colors[i%len(self.draw_colors)] + '''", "triangle");\n'''
+            shtml = shtml + '''legend_entry("leg_''' + line_name + '''_mo", 50, 20, "''' + self.draw_colors[i%len(self.draw_colors)] + '''", "square");\n'''
+            i = i + 1
+        html = html + "</table>\n"
+        
+        shtml = shtml + '''
+}
+gen_legend_''' + self.canvas_id + '''();
+</script>'''
+        
+        return (html + shtml)
         
     def make_graph(self):
         self.update_packet_data()
         # Update which flows we care about
         # For now, all of them.  Will update to those selected by GUI
         self.gui_flows = dict()
-        peers = singleton_webgui.x_alice.get_peers()
-        for p in peers:
-            flows = p.active_flows()
-            for f in flows:
-                flow_ip = f.flow_tuple[0] + ":" + str(f.flow_tuple[1]) + "::" + f.flow_tuple[2] + ":" + str(f.flow_tuple[3])
-                self.gui_flows[flow_ip] = f
+        for f in singleton_webgui.active_flows:
+            print f
+            self.gui_flows[f] = singleton_webgui.active_flows[f]
         
         # Get bin size for all flows
         self.get_hist_xbin_size()
         self.histograms = dict()
 
-        
         graph_data_html = ""
         line_names = dict()
         # For each flow considered
@@ -368,6 +304,7 @@ class line_graph:
         for ip in self.gui_flows:
             line_name = ip.replace(":","_")
             line_name = line_name.replace(".","_")
+            line_name = line_name.replace("|","_")
             # Make graph data
             graph_data_html = graph_data_html + self.canvas_context + '''.fillStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''
             graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
@@ -432,90 +369,21 @@ class line_graph:
         <br>
         '''
         return html
-    
-def find_max( struct):
-    if isinstance(struct, dict):
-        return find_max(struct.values())
-    if isinstance(struct, list) or isinstance(struct, sequence) or isinstance(struct, set):
-        item = struct[0]
-        if isinstance(item, str) or isinstance(item, int):
-            return max(struct)
-        else:
-            if len(struct) == 1:
-                return find_max(item)
-            else:
-                m2 = find_max(struct[1:])
-                m1 = find_max(item)
-                if m1 >= m2:
-                    return m1
-                else:
-                    return m2
-            
-def find_min( struct):
-    if isinstance(struct, dict):
-        return find_min(struct.values())
-    if isinstance(struct, list) or isinstance(struct, sequence) or isinstance(struct, set):
-        item = struct[0]
-        if isinstance(item, str) or isinstance(item, int):
-            return min(struct)
-        else:
-            if len(struct) == 1:
-                return find_min(item)
-            else:
-                m2 = find_min(struct[1:])
-                m1 = find_min(item)
-                if m1 >= m2:
-                    return m1
-                else:
-                    return m2    
-       
-class info_utility:
-    
-    def display_client_info(self):
-        html = '''<table>\n'''
-        info_hash = singleton_webgui.x_alice.get_client_info()
-        for key in info_hash:
-            html = html + '''<tr><td>''' + key + '''</td><td>''' 
-            html = html + str(info_hash[key]) + '''</td></tr>\n'''
-        html = html + '''</table>\n'''
-        return html
-    
-    def display_server_info(self):
-        html = '''<table>\n'''
-        info_hash = singleton_webgui.x_alice.get_server_info()
-        for key in info_hash:
-            html = html + '''<tr><td>''' + key + '''</td><td>''' 
-            html = html + str(info_hash[key])  + '''</td></tr>\n'''
-        html = html + '''</table>\n'''
-        return html
-    
-    def display_peer_list(self):
-        html = '''<table>\n'''
-        for peer in singleton_webgui.x_alice.get_peers():
-            for f in peer.active_flows():
-                html = html + '''<tr><td>''' + str(f.flow_tuple[0]) + '''</td>'''
-                html = html + '''<td>''' + str(f.flow_tuple[1]) + '''</td>''' 
-                html = html + '''<td>''' + str(f.flow_tuple[2]) + '''</td>''' 
-                html = html + '''<td>''' + str(f.flow_tuple[3]) + '''</td></tr>\n'''
-        html = html + '''</table>\n'''
-        return html
-
+ 
     
 class index:
     def GET(self):
-        page = '''<html><head><title>Switzerland</title></head><body>\n'''
-        i = info_utility()
-        page = page + i.display_client_info()
-        page = page + i.display_server_info()
-        page = page + i.display_peer_list()
-        graph = line_graph()        
-        page = page + graph.js_graph_functions()
-        page = page + graph.make_graph()
-        page = page + '''
-        </body>
-        </html>
-        '''
-        return page
+        render = web.template.render('templates')
+        client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
+        server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
+        active_flows = render.flow_list(singleton_webgui.active_flows)
+        graph = line_graph() 
+        graph_html = graph.make_graph()       
+        return render.dashboard(client_info, 
+            server_info,
+            active_flows,
+            graph.make_legend(),
+            graph_html)
 
 # List mutable configuration parameters, allow to change
 class config:
@@ -550,7 +418,9 @@ class WebGUI():
         self.x_alice_config = xAliceConfig()
         self.x_alice = xAlice(self.x_alice_config)
         self.packet_data = dict()
+        self.active_flows = dict()
         self.save_window = 60 * 60  # Number of seconds to save (1 hour default)
+        self.refresh_interval = 10  # Number of seconds between refresh
         self.urls = (
             '/', 'index', 
             '', 'index',

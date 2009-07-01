@@ -120,10 +120,17 @@ class xPeer:
     def __init__(self, actual_peer):
         self.actual_peer = actual_peer
         self.fake_flows = list()
+        self.firewalled = False
+        self.sent_flows = False
     def traceroute(self):
         return "Here is the route to this peer"
-    def active_flows(self):
-        return self.fake_flows
+    def new_flows(self):
+        if self.sent_flows:
+            return None
+        else:
+            self.sent_flows = True
+            return self.fake_flows
+        
     def old_flows(self):
         return []
 
@@ -169,17 +176,17 @@ class xFlow:
     def get_new_byte_count(self):
         return random.randint(10000,50000)
 
-    def get_new_dropped(self):
+    def get_new_dropped_packets(self):
         packets = self.rand_packet_list(self.last_dropped_time)
         self.last_dropped_time = time.time()
         return packets
 
-    def get_new_injected(self):
+    def get_new_injected_packets(self):
         packets = self.rand_packet_list(self.last_injected_time)
         self.last_injected_time = time.time()
         return packets
  
-    def get_new_modified(self):
+    def get_new_modified_packets(self):
         packets = self.rand_packet_list(self.last_modified_time)
         self.last_modified_time = time.time()
         return packets
