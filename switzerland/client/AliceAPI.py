@@ -4,12 +4,20 @@ import time
 from switzerland.client.Alice import Alice
 from switzerland.client.AliceConfig import AliceConfig,alice_options
 
+
+# XXX none of this does any locking at the moment.
+# That's probably okay because of the Global Interpreter Lock and
+# because nothing the UI does currently changes the client's state in
+# any complicated way.  But if either of those things change, the API
+# will need to be made threadsafe.
+
 def connectServer(config):
     return xAlice(config)
 
 class ConfigError(Exception):
     pass
     
+
 class ClientConfig:
     def __init__(self):
         self.actual_config = AliceConfig()
@@ -58,12 +66,17 @@ class ClientConfig:
             raise KeyError, '"%s" is not a valid option name' % option
         return self.actual_config.__dict__[option]
 
+
+tr = None # a Tracerouter, to be shared with Alice
+
 class xAlice:
     def __init__(self, config):
         assert isinstance(config, ClientConfig)
         config.in_use = True
         self.config = config
         self.actual_alice = Alice(config.actual_config)
+        global tr
+        tr = self.actual_alice.tr
         self.sinfo = {}
         self.cinfo = {}
         link = self.actual_alice.link
@@ -95,14 +108,18 @@ class xAlice:
         return self.cinfo
 
     def get_peers(self):
-        return []
+        peers = self.actual_alice.fm.peers.items()
+        return map(xPeer, peers)
 
  
 class xPeer:
-    def __init__(self, actual_peer):
-        self.actual_peer = actual_peer
+    def __init__(self, ip_and_actual_peer):
+        self.ip, self.actual_peer = ip_and_actual_peer
     def traceroute(self):
-        return ""
+        if tr:
+            return tr.route_to(self.ip)
+        else:
+            return None
     def active_flows(self):
         return []
     def old_flows(self):
