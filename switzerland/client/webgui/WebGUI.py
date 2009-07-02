@@ -22,7 +22,6 @@ class line_graph:
                     graph_xbins=50, 
                     graph_ybins=20):  
                     
-        self.use_round_numbers = True
         self.graph_xbins = graph_xbins
         self.graph_xbins_actual = graph_xbins
         self.graph_ybins = graph_ybins
@@ -91,11 +90,7 @@ class line_graph:
                 
         self.y_hist_max = max(all_packcount)
         
-    # Pass in all flows and get bin size used if all of these were
-    # plotted on same graph
-    # flows = list of xFlows objects
-    def get_hist_xbin_size(self):
-        
+    def get_min_max_time(self):
         # Find min and max timestamp
         all_timestamps = list()
         
@@ -110,36 +105,30 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['modified']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
             print "total count", singleton_webgui.packet_data[ip]['total count']
-
-        
+            
         self.max_timestamp = max(all_timestamps)
         self.min_timestamp = min(all_timestamps)
         print "max ts", self.max_timestamp, "min ts", self.min_timestamp
         
+    # Pass in all flows and get bin size used if all of these were
+    # plotted on same graph
+    # flows = list of xFlows objects
+    def get_hist_xbin_size(self):
+        
         range_timestamp = self.max_timestamp - self.min_timestamp
         print "x calculations"
-        if self.use_round_numbers:
-            (self.graph_xbins_actual, self.x_bin_size) = self.get_round_bin_size(range_timestamp, self.graph_xbins)
-        else:
-            self.x_bin_size = self.get_bin_size(range_timestamp,self.graph_xbins)
+        
+        (self.graph_xbins_actual, self.x_bin_size) = self.get_round_bin_size(range_timestamp, self.graph_xbins)
+        
         print "rough bin size", str(range_timestamp / self.graph_xbins), "bin size", self.x_bin_size
         # Return bin size (in seconds) 
         return self.x_bin_size
-    
-    def get_bin_size(self, range, bins):
-        bin_size = float(range) / float(bins)
-        bin_size = math.ceil(bin_size) 
-        if bin_size < 1:
-            bin_size = 1
-        return bin_size
     
     def get_round_bin_size(self, range, bins):
         est_bin_size = float(range) / float(bins)
         print "range:", range, "bins:", bins, "est bin size:", est_bin_size
         binlog = int(-math.floor(math.log10(est_bin_size)))
         actual_bin_size = math.ceil(est_bin_size) 
-        if actual_bin_size == 0:
-            actual_bin_size = 1
         actual_bins = math.ceil((int(range) / est_bin_size))
         print "actual bins:", actual_bins
         return (actual_bins, actual_bin_size)    
@@ -150,10 +139,8 @@ class line_graph:
         i = 0
         self.x_bin_pixels = int(self.graph_width/self.graph_xbins_actual)
         print "width:", self.graph_width, "xbins_actual:", self.graph_xbins_actual, "x_bin_pixels:", self.x_bin_pixels
-        if self.use_round_numbers:
-            (self.graph_ybins_actual, self.y_bin_size) = self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
-        else:
-            self.y_bin_size = self.x_bin_size = self.get_bin_size(self.y_hist_max,self.graph_ybins)
+    
+        (self.graph_ybins_actual, self.y_bin_size) = self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
             
         self.y_bin_pixels = int(self.graph_height/self.graph_ybins_actual)
         
@@ -169,7 +156,7 @@ class line_graph:
             
             x = str(i * (self.x_bin_pixels) + self.x_axis_margin + self.x_margin)
             y = b * self.y_bin_pixels / self.y_bin_size
-            print "y:", y 
+            
             y = str(self.height - (y + self.y_axis_margin + self.y_margin))
             xhtml = xhtml + x + ","
             yhtml = yhtml + y + ","
@@ -184,13 +171,7 @@ class line_graph:
         html = html + "make_line(" + self.canvas_context + ", x_" + name + ", y_" + name +", '" + point_shape +"')\n"
         # Return canvas-formatted graph data (for line drawing)
         return html
- 
         
-    def delete_old_packets(self, packet_list, cutoff_time) :
-        for packet in packet_list:
-            if packet[0] < cutoff_time:
-                packet_list.remove(packet)
-
     def flow_key(self, f):
         return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) + "|" + str(f.flow_tuple[4])         
     
@@ -199,10 +180,8 @@ class line_graph:
         for p in peers:
             flows = p.new_flows()
             if isinstance(flows, list):
-                print "flows is a list"
                 for f in flows:
                     ip = self.flow_key(f)
-                    print ip
                     if singleton_webgui.active_flows.get(ip):
                         pass
                     else:
@@ -212,10 +191,19 @@ class line_graph:
                 pass
             else:
                 del singleton_webgui.active_flows[f]
-            
+          
+    def delete_old_packets(self, packet_list, cutoff_time):
+        new_packet_list = list()
+        for index, packet in enumerate(packet_list): 
+            if packet[0] > cutoff_time:
+                new_packet_list.append(packet)
+        packet_list = None
+        return new_packet_list
+
+                
     def update_packet_data(self):
         # For each active flow
-        self.update_active_flows()
+
         peers = singleton_webgui.x_alice.get_peers()
 
         for flow_ip in singleton_webgui.active_flows:
@@ -231,17 +219,26 @@ class line_graph:
                 singleton_webgui.packet_data[flow_ip]['modified'] = list()
                 singleton_webgui.packet_data[flow_ip]['total count'] = list()
             
-            print flow_ip
-            
             # Each active flow has 4 lists of packets: dropped, injected, 
             # modified, total count
-            cutoff_time = time.time() - singleton_webgui.save_window
-            self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['dropped'], cutoff_time)
-            self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['injected'], cutoff_time)
-            self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['modified'], cutoff_time)
+            
+            self.cutoff_time = time.time() - singleton_webgui.save_window
+            
             singleton_webgui.packet_data[flow_ip]['dropped'].extend(f.get_new_dropped_packets())
             singleton_webgui.packet_data[flow_ip]['injected'].extend(f.get_new_injected_packets())
-            singleton_webgui.packet_data[flow_ip]['modified'].extend(f.get_new_modified_packets())    
+            singleton_webgui.packet_data[flow_ip]['modified'].extend(f.get_new_modified_packets())  
+            
+            print "dropped, adding", singleton_webgui.packet_data[flow_ip]['dropped']  
+            
+            singleton_webgui.packet_data[flow_ip]['dropped'] = \
+                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['dropped'], self.cutoff_time)
+            singleton_webgui.packet_data[flow_ip]['injected'] = \
+                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['injected'], self.cutoff_time)
+            singleton_webgui.packet_data[flow_ip]['modified'] = \
+                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['modified'], self.cutoff_time)
+            print "dropped, trimmed", singleton_webgui.packet_data[flow_ip]['dropped']
+            
+            
             singleton_webgui.packet_data[flow_ip]['total count'].extend([(time.time(),  f.get_new_packet_count()) ])
                 
     def make_legend(self):
@@ -274,13 +271,16 @@ gen_legend_''' + self.canvas_id + '''();
         return (html + shtml)
         
     def make_graph(self):
-        self.update_packet_data()
+        self.update_active_flows()        
+        
         # Update which flows we care about
         # For now, all of them.  Will update to those selected by GUI
         self.gui_flows = dict()
         for f in singleton_webgui.active_flows:
-            print f
             self.gui_flows[f] = singleton_webgui.active_flows[f]
+            
+        self.update_packet_data()
+        self.get_min_max_time()
         
         # Get bin size for all flows
         self.get_hist_xbin_size()
@@ -361,7 +361,11 @@ gen_legend_''' + self.canvas_id + '''();
         self.graph_ybins ''' + str(self.graph_ybins) + '''<br>
         self.graph_ybins_actual ''' + str(self.graph_ybins_actual) + '''<br>
         self.y_hist_max ''' + str(self.y_hist_max) + '''<br>
-        ''' + str(self.max_timestamp - self.min_timestamp)+ '''<br>
+        range ''' + str(self.max_timestamp - self.min_timestamp)+ '''<br>
+        self.max_timestamp ''' + str(self.max_timestamp)+ '''<br>
+        self.min_timestamp ''' + str(self.min_timestamp)+ '''<br>
+        time ''' + str(time.time())+ '''<br>
+        self.cutoff_time ''' + str(self.cutoff_time)+ '''<br>
         self.x_bin_pixels ''' + str(self.x_bin_pixels) + '''<br>
         self.x_bin_size ''' + str(self.x_bin_size) + '''<br>
         self.y_bin_pixels ''' + str(self.y_bin_pixels) + '''<br>
