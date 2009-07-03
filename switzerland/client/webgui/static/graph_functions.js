@@ -1,5 +1,6 @@
 /*
- 
+    Switzerland 
+    http://www.eff.org/testyourisp/switzerland
 */
 
 function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height, 
@@ -49,8 +50,11 @@ function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height,
             ctx.mozDrawText(Math.round(label*10)/10);
             ctx.restore();
         }
-        // FF 3.5 standard instead of ctx.MozDrawText
-        //ctx.fillText(bin_pixels * i, x, y_ax_mar - 12);
+        // moz*Text* are deprecated in 3.5, but necessary for 
+        // Firefox 3.0 and compatible
+        // For Firefox 3.5 standard instead of ctx.MozDrawText
+        // ctx.fillText(bin_pixels * i, x, y_ax_mar - 12);
+        // TODO: Either update to filltext or add browser detection code
     }
     
 
@@ -119,8 +123,5 @@ function legend_entry(id, width, height, color, shape) {
         ctx.moveTo(0, height/2);
         ctx.lineTo(width, height/2);
         ctx.stroke(); 
-    }
-    else {
-        /* Does not support canvas*/
     }
 }

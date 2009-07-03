@@ -5,12 +5,11 @@ import math
 import sys
 sys.path.append("..") 
 
-#from AliceAPI import xAlice, xAliceConfig, xPeer, xFlow
-from AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow
+#from AliceAPI import xAlice, xAliceConfig, xPeer, xFlow, xPacket
+from AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
-canvas_message = "Your browser does not support canvas."
 
 
 class line_graph:
@@ -56,21 +55,56 @@ class line_graph:
     # packet_type = dropped, injected, modified
     def make_histogram(self, packet_list):
         histogram = list()
-        for i in range(0,self.graph_xbins_actual):
+        for i in range(0,int(self.graph_xbins_actual)):
             histogram.append(0)
-            
-        # Count packets into bins
-        for packet_ts in [p[0] for p in packet_list]:
-            i =  packet_ts - self.min_timestamp
-            i = int(i/self.x_bin_size)
-            if i < len(histogram):
-                histogram[i] = histogram[i] + 1
-            else:
-                if debug_output:
-                    ''' This data is preserved for the next reload '''
-                    print "index", i, "out of range"
+ 
+        #try: 
+        if isinstance(packet_list[0][1], xPacket):  
+            # Handle detailed packet lists
+            # Count packets into bins
+            for packet_ts in [p[0] for p in packet_list]:
+                i =  packet_ts - self.min_timestamp
+                i = int(i/self.x_bin_size)
+                if i < len(histogram):
+                    histogram[i] = histogram[i] + 1
                 else:
-                    pass
+                    if debug_output:
+                        ''' This data is preserved for the next reload '''
+                        print "index", i, "out of range"
+        else:
+            # Handle total packet (not detailed) list
+            packet_list.sort()
+            updated_packet_list = list()
+            time_range = packet_list[0][0] - self.min_timestamp
+            num_bin = math.ceil(time_range / self.x_bin_size)
+            print "num_bin", num_bin
+            for i in range(int(num_bin)):
+                updated_packet_list.append(
+                    (packet_list[0][0], 
+                    packet_list[0][1]/num_bin)) 
+                               
+            for i in range(1,len(packet_list)):
+                time_range = packet_list[i][0] - packet_list[i - 1][0]
+                print "time range", time_range, "self.x_bin_size", self.x_bin_size
+                num_bin = math.ceil(time_range / self.x_bin_size)
+                print "num_bin", num_bin
+                for j in range(int(num_bin)):
+                    updated_packet_list.append(
+                        (j * self.x_bin_size + packet_list[i][0], 
+                        packet_list[i][1]/num_bin))
+            
+            for p in updated_packet_list:
+                i = p[0] - self.min_timestamp
+                i = int(i/self.x_bin_size)
+                if i < len(histogram):
+                    histogram[i] = histogram[i] + p[1]
+                else:
+                    if debug_output:
+                        ''' This data is preserved for the next reload '''
+                        print "index", i, "out of range"
+        #except:
+        #    print "Something is wrong with the incoming packet data."
+        #    print "Check to make sure that the packet_list is not None."
             
         # Return histogram
         return histogram
@@ -81,11 +115,10 @@ class line_graph:
         for ip in self.gui_flows:
             print "get_y_hist_max gui flow", ip
             if include_total:
-                all_packcount.extend([p[1] for p in singleton_webgui.packet_data[ip]['total count']])
-            else:
-                all_packcount.extend(self.histograms[ip]['modified'])
-                all_packcount.extend(self.histograms[ip]['injected'])
-                all_packcount.extend(self.histograms[ip]['dropped'])
+                all_packcount.extend(self.histograms[ip]['total'])
+            all_packcount.extend(self.histograms[ip]['modified'])
+            all_packcount.extend(self.histograms[ip]['injected'])
+            all_packcount.extend(self.histograms[ip]['dropped'])
             print all_packcount
                 
         self.y_hist_max = max(all_packcount)
@@ -104,7 +137,7 @@ class line_graph:
             all_timestamps.extend((min(ts_list), max(ts_list)))
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['modified']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
-            print "total count", singleton_webgui.packet_data[ip]['total count']
+            print "total count", singleton_webgui.packet_data[ip]['total']
             
         self.max_timestamp = max(all_timestamps)
         self.min_timestamp = min(all_timestamps)
@@ -118,9 +151,11 @@ class line_graph:
         range_timestamp = self.max_timestamp - self.min_timestamp
         print "x calculations"
         
-        (self.graph_xbins_actual, self.x_bin_size) = self.get_round_bin_size(range_timestamp, self.graph_xbins)
+        (self.graph_xbins_actual, self.x_bin_size) = \
+            self.get_round_bin_size(range_timestamp, self.graph_xbins)
         
-        print "rough bin size", str(range_timestamp / self.graph_xbins), "bin size", self.x_bin_size
+        print "rough bin size", str(range_timestamp / self.graph_xbins), \
+            "bin size", self.x_bin_size
         # Return bin size (in seconds) 
         return self.x_bin_size
     
@@ -138,12 +173,11 @@ class line_graph:
         
         i = 0
         self.x_bin_pixels = int(self.graph_width/self.graph_xbins_actual)
-        print "width:", self.graph_width, "xbins_actual:", self.graph_xbins_actual, "x_bin_pixels:", self.x_bin_pixels
-    
-        (self.graph_ybins_actual, self.y_bin_size) = self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
+      
+        (self.graph_ybins_actual, self.y_bin_size) = \
+            self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
             
         self.y_bin_pixels = int(self.graph_height/self.graph_ybins_actual)
-        
         
         html = "/* " + name + " " + point_shape + "*/\n"
         xhtml = "var x_" + name + " = new Array("
@@ -168,12 +202,15 @@ class line_graph:
         yhtml = yhtml + ");"
         
         html = xhtml + "\n" + yhtml + "\n"  
-        html = html + "make_line(" + self.canvas_context + ", x_" + name + ", y_" + name +", '" + point_shape +"')\n"
+        html = html + "make_line(" + self.canvas_context + ", x_" + name \
+            + ", y_" + name +", '" + point_shape +"')\n"
         # Return canvas-formatted graph data (for line drawing)
         return html
         
     def flow_key(self, f):
-        return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) + "|" + str(f.flow_tuple[4])         
+        return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" \
+            + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) \
+            + "|" + str(f.flow_tuple[4])         
     
     def update_active_flows(self):
         peers = singleton_webgui.x_alice.get_peers()
@@ -217,62 +254,62 @@ class line_graph:
                 singleton_webgui.packet_data[flow_ip]['dropped'] = list()
                 singleton_webgui.packet_data[flow_ip]['injected'] = list()
                 singleton_webgui.packet_data[flow_ip]['modified'] = list()
-                singleton_webgui.packet_data[flow_ip]['total count'] = list()
+                singleton_webgui.packet_data[flow_ip]['total'] = list()
             
             # Each active flow has 4 lists of packets: dropped, injected, 
             # modified, total count
             
             self.cutoff_time = time.time() - singleton_webgui.save_window
             
-            singleton_webgui.packet_data[flow_ip]['dropped'].extend(f.get_new_dropped_packets())
-            singleton_webgui.packet_data[flow_ip]['injected'].extend(f.get_new_injected_packets())
-            singleton_webgui.packet_data[flow_ip]['modified'].extend(f.get_new_modified_packets())  
+            singleton_webgui.packet_data[flow_ip]['dropped'].extend( \
+                f.get_new_dropped_packets())
+            singleton_webgui.packet_data[flow_ip]['injected'].extend( \
+                f.get_new_injected_packets())
+            singleton_webgui.packet_data[flow_ip]['modified'].extend( \
+                f.get_new_modified_packets())  
             
-            print "dropped, adding", singleton_webgui.packet_data[flow_ip]['dropped']  
+            singleton_webgui.packet_data[flow_ip]['total'].extend(
+                [(time.time(),  f.get_new_packet_count()) ])
+            
             
             singleton_webgui.packet_data[flow_ip]['dropped'] = \
-                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['dropped'], self.cutoff_time)
+                self.delete_old_packets(
+                    singleton_webgui.packet_data[flow_ip]['dropped'], 
+                        self.cutoff_time)
             singleton_webgui.packet_data[flow_ip]['injected'] = \
-                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['injected'], self.cutoff_time)
+                self.delete_old_packets(
+                    singleton_webgui.packet_data[flow_ip]['injected'], 
+                    self.cutoff_time)
             singleton_webgui.packet_data[flow_ip]['modified'] = \
-                self.delete_old_packets(singleton_webgui.packet_data[flow_ip]['modified'], self.cutoff_time)
-            print "dropped, trimmed", singleton_webgui.packet_data[flow_ip]['dropped']
-            
-            
-            singleton_webgui.packet_data[flow_ip]['total count'].extend([(time.time(),  f.get_new_packet_count()) ])
-                
+                self.delete_old_packets(
+                singleton_webgui.packet_data[flow_ip]['modified'], 
+                self.cutoff_time)
+            singleton_webgui.packet_data[flow_ip]['total'] = \
+                self.delete_old_packets(
+                singleton_webgui.packet_data[flow_ip]['total'], 
+                self.cutoff_time)
+
+    
+    # Legend for the graph
+    # precondition: gui_flows must be set            
     def make_legend(self):
         i = 0
-        html = "<table>\n"
-        shtml = '''<script type="text/javascript">
-
-function gen_legend_''' + self.canvas_id + '''() {
-'''
+        entries = list()
         for ip in self.gui_flows:
             line_name = ip.replace(":","_")
             line_name = line_name.replace(".","_")
-            html = html + '''<tr><td><canvas id="leg_''' + line_name + '''_dr" height="20" width="50">''' + canvas_message + '''</canvas></td><td>'''
-            html = html + '''</td><td>'''  + ip + ''' dropped</td></tr>\n'''
-            html = html + '''<tr><td><canvas id="leg_''' + line_name + '''_in" height="20" width="50">''' + canvas_message + '''</canvas></td><td>'''
-            html = html + '''</td><td>'''  + ip + ''' inserted</td></tr>\n'''
-            html = html + '''<tr><td><canvas id="leg_''' + line_name + '''_mo" height="20" width="50">''' + canvas_message + '''</canvas></td><td>'''
-            html = html + '''</td><td>'''  + ip + ''' modified</td></tr>\n'''
-            shtml = shtml + '''legend_entry("leg_''' + line_name + '''_dr", 50, 20, "''' + self.draw_colors[i%len(self.draw_colors)] + '''", "x");\n'''
-            shtml = shtml + '''legend_entry("leg_''' + line_name + '''_in", 50, 20, "''' + self.draw_colors[i%len(self.draw_colors)] + '''", "triangle");\n'''
-            shtml = shtml + '''legend_entry("leg_''' + line_name + '''_mo", 50, 20, "''' + self.draw_colors[i%len(self.draw_colors)] + '''", "square");\n'''
+            entries.append((ip, '''leg_''' + line_name + '''_dr''', ip + ''' dropped''', self.draw_colors[i%len(self.draw_colors)], "x"))
+            entries.append((ip, '''leg_''' + line_name + '''_in''', ip + ''' injected''', self.draw_colors[i%len(self.draw_colors)], "triangle"))
+            entries.append((ip, '''leg_''' + line_name + '''_mo''', ip + ''' modified''', self.draw_colors[i%len(self.draw_colors)], "square"))
+            entries.append((ip, '''leg_''' + line_name + '''_to''', ip + ''' total''', self.draw_colors[i%len(self.draw_colors)], ""))
             i = i + 1
-        html = html + "</table>\n"
-        
-        shtml = shtml + '''
-}
-gen_legend_''' + self.canvas_id + '''();
-</script>'''
-        
-        return (html + shtml)
-        
+        render = web.template.render('templates')
+        return render.packet_graph_legend(self.canvas_id,
+            entries)
+     
+    # Return graph HTML to render graph with HTML canvas element   
     def make_graph(self):
         self.update_active_flows()        
-        
         # Update which flows we care about
         # For now, all of them.  Will update to those selected by GUI
         self.gui_flows = dict()
@@ -292,13 +329,18 @@ gen_legend_''' + self.canvas_id + '''();
         for ip in self.gui_flows:
             # Make a histogram
             self.histograms[ip] = dict()
-            self.histograms[ip]['dropped'] = self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
-            self.histograms[ip]['injected'] = self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
-            self.histograms[ip]['modified'] = self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
+            self.histograms[ip]['dropped'] = \
+                self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
+            self.histograms[ip]['injected'] = \
+                self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
+            self.histograms[ip]['modified'] = \
+                self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
+            self.histograms[ip]['total'] = \
+                self.make_histogram(singleton_webgui.packet_data[ip]['total'])           
         
         i = 0
         # Get maximum y value (# of packets)
-        self.get_y_hist_max(False)
+        self.get_y_hist_max(True)
         print "y max", self.y_hist_max
         
         for ip in self.gui_flows:
@@ -311,46 +353,33 @@ gen_legend_''' + self.canvas_id + '''();
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
             graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
+            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_to", self.histograms[ip]['total'], "total")
             line_names[line_name] = line_name
             i = i + 1
-            
-        html = '''
-
-<canvas id="''' + self.canvas_id + '''" width="''' + str(self.width) + '''" height="''' + str(self.height) + '''">       
-    Canvas is not supported.
-</canvas>
-''' + self.dump_graph_info() + '''
-<script type="text/javascript">
-<!--
-    function drawgraph_''' + self.canvas_id + '''() {
-        var canvas_''' + self.canvas_id + ''' = document.getElementById("''' + self.canvas_id + '''");
-        if (canvas_''' + self.canvas_id + '''.getContext) {            
-            var ''' + self.canvas_context + ''' = canvas_''' + self.canvas_id + '''.getContext('2d');
-            draw_axes(''' + self.canvas_context + ''',  // canvas context
-                    ''' + str(self.x_margin) + ''',     
-                    ''' + str(self.y_margin) + ''', 
-                    ''' + str(self.x_axis_margin) + ''',        // left hand margin for axis info
-                    ''' + str(self.y_axis_margin) + ''',        // bottom margin for axis info
-                    ''' + str(self.width) + ''',                // canvas element width
-                    ''' + str(self.height) + ''',               // canvas element height
-                    ''' + str(self.graph_xbins_actual) + ''',   // number of x histogram bins
-                    ''' + str(self.graph_ybins) + ''',          // number of y levels
-                    ''' + str(self.x_bin_pixels)  + ''',        // number of pixels per x bin
-                    ''' + str(self.x_bin_size) + ''',           // number of seconds per x bin
-                    ''' + str(self.y_bin_pixels) + ''', 
-                    ''' + str(self.y_bin_size) + ''');          // number of packets per y bin 
-''' + graph_data_html + '''  
-        } else {
-            alert('You need Safari or Firefox 1.5+ to see this demo.');
-        }
-    }
-    
-    drawgraph_''' + self.canvas_id + '''();
-//-->
-</script>
-        '''    
+        
+        # Use a temporary dict to pass all fo the graph variables to the
+        # JavaScript function
+        graph_opts = dict()
+        graph_opts['canvas_id'] = self.canvas_id
+        graph_opts['canvas_context'] = self.canvas_context
+        graph_opts['x_margin'] = self.x_margin
+        graph_opts['y_margin'] = self.y_margin
+        graph_opts['x_axis_margin'] = self.x_axis_margin
+        graph_opts['y_axis_margin'] = self.y_axis_margin
+        graph_opts['width'] = self.width
+        graph_opts['height'] = self.height
+        graph_opts['graph_xbins_actual'] = self.graph_xbins_actual
+        graph_opts['graph_ybins'] = self.graph_ybins
+        graph_opts['x_bin_pixels'] = self.x_bin_pixels
+        graph_opts['x_bin_size'] = self.x_bin_size
+        graph_opts['y_bin_pixels'] = self.y_bin_pixels
+        graph_opts['y_bin_size'] = self.y_bin_size
+      
         # Finally, plot to canvas 
-        return html   
+        # return html   
+        render = web.template.render('templates')
+        return render.packet_graph(graph_opts,
+            graph_data_html)
     
     def dump_graph_info(self):
         html = '''        <br>
@@ -378,41 +407,27 @@ gen_legend_''' + self.canvas_id + '''();
 class index:
     def GET(self):
         render = web.template.render('templates')
+        graph = line_graph() 
+        # Call make_graph FIRST to load data into structures
+        graph_html = graph.make_graph() 
         client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
         server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
-        active_flows = render.flow_list(singleton_webgui.active_flows)
-        graph = line_graph() 
-        graph_html = graph.make_graph()       
+        active_flows = render.flow_list(singleton_webgui.active_flows)      
+        legend = graph.make_legend()
         return render.dashboard(client_info, 
             server_info,
             active_flows,
-            graph.make_legend(),
+            legend,
             graph_html)
 
 # List mutable configuration parameters, allow to change
 class config:
     def GET(self):  
-        page = '''<p>Tweakable Options</p>
-                    <form name="frmMutableOpt" id="frmMutableOpt">\n<table>\n'''
-                    
-        for opt in singleton_webgui.x_alice_config.tweakable_options:
-            page = page + '''<tr><td>''' + opt + '''</td>'''
-            page = page + '''<td><input name="''' + opt +  '''"''' 
-            page = page + ''' value="''' + WebGUI.x_alice_config.get_option(opt) 
-            page = page + '''"/></td></tr>\n'''
-        
-        page = page + '''</table>\n<br/>\n
-                    <input type="submit" value="Save changes"/></form>\n
-                    <p>Immutable Options</p>\n
-                    <table>\n'''
-                    
-        for opt in WebGUI.x_alice_config.immutable_options:
-            page = page + '''<tr><td>''' + opt + '''</td>'''
-            page = page + '''<td>''' + WebGUI.x_alice_config.get_option(opt) + '''</td></tr>\n'''
-        
-        page = page + "<table>\n"
-         
-        return page
+        render = web.template.render('templates')
+        return render.config(singleton_webgui.x_alice_config, 
+            singleton_webgui.x_alice_config.tweakable_options,
+            singleton_webgui.x_alice_config.immutable_options)
+
     
 
 class WebGUI():
@@ -428,7 +443,7 @@ class WebGUI():
         self.urls = (
             '/', 'index', 
             '', 'index',
-            'config[/]?', 'config')
+            '/config', 'config')
         
     def main(self):
         self.app = web.application(self.urls, globals())
