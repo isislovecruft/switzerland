@@ -1,0 +1,12 @@
+$def with (flows)        
+<table>
+        <caption>Active Flow List</caption>        
+        $for f in flows:
+            <tr>
+            <td>$flows[f].flow_tuple[0]</td>
+            <td>$flows[f].flow_tuple[1]</td>
+            <td>$flows[f].flow_tuple[2]</td>
+            <td>$flows[f].flow_tuple[3]</td>
+            <td>$flows[f].flow_tuple[4]</td>
+            </tr>
+</table>

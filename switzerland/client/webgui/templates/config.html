@@ -1,0 +1,21 @@
+$def with (config, tweakable_options, immutable_options)
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Switzerland</title>
+    </head>
+    <body>
+    <form name="frmMutableOpt" id="frmMutableOpt">
+    <table>
+        <caption>Tweakable Options</caption>
+        $for opt in tweakable_options: 
+            <tr><td>$opt[0]</td><td><input name="opt[0]" value="$config.get_option(opt[0])"></td></tr>
+    </table>
+    <input type="submit" value="Save changes"></form>
+    <table>
+        <caption>Immutable Options</caption>
+        $for opt in immutable_options: 
+            <tr><td>$opt[0]</td><td>$config.get_option(opt[0])</td></tr>
+    </table>
+    <body>
+</html>

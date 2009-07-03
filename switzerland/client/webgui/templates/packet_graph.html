@@ -1,0 +1,35 @@
+$def with (graph_opts, graph_data_html)
+
+<canvas id="$graph_opts['canvas_id']" width="$graph_opts['width']" height="$graph_opts['height']'">       
+    Canvas is not supported.
+    You need Safari or Firefox 1.5+ to see this graph.
+</canvas>
+<script type="text/javascript">
+<!--
+    function drawgraph_$graph_opts['canvas_id'] () {
+        var canvas = document.getElementById("$graph_opts['canvas_id']");
+        
+        if (canvas.getContext) {            
+            var $graph_opts['canvas_context'] = canvas.getContext('2d');
+            draw_axes($graph_opts['canvas_context'],  // canvas context
+                   $graph_opts['x_margin'],     
+                   $graph_opts['y_margin'], 
+                   $graph_opts['x_axis_margin'],        // left hand margin for axis info
+                   $graph_opts['y_axis_margin'],        // bottom margin for axis info
+                   $graph_opts['width'],                // canvas element width
+                   $graph_opts['height'],               // canvas element height
+                   $graph_opts['graph_xbins_actual'],   // number of x histogram bins
+                   $graph_opts['graph_ybins'],          // number of y levels
+                   $graph_opts['x_bin_pixels'],        // number of pixels per x bin
+                   $graph_opts['x_bin_size'],           // number of seconds per x bin
+                   $graph_opts['y_bin_pixels'], 
+                   $graph_opts['y_bin_size']);          // number of packets per y bin 
+            $:graph_data_html 
+        } else {
+            alert('You need Safari or Firefox 1.5+ to see this graph.');
+        }
+    }
+    
+    drawgraph_$graph_opts['canvas_id'] ();
+//-->
+</script>
