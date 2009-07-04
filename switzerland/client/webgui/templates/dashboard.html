@@ -1,15 +1,34 @@
-$def with (client_info, server_info, active_flows, legend, graph)
+$def with (client_info, server_info, active_flows, legend, graph, reload_seconds)
+$# Main page with graph
 <!DOCTYPE HTML>
+<script type="text/javascript">
+    var curURL = unescape(window.location.pathname);
+
+    function update_page(){
+        setTimeout("window.location.replace( curURL );", $reload_seconds * 1000);    
+    }
+</script>
 <html>
     <head>
         <title>Switzerland</title>
         <script type="text/javascript" src="/static/graph_functions.js"></script>
+        <link rel="stylesheet" type="text/css" href="/static/main.css"> 
     </head>
-    <body>
+    <body onload="update_page()">
+    <div id="clientinfo" class="page_section">
     $:client_info
+    </div>
+    <div id="serverinfo" class="page_section">
     $:server_info
+    </div>
+    <div id="activeflows" class="page_section">
     $:active_flows
+    </div>
+    <div id="legend" class="page_section">
     $:legend
+    </div>
+    <div id="graph" class="page_section">
     $:graph
+    </div>
     <body>
 </html>

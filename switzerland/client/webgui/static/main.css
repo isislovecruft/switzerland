@@ -1,0 +1,36 @@
+
+body, th, td, p, div {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: small;
+}
+
+#clientinfo {
+	float: left;
+	width: 250px;
+}
+#serverinfo { 
+	float: left;
+	width: 250px;
+}
+#activeflows {
+	float: left;
+}
+#legend {
+    float: left;
+    width: 500px;
+}
+#graph {
+	clear: both;
+	width: 820px;
+}
+caption {
+    font-weight: bold;
+}
+
+.page_section {
+    border-style:solid;
+    border-width:1px;
+    border-color:black;
+    margin: 4px;
+    width: 300px;
+}

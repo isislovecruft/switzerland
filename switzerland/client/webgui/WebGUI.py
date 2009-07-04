@@ -3,6 +3,7 @@ import web
 import time
 import math
 import sys
+import logging
 sys.path.append("..") 
 
 #from AliceAPI import xAlice, xAliceConfig, xPeer, xFlow, xPacket
@@ -10,6 +11,8 @@ from AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
+
+
 
 
 class line_graph:
@@ -75,33 +78,28 @@ class line_graph:
             # Handle total packet (not detailed) list
             packet_list.sort()
             updated_packet_list = list()
-            time_range = packet_list[0][0] - self.min_timestamp
-            num_bin = math.ceil(time_range / self.x_bin_size)
-            print "num_bin", num_bin
-            for i in range(int(num_bin)):
-                updated_packet_list.append(
-                    (packet_list[0][0], 
-                    packet_list[0][1]/num_bin)) 
-                               
-            for i in range(1,len(packet_list)):
-                time_range = packet_list[i][0] - packet_list[i - 1][0]
-                print "time range", time_range, "self.x_bin_size", self.x_bin_size
-                num_bin = math.ceil(time_range / self.x_bin_size)
-                print "num_bin", num_bin
-                for j in range(int(num_bin)):
-                    updated_packet_list.append(
-                        (j * self.x_bin_size + packet_list[i][0], 
-                        packet_list[i][1]/num_bin))
             
-            for p in updated_packet_list:
-                i = p[0] - self.min_timestamp
+            prev_time = self.min_timestamp
+            
+            for p in packet_list:
+                num_packets = p[1]
+                cur_time = p[0]
+                time_range = cur_time - prev_time
+                for i in range(num_packets):
+                    new_time = prev_time + i * (time_range/num_packets) 
+                    updated_packet_list.append(new_time)
+                prev_time = cur_time
+                    
+            for packet_ts in updated_packet_list:
+                i =  packet_ts - self.min_timestamp
                 i = int(i/self.x_bin_size)
                 if i < len(histogram):
-                    histogram[i] = histogram[i] + p[1]
+                    histogram[i] = histogram[i] + 1
                 else:
                     if debug_output:
                         ''' This data is preserved for the next reload '''
-                        print "index", i, "out of range"
+                        print "index", i, "out of range"    
+            
         #except:
         #    print "Something is wrong with the incoming packet data."
         #    print "Check to make sure that the packet_list is not None."
@@ -259,7 +257,7 @@ class line_graph:
             # Each active flow has 4 lists of packets: dropped, injected, 
             # modified, total count
             
-            self.cutoff_time = time.time() - singleton_webgui.save_window
+            self.cutoff_time = time.time() - singleton_webgui.web_app_config['save_window'][0]
             
             singleton_webgui.packet_data[flow_ip]['dropped'].extend( \
                 f.get_new_dropped_packets())
@@ -403,7 +401,7 @@ class line_graph:
         '''
         return html
  
-    
+
 class index:
     def GET(self):
         render = web.template.render('templates')
@@ -418,28 +416,71 @@ class index:
             server_info,
             active_flows,
             legend,
-            graph_html)
+            graph_html,
+            singleton_webgui.web_app_config['refresh_interval'][0])
 
 # List mutable configuration parameters, allow to change
 class config:
     def GET(self):  
-        render = web.template.render('templates')
+        render = web.template.render('templates', globals={'logging': logging})
         return render.config(singleton_webgui.x_alice_config, 
             singleton_webgui.x_alice_config.tweakable_options,
-            singleton_webgui.x_alice_config.immutable_options)
+            singleton_webgui.x_alice_config.immutable_options,
+            singleton_webgui.web_app_config)
+    
+    def POST(self):  
+        webin = web.input()
+        if webin.form == "frmApplicationOpt":
+            # Edit web application variables
+            message = "Changes saved."
+            try:
+                singleton_webgui.web_app_config['save_window'][0] = int(webin.save_window)
+            except:
+                message = "The save window must be a number of seconds."
+            try:
+                singleton_webgui.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
+            except:
+                message = "The refresh interval must be a number of seconds."
+                
+        else:
+            # Edit tweakable variables
+            message = "Changes saved."
+            try:
+                #lvl =  singleton_webgui.LOG_LEVELS.get(webin.log_level, logging.NOTSET)
+                singleton_webgui.x_alice_config.set_option("log_level", int(webin.log_level))
+            except:
+                message = "The log_level must be a valid python logging log level (e.g. logging.DEBUG)"
+            try:
+                singleton_webgui.x_alice_config.set_option("seriousness",  int(webin.seriousness))
+            except:
+                message = "Seriousness must be an integer."
+            try:
+                singleton_webgui.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
+            except:
+                message = "The refresh interval must be a number of seconds."
+            
+        render = web.template.render('templates', globals={'logging': logging})
+        return render.config(singleton_webgui.x_alice_config, 
+            singleton_webgui.x_alice_config.tweakable_options,
+            singleton_webgui.x_alice_config.immutable_options,
+            singleton_webgui.web_app_config, message)
 
     
 
 class WebGUI():
     """ Run a GUI with monitoring features as a local web server """
-
+    
+    # From python logging module documentation
+    # http://docs.python.org/library/logging.html
+                
     def __init__(self):
         self.x_alice_config = xAliceConfig()
         self.x_alice = xAlice(self.x_alice_config)
         self.packet_data = dict()
         self.active_flows = dict()
-        self.save_window = 60 * 60  # Number of seconds to save (1 hour default)
-        self.refresh_interval = 10  # Number of seconds between refresh
+        self.web_app_config = dict()
+        self.web_app_config['save_window'] = [60 * 60, "Save window", "Number of seconds to save"]
+        self.web_app_config['refresh_interval'] = [10, "Refresh interval", "Number of seconds between refresh"]
         self.urls = (
             '/', 'index', 
             '', 'index',

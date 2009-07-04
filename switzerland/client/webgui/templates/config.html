@@ -1,21 +1,69 @@
-$def with (config, tweakable_options, immutable_options)
+$def with (config, tweakable_options, immutable_options, application_options, message="")
 <!DOCTYPE HTML>
 <html>
     <head>
         <title>Switzerland</title>
+        <link rel="stylesheet" type="text/css" href="/static/main.css"> 
     </head>
     <body>
-    <form name="frmMutableOpt" id="frmMutableOpt">
+    <div id="message">$message</div>
+    <div id="applicationoptions" class="page_section">
+    <form name="frmApplicationOpt" id="frmApplicationOpt" method="POST">
+    <table>
+        <caption>Web Application Options</caption>
+        $for opt in application_options: 
+            <tr><td>$application_options[opt][1]</td><td><input name="$opt" value="$application_options[opt][0]"></td></tr>
+    </table>
+    <input type="hidden" name="form" value="frmApplicationOpt">
+    <input type="submit" value="Save changes"></form>
+    </div>
+    <div id="tweakableoptions" class="page_section"">
+    <form name="frmTweakableOpt" id="frmTweakableOpt" method="POST">
     <table>
         <caption>Tweakable Options</caption>
-        $for opt in tweakable_options: 
-            <tr><td>$opt[0]</td><td><input name="opt[0]" value="$config.get_option(opt[0])"></td></tr>
+        $for opt in tweakable_options:     
+            <tr><td>$opt[0]</td><td>
+            $# TODO: Replace the if statements with something more elegant
+            $if opt[0] == "log_level":
+                <select name="log_level">
+                    <option value="50"
+                    $if config.get_option(opt[0]) == 50:
+                        selected
+                    >critical</option>
+                    <option value="40"
+                    $if config.get_option(opt[0]) == 40:
+                        selected                    
+                    >error</option>
+                    <option value="30"
+                    $if config.get_option(opt[0]) == 30:
+                        selected
+                    >warning</option>
+                    <option value="20"
+                    $if config.get_option(opt[0]) == 20:
+                        selected
+                    >info</option>
+                    <option value="10"
+                    $if config.get_option(opt[0]) == 10:
+                        selected
+                    >debug</option>
+                    <option value="0"
+                    $if config.get_option(opt[0]) == 0:
+                        selected
+                    >not set</option>
+                </select>
+            $else:
+                <input name="$opt[0]" value="$config.get_option(opt[0])">
+            </td></tr>
     </table>
+    <input type="hidden" name="form" value="frmTweakableOpt">
     <input type="submit" value="Save changes"></form>
+    </div>
+    <div id="immutableoptions" class="page_section">
     <table>
         <caption>Immutable Options</caption>
         $for opt in immutable_options: 
             <tr><td>$opt[0]</td><td>$config.get_option(opt[0])</td></tr>
     </table>
+    </div>
     <body>
 </html>
