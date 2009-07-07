@@ -6,8 +6,8 @@ import sys
 import logging
 sys.path.append(".")  # XXX Stephan says:  this line should be removed, eventually....
 
-#from switzerland.client.AliceAPI import xAlice, xAliceConfig, xPeer, xFlow, xPacket
-from switzerland.client.AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
@@ -474,7 +474,7 @@ class WebGUI():
     # http://docs.python.org/library/logging.html
                 
     def __init__(self):
-        self.x_alice_config = xAliceConfig()
+        self.x_alice_config = ClientConfig()
         self.x_alice = xAlice(self.x_alice_config)
         self.packet_data = dict()
         self.active_flows = dict()
