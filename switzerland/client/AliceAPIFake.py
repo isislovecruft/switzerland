@@ -49,7 +49,7 @@ class xAliceConfig:
         self.option_hash["packet_buffer_size"] = 25000
         self.option_hash["quiet"] = False         
                  
-        tweakable = self.tweakable_options = [("log_level", string),
+        tweakable = self.tweakable_options = [("log_level", int),
         ("seriousness", int),
         ("do_cleaning", bool)]
         immutable = self.immutable_options = [("host", ip),
@@ -70,7 +70,7 @@ class xAliceConfig:
             
         
     def get_option(self,option):
-        return self.option_hash[option]
+        return self.option_hash.get(option)
 
 class xAlice:
     def __init__(self, config):
@@ -170,7 +170,9 @@ class xFlow:
         return packets
     
     def get_new_packet_count(self):
-        return random.randint(1000,5000)
+        diff = time.time() - self.last_packet_count_time
+        self.last_packet_count_time = time.time()
+        return (random.randint(10,20) * diff)
         
 
     def get_new_byte_count(self):
