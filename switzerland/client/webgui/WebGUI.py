@@ -4,10 +4,10 @@ import time
 import math
 import sys
 import logging
-sys.path.append("..") 
+sys.path.append(".")  # XXX Stephan says:  this line should be removed, eventually....
 
-#from AliceAPI import xAlice, xAliceConfig, xPeer, xFlow, xPacket
-from AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPI import xAlice, xAliceConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPIFake import xAlice, xAliceConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
