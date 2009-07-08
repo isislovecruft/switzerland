@@ -55,7 +55,7 @@ class TimeManager:
       val = line[pos+1:].strip()
       self.ntp_sysinfo[key]=val
 
-    self.mode = self.ntp_sysinfo["system peer mode"]
+    mode = self.ntp_sysinfo["system peer mode"]
     if mode == "unspec":
       log.debug("""
       NTP is in "unspec" mode.  This is probably because your system clock
