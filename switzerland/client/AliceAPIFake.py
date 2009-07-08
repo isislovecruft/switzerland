@@ -4,13 +4,13 @@ import random
 import logging
 
 def ClientConfig(self):
-    '''A factory function for the API's xAliceConfig objects.'''
-    return xAliceConfig()
+    '''A factory function for the API's ClientConfig objects.'''
+    return ClientConfig()
 
 def connectServer(self, config):
     return xAlice(config)
     
-class xAliceConfig:
+class ClientConfig:
     def __init__(self):
         # Fake for no AliceConfig
         self.option_hash = dict()
@@ -88,7 +88,7 @@ class xAlice:
         #self.fake_peers[2].fake_flows.append(xFlow(None))
         #self.fake_peers[2].fake_flows.append(xFlow(None))
         
-        assert isinstance(config, xAliceConfig)
+        assert isinstance(config, ClientConfig)
         #self.actual_alice = Alice(config.actual_config)
         
     def disconnect(self):

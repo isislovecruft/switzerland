@@ -32,5 +32,10 @@ caption {
     border-width:1px;
     border-color:black;
     margin: 4px;
+    padding: 2px;
     width: 300px;
+}
+
+.iparrow {
+    font-size: large;
 }

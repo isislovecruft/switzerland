@@ -3,8 +3,8 @@ import web
 import time
 import math
 import sys
+import os
 import logging
-sys.path.append(".")  # XXX Stephan says:  this line should be removed, eventually....
 
 from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
 #from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
@@ -296,10 +296,15 @@ class line_graph:
         for ip in self.gui_flows:
             line_name = ip.replace(":","_")
             line_name = line_name.replace(".","_")
-            entries.append((ip, '''leg_''' + line_name + '''_dr''', ip + ''' dropped''', self.draw_colors[i%len(self.draw_colors)], "x"))
-            entries.append((ip, '''leg_''' + line_name + '''_in''', ip + ''' injected''', self.draw_colors[i%len(self.draw_colors)], "triangle"))
-            entries.append((ip, '''leg_''' + line_name + '''_mo''', ip + ''' modified''', self.draw_colors[i%len(self.draw_colors)], "square"))
-            entries.append((ip, '''leg_''' + line_name + '''_to''', ip + ''' total''', self.draw_colors[i%len(self.draw_colors)], ""))
+            line_name = line_name.replace("|","_")
+            ip2 = ip.replace("::", ' <img src="/static/rarrow.png" alt="->"> ')
+            ip2 = ip2.replace("|tcp", " (tcp)")
+            ip2 = ip2.replace("|ip", " (ip)")
+            
+            entries.append((ip2, '''leg_''' + line_name + '''_dr''', ip2 + ''' dropped''', self.draw_colors[i%len(self.draw_colors)], "x"))
+            entries.append((ip2, '''leg_''' + line_name + '''_in''', ip2 + ''' injected''', self.draw_colors[i%len(self.draw_colors)], "triangle"))
+            entries.append((ip2, '''leg_''' + line_name + '''_mo''', ip2 + ''' modified''', self.draw_colors[i%len(self.draw_colors)], "square"))
+            entries.append((ip2, '''leg_''' + line_name + '''_to''', ip2 + ''' total''', self.draw_colors[i%len(self.draw_colors)], ""))
             i = i + 1
         render = web.template.render('templates')
         return render.packet_graph_legend(self.canvas_id,
@@ -404,6 +409,14 @@ class line_graph:
 
 class index:
     def GET(self):
+        return self.main()
+
+    def POST(self):
+        webin = web.input()
+        
+        return self.main()
+        
+    def main(self):
         render = web.template.render('templates')
         graph = line_graph() 
         # Call make_graph FIRST to load data into structures
@@ -492,5 +505,11 @@ class WebGUI():
 
 
 if __name__ == "__main__":
+
+    # We have to change the working directory to the directory of the WebGUI script
+    # If we don't, the script can't find all of the static and template files
+    pathname = os.path.dirname(sys.argv[0])
+    os.chdir(os.path.abspath(pathname))
+
     singleton_webgui = WebGUI()
     singleton_webgui.main()
