@@ -78,9 +78,9 @@ class xAlice:
         self.message_count = 0
         self.last_message_time = time.time()
         self.fake_peers = list()
-        self.fake_peers.append(xPeer(None))
-        self.fake_peers[0].fake_flows.append(xFlow(None))
-        self.fake_peers[0].fake_flows.append(xFlow(None))
+        #self.fake_peers.append(xPeer(None))
+        #self.fake_peers[0].fake_flows.append(xFlow(None))
+        #self.fake_peers[0].fake_flows.append(xFlow(None))
         #self.fake_peers.append(xPeer(None))
         #self.fake_peers[1].fake_flows.append(xFlow(None))
         #self.fake_peers[1].fake_flows.append(xFlow(None))

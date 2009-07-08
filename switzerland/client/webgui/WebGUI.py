@@ -6,14 +6,11 @@ import sys
 import os
 import logging
 
-from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
-
-
-
 
 class line_graph:
     def __init__(   self, 
@@ -136,9 +133,13 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['modified']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
             print "total count", singleton_webgui.packet_data[ip]['total']
-            
-        self.max_timestamp = max(all_timestamps)
-        self.min_timestamp = min(all_timestamps)
+        
+        if len(all_timestamps) > 0:    
+            self.max_timestamp = max(all_timestamps)
+            self.min_timestamp = min(all_timestamps)
+        else:
+            self.max_timestamp = 0
+            self.min_timestamp = 0        
         print "max ts", self.max_timestamp, "min ts", self.min_timestamp
         
     # Pass in all flows and get bin size used if all of these were
@@ -159,12 +160,14 @@ class line_graph:
     
     def get_round_bin_size(self, range, bins):
         est_bin_size = float(range) / float(bins)
-        print "range:", range, "bins:", bins, "est bin size:", est_bin_size
-        binlog = int(-math.floor(math.log10(est_bin_size)))
-        actual_bin_size = math.ceil(est_bin_size) 
-        actual_bins = math.ceil((int(range) / est_bin_size))
-        print "actual bins:", actual_bins
-        return (actual_bins, actual_bin_size)    
+        if est_bin_size > 0:
+            print "range:", range, "bins:", bins, "est bin size:", est_bin_size
+            binlog = int(-math.floor(math.log10(est_bin_size)))
+            actual_bin_size = math.ceil(est_bin_size) 
+            actual_bins = math.ceil((int(range) / est_bin_size))
+            print "actual bins:", actual_bins
+            return (actual_bins, actual_bin_size)    
+        return (1,1) # Empty data set
 
         
     def make_graph_data(self, name, histogram, point_shape="circle"):
@@ -321,68 +324,73 @@ class line_graph:
             
         self.update_packet_data()
         self.get_min_max_time()
+        if self.max_timestamp != 0:
         
-        # Get bin size for all flows
-        self.get_hist_xbin_size()
-        self.histograms = dict()
+            # Get bin size for all flows
+            self.get_hist_xbin_size()
+            self.histograms = dict()
 
-        graph_data_html = ""
-        line_names = dict()
-        # For each flow considered
-        for ip in self.gui_flows:
-            # Make a histogram
-            self.histograms[ip] = dict()
-            self.histograms[ip]['dropped'] = \
-                self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
-            self.histograms[ip]['injected'] = \
-                self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
-            self.histograms[ip]['modified'] = \
-                self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
-            self.histograms[ip]['total'] = \
-                self.make_histogram(singleton_webgui.packet_data[ip]['total'])           
+            graph_data_html = ""
+            line_names = dict()
+            # For each flow considered
+            for ip in self.gui_flows:
+                # Make a histogram
+                self.histograms[ip] = dict()
+                self.histograms[ip]['dropped'] = \
+                    self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
+                self.histograms[ip]['injected'] = \
+                    self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
+                self.histograms[ip]['modified'] = \
+                    self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
+                self.histograms[ip]['total'] = \
+                    self.make_histogram(singleton_webgui.packet_data[ip]['total'])           
+            
+            i = 0
+            # Get maximum y value (# of packets)
+            self.get_y_hist_max(True)
+            print "y max", self.y_hist_max
+            
+            for ip in self.gui_flows:
+                line_name = ip.replace(":","_")
+                line_name = line_name.replace(".","_")
+                line_name = line_name.replace("|","_")
+                # Make graph data
+                graph_data_html = graph_data_html + self.canvas_context + '''.fillStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''
+                graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
+                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
+                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
+                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
+                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_to", self.histograms[ip]['total'], "total")
+                line_names[line_name] = line_name
+                i = i + 1
+            
+            # Use a temporary dict to pass all fo the graph variables to the
+            # JavaScript function
+            graph_opts = dict()
+            graph_opts['canvas_id'] = self.canvas_id
+            graph_opts['canvas_context'] = self.canvas_context
+            graph_opts['x_margin'] = self.x_margin
+            graph_opts['y_margin'] = self.y_margin
+            graph_opts['x_axis_margin'] = self.x_axis_margin
+            graph_opts['y_axis_margin'] = self.y_axis_margin
+            graph_opts['width'] = self.width
+            graph_opts['height'] = self.height
+            graph_opts['graph_xbins_actual'] = self.graph_xbins_actual
+            graph_opts['graph_ybins'] = self.graph_ybins
+            graph_opts['x_bin_pixels'] = self.x_bin_pixels
+            graph_opts['x_bin_size'] = self.x_bin_size
+            graph_opts['y_bin_pixels'] = self.y_bin_pixels
+            graph_opts['y_bin_size'] = self.y_bin_size
+          
+            # Finally, plot to canvas 
+            # return html   
+            render = web.template.render('templates')
+            return render.packet_graph(graph_opts,
+                graph_data_html)
         
-        i = 0
-        # Get maximum y value (# of packets)
-        self.get_y_hist_max(True)
-        print "y max", self.y_hist_max
-        
-        for ip in self.gui_flows:
-            line_name = ip.replace(":","_")
-            line_name = line_name.replace(".","_")
-            line_name = line_name.replace("|","_")
-            # Make graph data
-            graph_data_html = graph_data_html + self.canvas_context + '''.fillStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''
-            graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
-            graph_data_html = graph_data_html + self.make_graph_data(line_name + "_to", self.histograms[ip]['total'], "total")
-            line_names[line_name] = line_name
-            i = i + 1
-        
-        # Use a temporary dict to pass all fo the graph variables to the
-        # JavaScript function
-        graph_opts = dict()
-        graph_opts['canvas_id'] = self.canvas_id
-        graph_opts['canvas_context'] = self.canvas_context
-        graph_opts['x_margin'] = self.x_margin
-        graph_opts['y_margin'] = self.y_margin
-        graph_opts['x_axis_margin'] = self.x_axis_margin
-        graph_opts['y_axis_margin'] = self.y_axis_margin
-        graph_opts['width'] = self.width
-        graph_opts['height'] = self.height
-        graph_opts['graph_xbins_actual'] = self.graph_xbins_actual
-        graph_opts['graph_ybins'] = self.graph_ybins
-        graph_opts['x_bin_pixels'] = self.x_bin_pixels
-        graph_opts['x_bin_size'] = self.x_bin_size
-        graph_opts['y_bin_pixels'] = self.y_bin_pixels
-        graph_opts['y_bin_size'] = self.y_bin_size
-      
-        # Finally, plot to canvas 
-        # return html   
-        render = web.template.render('templates')
-        return render.packet_graph(graph_opts,
-            graph_data_html)
+        else:
+            return "No data yet."        
+                    
     
     def dump_graph_info(self):
         html = '''        <br>
