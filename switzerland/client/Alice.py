@@ -65,7 +65,7 @@ class Alice:
         self.listener = PacketListener.PacketListener(self)
         self.link = linkobj(self.quit_event, self, config)
         self.reporter = Reporter.Reporter(self)
-        self.tr = Tracerouter
+        self.tr = Tracerouter()
     
         self.cleaner.setDaemon(True)
         self.listener.setDaemon(True)
