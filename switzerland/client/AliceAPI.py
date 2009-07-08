@@ -20,7 +20,7 @@ class ConfigError(Exception):
 
 class ClientConfig:
     def __init__(self):
-        self.actual_config = AliceConfig()
+        self.actual_config = AliceConfig(getopt=True)
         self.extract_options_for_api()
         self.in_use = False # this AliceConfig instance is in use by a client
                             # that's connected to a server
