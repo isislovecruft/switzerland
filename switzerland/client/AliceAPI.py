@@ -171,5 +171,5 @@ class xPacket:
         self.actual_packet = actual_packet
     
     def raw_data(self):
-        return actual_packet.original_data
+        return self.actual_packet.original_data
 
