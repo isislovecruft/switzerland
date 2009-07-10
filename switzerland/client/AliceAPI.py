@@ -2,6 +2,7 @@
 
 import time
 from switzerland.client.Alice import Alice
+from switzerland.client.Packet import Packet
 from switzerland.client.AliceConfig import AliceConfig,alice_options
 
 
@@ -157,6 +158,10 @@ class xFlow:
         return 0
 
 class xPacket:
-    def __init__(self):
-        pass
+    def __init__(self, actual_packet):
+        assert isinstance(actual_packet, Packet)
+        self.actual_packet = actual_packet
+    
+    def raw_data(self):
+        return actual_packet.original_data
 
