@@ -1,4 +1,4 @@
-$def with (config, tweakable_options, immutable_options, application_options, message="")
+$def with (menu, config, tweakable_options, immutable_options, application_options, message="")
 <!DOCTYPE HTML>
 <html>
     <head>
@@ -6,6 +6,11 @@ $def with (config, tweakable_options, immutable_options, application_options, me
         <link rel="stylesheet" type="text/css" href="/static/main.css"> 
     </head>
     <body>
+    <div id="menu" class="top_menu">
+    $:menu
+    </div>
+    
+    <div class="container">
     <div id="message">$message</div>
     <div id="applicationoptions" class="page_section">
     <form name="frmApplicationOpt" id="frmApplicationOpt" method="POST">
@@ -65,5 +70,6 @@ $def with (config, tweakable_options, immutable_options, application_options, me
             <tr><td>$opt[0]</td><td>$config.get_option(opt[0])</td></tr>
     </table>
     </div>
-    <body>
+    </div>
+    </body>
 </html>

@@ -36,6 +36,39 @@ caption {
     width: 300px;
 }
 
-.iparrow {
-    font-size: large;
+.container {
+    clear: both;
 }
+
+.top_menu {
+}
+
+.menu_item {
+    float: left; 
+    margin: 2px;
+    padding: 4px;
+    width: 120px;
+    text-align: center;
+    background-color:gray;
+    color:white;
+}
+
+.menu_item_selected {
+    float:left ;
+    margin: 2px;
+    padding: 4px;
+    width: 120px;
+    text-align: center;
+    color:white;
+    background-color:red;
+}
+
+.top_menu a {
+    text-decoration:none;
+    color:white;
+}
+
+.menu_item:hover, .top_menu a:hover {
+    background-color:#0000ff
+}
+

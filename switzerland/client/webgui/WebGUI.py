@@ -43,6 +43,7 @@ class line_graph:
         self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
         
         self.gui_flows = None
+
         
         # JavaScript canvas context name
         self.canvas_context = canvas_context
@@ -55,6 +56,7 @@ class line_graph:
     # packet_type = dropped, injected, modified
     def make_histogram(self, packet_list):
         histogram = list()
+        
         for i in range(0,int(self.graph_xbins_actual)):
             histogram.append(0)
  
@@ -128,13 +130,13 @@ class line_graph:
         all_timestamps = list()
         
         for ip in self.gui_flows :
-            ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['dropped']]
+            ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
             # only need the mins and maxes.
             all_timestamps.extend((min(ts_list), max(ts_list)))
-            ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['injected']]
+            ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['injected']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
-            ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['modified']]
+            ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['modified']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
 
         if len(all_timestamps) > 0:    
@@ -158,6 +160,8 @@ class line_graph:
         return self.x_bin_size
     
     def get_round_bin_size(self, range, bins):
+        assert bins > 0
+        
         est_bin_size = float(range) / float(bins)
         if est_bin_size > 0:
 
@@ -174,11 +178,16 @@ class line_graph:
         if histogram == None:
             return ""
         
+        assert len(histogram) > 0
+        assert self.graph_xbins_actual > 0
+        
         i = 0
         self.x_bin_pixels = int(self.graph_width/self.graph_xbins_actual)
       
         (self.graph_ybins_actual, self.y_bin_size) = \
             self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
+            
+        assert self.y_bin_size > 0
             
         self.y_bin_pixels = int(self.graph_height/self.graph_ybins_actual)
         
@@ -210,86 +219,8 @@ class line_graph:
         # Return canvas-formatted graph data (for line drawing)
         return html
         
-    def flow_key(self, f):
-        return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" \
-            + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) \
-            + "|" + str(f.flow_tuple[4])         
-    
-    def update_active_flows(self):
-        peers = singleton_webgui.x_alice.get_peers()
-        for p in peers:
-            flows = p.new_flows()
-            if isinstance(flows, list):
-                for f in flows:
-                    ip = self.flow_key(f)
-                    if singleton_webgui.active_flows.get(ip):
-                        pass
-                    else:
-                        singleton_webgui.active_flows[ip] = f
-        for f in singleton_webgui.active_flows:
-            if singleton_webgui.active_flows[f].is_active():
-                pass
-            else:
-                del singleton_webgui.active_flows[f]
-          
-    def delete_old_packets(self, packet_list, cutoff_time):
-        new_packet_list = list()
-        for index, packet in enumerate(packet_list): 
-            if packet[0] > cutoff_time:
-                new_packet_list.append(packet)
-        packet_list = None
-        return new_packet_list
 
-                
-    def update_packet_data(self):
-        # For each active flow
 
-        peers = singleton_webgui.x_alice.get_peers()
-
-        for flow_ip in singleton_webgui.active_flows:
-            # If flow does not exist in dictionary object, add
-            f = singleton_webgui.active_flows[flow_ip]
-            if singleton_webgui.packet_data.get(flow_ip) :
-                pass
-            else:
-                singleton_webgui.packet_data[flow_ip] = dict()
-                singleton_webgui.packet_data[flow_ip]['dropped'] = list()
-                singleton_webgui.packet_data[flow_ip]['injected'] = list()
-                singleton_webgui.packet_data[flow_ip]['modified'] = list()
-                singleton_webgui.packet_data[flow_ip]['total'] = list()
-            
-            # Each active flow has 4 lists of packets: dropped, injected, 
-            # modified, total count
-            
-            self.cutoff_time = time.time() - singleton_webgui.web_app_config['save_window'][0]
-            
-            singleton_webgui.packet_data[flow_ip]['dropped'].extend( \
-                f.get_new_dropped_packets())
-            singleton_webgui.packet_data[flow_ip]['injected'].extend( \
-                f.get_new_injected_packets())
-            singleton_webgui.packet_data[flow_ip]['modified'].extend( \
-                f.get_new_modified_packets())  
-            
-            singleton_webgui.packet_data[flow_ip]['total'].extend(
-                [(time.time(),  f.get_new_packet_count()) ])
-            
-            
-            singleton_webgui.packet_data[flow_ip]['dropped'] = \
-                self.delete_old_packets(
-                    singleton_webgui.packet_data[flow_ip]['dropped'], 
-                        self.cutoff_time)
-            singleton_webgui.packet_data[flow_ip]['injected'] = \
-                self.delete_old_packets(
-                    singleton_webgui.packet_data[flow_ip]['injected'], 
-                    self.cutoff_time)
-            singleton_webgui.packet_data[flow_ip]['modified'] = \
-                self.delete_old_packets(
-                singleton_webgui.packet_data[flow_ip]['modified'], 
-                self.cutoff_time)
-            singleton_webgui.packet_data[flow_ip]['total'] = \
-                self.delete_old_packets(
-                singleton_webgui.packet_data[flow_ip]['total'], 
-                self.cutoff_time)
 
     
     # Legend for the graph
@@ -305,28 +236,26 @@ class line_graph:
             ip2 = ip2.replace("|tcp", " (tcp)")
             ip2 = ip2.replace("|ip", " (ip)")
             
-            
             entries.append((ip2, '''leg_''' + line_name + '''_dr''', ip2 + ''' dropped''', self.draw_colors[i%len(self.draw_colors)], "x"))
             entries.append((ip2, '''leg_''' + line_name + '''_in''', ip2 + ''' injected''', self.draw_colors[i%len(self.draw_colors)], "triangle"))
             entries.append((ip2, '''leg_''' + line_name + '''_mo''', ip2 + ''' modified''', self.draw_colors[i%len(self.draw_colors)], "square"))
             entries.append((ip2, '''leg_''' + line_name + '''_to''', ip2 + ''' total''', self.draw_colors[i%len(self.draw_colors)], ""))
             i = i + 1
-            print "entries", entries
-            print "selected", singleton_webgui.selected_flows
+
         render = web.template.render('templates')
         return render.packet_graph_legend(self.canvas_id,
-            entries, singleton_webgui.selected_flows)
+            entries, singleton_webgui.packet_data.selected_flows)
      
     # Return graph HTML to render graph with HTML canvas element   
     def make_graph(self):
-        self.update_active_flows()        
+        singleton_webgui.packet_data.update_active_flows()        
         # Update which flows we care about
         # For now, all of them.  Will update to those selected by GUI
         self.gui_flows = dict()
-        for f in singleton_webgui.active_flows:
-            self.gui_flows[f] = singleton_webgui.active_flows[f]
+        for f in singleton_webgui.packet_data.active_flows:
+            self.gui_flows[f] = singleton_webgui.packet_data.active_flows[f]
             
-        self.update_packet_data()
+        singleton_webgui.packet_data.update_packet_data()
         self.get_min_max_time()
         
         if self.max_timestamp != 0:
@@ -344,24 +273,24 @@ class line_graph:
                 line_name = line_name.replace("|","_")
                 # Make a histogram
                 self.histograms[ip] = dict()
-                if singleton_webgui.selected_flows.get(line_name + "_dr") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(line_name + "_dr") == 'on':
                     self.histograms[ip]['dropped'] = \
-                        self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
+                        self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['dropped'])
                 else: 
                     self.histograms[ip]['dropped'] = None
-                if singleton_webgui.selected_flows.get(line_name + "_in") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(line_name + "_in") == 'on':
                     self.histograms[ip]['injected'] = \
-                        self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
+                        self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['injected'])
                 else: 
                     self.histograms[ip]['injected'] = None
-                if singleton_webgui.selected_flows.get(line_name + "_mo") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(line_name + "_mo") == 'on':
                     self.histograms[ip]['modified'] = \
-                        self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
+                        self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['modified'])
                 else: 
                     self.histograms[ip]['modified'] = None                
-                if singleton_webgui.selected_flows.get(line_name + "_to") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(line_name + "_to") == 'on':
                     self.histograms[ip]['total'] = \
-                        self.make_histogram(singleton_webgui.packet_data[ip]['total'])           
+                        self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['total'])           
                 else: 
                     self.histograms[ip]['total'] = None 
             i = 0
@@ -435,30 +364,34 @@ class line_graph:
 
 class index:
     def GET(self):
+        # No form input; maintain previous list of selected flows
         return self.main()
 
     def POST(self):
         webin = web.input()
-        singleton_webgui.selected_flows = dict()
+        # Reset list of selected flows and rebuild from form input
+        singleton_webgui.packet_data.selected_flows = dict()
         for attr in webin:
-            print "full flow", attr
+            # Add flows with checked checkboxes to selected flows
             if attr.startswith('cb_'):
                 #format: cb_leg_149_169_192_185_16618__100_133_203_203_35748_tcp_dr
                 name = attr[7:]
-                print "flow", name
-                singleton_webgui.selected_flows[name] = "on"
+                #name format: 149_169_192_185_16618__100_133_203_203_35748_tcp_dr
+                singleton_webgui.packet_data.selected_flows[name] = "on"
         return self.main()
         
     def main(self):
         render = web.template.render('templates')
+        menu = render.menu("main")
         graph = line_graph() 
         # Call make_graph FIRST to load data into structures
         graph_html = graph.make_graph() 
         client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
         server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
-        active_flows = render.flow_list(singleton_webgui.active_flows)      
+        active_flows = render.flow_list(singleton_webgui.packet_data.active_flows)      
         legend = graph.make_legend()
-        return render.dashboard(client_info, 
+        return render.dashboard(menu, 
+            client_info, 
             server_info,
             active_flows,
             legend,
@@ -469,7 +402,8 @@ class index:
 class config:
     def GET(self):  
         render = web.template.render('templates', globals={'logging': logging})
-        return render.config(singleton_webgui.x_alice_config, 
+        menu = render.menu("config")
+        return render.config(menu,singleton_webgui.x_alice_config, 
             singleton_webgui.x_alice_config.tweakable_options,
             singleton_webgui.x_alice_config.immutable_options,
             singleton_webgui.web_app_config)
@@ -480,11 +414,11 @@ class config:
             # Edit web application variables
             message = "Changes saved."
             try:
-                singleton_webgui.web_app_config['save_window'][0] = int(webin.save_window)
+                self.web_app_config['save_window'][0] = int(webin.save_window)
             except:
                 message = "The save window must be a number of seconds."
             try:
-                singleton_webgui.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
+                self.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
             except:
                 message = "The refresh interval must be a number of seconds."
                 
@@ -492,27 +426,128 @@ class config:
             # Edit tweakable variables
             message = "Changes saved."
             try:
-                #lvl =  singleton_webgui.LOG_LEVELS.get(webin.log_level, logging.NOTSET)
-                singleton_webgui.x_alice_config.set_option("log_level", int(webin.log_level))
+                #lvl =  self.LOG_LEVELS.get(webin.log_level, logging.NOTSET)
+                self.x_alice_config.set_option("log_level", int(webin.log_level))
             except:
                 message = "The log_level must be a valid python logging log level (e.g. logging.DEBUG)"
             try:
-                singleton_webgui.x_alice_config.set_option("seriousness",  int(webin.seriousness))
+                self.x_alice_config.set_option("seriousness",  int(webin.seriousness))
             except:
                 message = "Seriousness must be an integer."
             try:
-                singleton_webgui.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
+                self.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
             except:
                 message = "The refresh interval must be a number of seconds."
             
         render = web.template.render('templates', globals={'logging': logging})
-        return render.config(singleton_webgui.x_alice_config, 
-            singleton_webgui.x_alice_config.tweakable_options,
-            singleton_webgui.x_alice_config.immutable_options,
-            singleton_webgui.web_app_config, message)
+        menu = render.menu("config")
+        return render.config(menu, singleton_webgui.packet_data.x_alice_config, 
+            singleton_webgui.packet_data.x_alice_config.tweakable_options,
+            singleton_webgui.packet_data.x_alice_config.immutable_options,
+            singleton_webgui.packet_data.web_app_config, message)
 
     
+def flow_key(f):
 
+    return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" \
+        + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) \
+        + "|" + str(f.flow_tuple[4])         
+
+
+# Packet data persists between web page calls, graph does not.
+# Persistent data belongs in this object.
+class packet_data:
+    
+    def __init__(self):
+        self.packet_data = dict()
+        self.active_flows = dict()
+        self.selected_flows = dict()
+
+    def init_gui_flows(self):
+        self.update_active_flows()
+        for ip in self.active_flows:
+            line_name = ip.replace(":","_")
+            line_name = line_name.replace(".","_")
+            line_name = line_name.replace("|","_")
+            self.selected_flows[line_name + "_mo"] = "on"
+            self.selected_flows[line_name + "_dr"] = "on"
+            self.selected_flows[line_name + "_in"] = "on"
+            self.selected_flows[line_name + "_to"] = "on"
+
+    def update_active_flows(self):
+        peers = singleton_webgui.x_alice.get_peers()
+        for p in peers:
+            flows = p.new_flows()
+            if isinstance(flows, list):
+                for f in flows:
+                    ip = flow_key(f)
+                    if self.active_flows.get(ip):
+                        pass
+                    else:
+                        self.active_flows[ip] = f
+        for f in self.active_flows:
+            if self.active_flows[f].is_active():
+                pass
+            else:
+                del self.active_flows[f]
+          
+    def delete_old_packets(self, packet_list, cutoff_time):
+        new_packet_list = list()
+        for index, packet in enumerate(packet_list): 
+            if packet[0] > cutoff_time:
+                new_packet_list.append(packet)
+        packet_list = None
+        return new_packet_list
+
+                
+    def update_packet_data(self):
+        
+        # For each active flow
+        for flow_ip in self.active_flows:
+            # If flow does not exist in dictionary object, add
+            f = self.active_flows[flow_ip]
+            if self.packet_data.get(flow_ip) :
+                pass
+            else:
+                self.packet_data[flow_ip] = dict()
+                self.packet_data[flow_ip]['dropped'] = list()
+                self.packet_data[flow_ip]['injected'] = list()
+                self.packet_data[flow_ip]['modified'] = list()
+                self.packet_data[flow_ip]['total'] = list()
+            
+            # Each active flow has 4 lists of packets: dropped, injected, 
+            # modified, total count
+            
+            self.cutoff_time = time.time() - singleton_webgui.web_app_config['save_window'][0]
+            
+            self.packet_data[flow_ip]['dropped'].extend( \
+                f.get_new_dropped_packets())
+            self.packet_data[flow_ip]['injected'].extend( \
+                f.get_new_injected_packets())
+            self.packet_data[flow_ip]['modified'].extend( \
+                f.get_new_modified_packets())  
+            
+            self.packet_data[flow_ip]['total'].extend(
+                [(time.time(),  f.get_new_packet_count()) ])
+            
+            
+            self.packet_data[flow_ip]['dropped'] = \
+                self.delete_old_packets(
+                    self.packet_data[flow_ip]['dropped'], 
+                        self.cutoff_time)
+            self.packet_data[flow_ip]['injected'] = \
+                self.delete_old_packets(
+                    self.packet_data[flow_ip]['injected'], 
+                    self.cutoff_time)
+            self.packet_data[flow_ip]['modified'] = \
+                self.delete_old_packets(
+                self.packet_data[flow_ip]['modified'], 
+                self.cutoff_time)
+            self.packet_data[flow_ip]['total'] = \
+                self.delete_old_packets(
+                self.packet_data[flow_ip]['total'], 
+                self.cutoff_time)
+    
 class WebGUI():
     """ Run a GUI with monitoring features as a local web server """
     
@@ -522,12 +557,13 @@ class WebGUI():
     def __init__(self):
         self.x_alice_config = ClientConfig()
         self.x_alice = xAlice(self.x_alice_config)
-        self.packet_data = dict()
-        self.active_flows = dict()
-        self.selected_flows = dict()
+        self.packet_data = packet_data()
+        
         self.web_app_config = dict()
-        self.web_app_config['save_window'] = [60 * 60, "Save window", "Number of seconds to save"]
-        self.web_app_config['refresh_interval'] = [20, "Refresh interval", "Number of seconds between refresh"]
+        self.web_app_config['save_window'] = [60 * 60, 
+            "Save window", "Number of seconds to save"]
+        self.web_app_config['refresh_interval'] = [20, 
+            "Refresh interval", "Number of seconds between refresh"]
         self.urls = (
             '/', 'index', 
             '', 'index',
@@ -536,6 +572,8 @@ class WebGUI():
     def main(self):
         self.app = web.application(self.urls, globals())
         self.app.run()
+    
+
 
 
 if __name__ == "__main__":
@@ -546,4 +584,5 @@ if __name__ == "__main__":
     os.chdir(os.path.abspath(pathname))
 
     singleton_webgui = WebGUI()
+    singleton_webgui.packet_data.init_gui_flows()
     singleton_webgui.main()
