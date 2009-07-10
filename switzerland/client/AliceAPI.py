@@ -134,11 +134,12 @@ class xPeer:
         finally:
             self.fm.lock.release()
         
-
 class xFlow:
     def __init__(self, actual_flow):
         self.actual_flow = actual_flow
         self.flow_tuple = self.actual_flow.summary()[2]
+        self.reported_packets = 0
+        self.reported_bytes = 0
 
     def get_pair(self):
         """
@@ -151,10 +152,14 @@ class xFlow:
         return True
     
     def get_new_packet_count(self):
-        return 0
+        n = self.actual_flow.packets_transferred - self.reported_packets
+        self.reported_packets = self.actual_flow.packets_transferred
+        return n
 
     def get_new_byte_count(self):
-        return 0
+        n = self.actual_flow.bytes_transferred - self.reported_bytes
+        self.reported_bytes = self.actual_flow.bytes_transferred
+        return n
 
     def get_new_dropped(self):
         return 0
