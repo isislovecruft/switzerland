@@ -28,12 +28,21 @@ function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height,
             ctx.save();
             var label = i * y_bin_size;
             var len = ctx.mozMeasureText(label); 
-            ctx.translate(x_mar , height - y);
+            ctx.translate(x_ax_mar + 2 - len, height - y);
             ctx.mozTextStyle = "8pt Arial, Helvetica"
             ctx.mozDrawText(Math.round(label*10)/10);
             ctx.restore();
         }       
     }
+    
+    var rad=(Math.PI/180)*-90;
+    var label = "No. of Packets";
+    var len = ctx.mozMeasureText(label); 
+    ctx.save();
+    ctx.translate(x_mar,  height - graph_height/2);
+    ctx.rotate(rad);
+    ctx.mozDrawText(label);
+    ctx.restore();
 
     // Draw the x axis numbers and hash marks
     for (i = 0; i < x_bins; i++){
@@ -57,6 +66,12 @@ function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height,
         // TODO: Either update to filltext or add browser detection code
     }
     
+    label = "No. of Seconds";
+    len = ctx.mozMeasureText(label); 
+    ctx.save();
+    ctx.translate( graph_width/2 - len/2, height - 2);
+    ctx.mozDrawText(label);
+    ctx.restore();
 
     ctx.stroke();
 }

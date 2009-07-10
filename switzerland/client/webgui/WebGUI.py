@@ -37,8 +37,8 @@ class line_graph:
         self.y_bin_pixels = None
         self.y_margin = 5
         self.x_margin = 10
-        self.x_axis_margin = 25
-        self.y_axis_margin = 20
+        self.x_axis_margin = 35
+        self.y_axis_margin = 30
         self.graph_height = height - (self.y_axis_margin + 2 * self.y_margin)
         self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
         
@@ -571,6 +571,8 @@ class WebGUI():
         
     def main(self):
         self.app = web.application(self.urls, globals())
+        # Uncomment to make inaccessible outside of localhost
+        #sys.argv.insert(1,"127.0.0.1:8080")
         self.app.run()
     
 
