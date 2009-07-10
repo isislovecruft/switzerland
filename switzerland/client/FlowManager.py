@@ -32,8 +32,12 @@ class FlowManager:
     def __init__(self, config, parent=None):
         self.flows = { }
         self.flow_id_to_address = { }
+        # jered used these to implement the Reporter:
         self.new_flows = [ ]
         self.deleted_flows = [ ]
+        # I'mma use these to implement the API:
+        self.api_new_flows = []
+
         self.unique_id = 0
         self.config = config
         self.private_ip = s.inet_aton(config.private_ip)
@@ -174,6 +178,7 @@ class FlowManager:
         self.unique_id += 1
         if flow.in_circle: # only report flows in circle to switzerland
             self.new_flows.append(flow)
+            self.api_new_flows.append(flow)
             log.info("Attempting to test flow #%d %s" % (flow.id, flow.__str__()))
             log.debug("(flow opens with hash: %s\npacket data: %s" % \
                 (hexlify(opening_hash), hexlify(packet.data.tostring())))
@@ -190,28 +195,32 @@ class FlowManager:
         for that flow.  return True if the packet completes a PacketBatch,
         False otherwise.
         """
-        assert isinstance(packet, Packet.Packet), 'expecting Packet'
-        if not self.is_local_flow(packet): # ignore packets not from/to alice
+        self.lock.acquire()
+        try:
+            assert isinstance(packet, Packet.Packet), 'expecting Packet'
+            if not self.is_local_flow(packet): # ignore packets not from/to alice
+                return False
+            self.mark_if_firewalled(packet)
+            self.archive_packet(packet)
+
+            flow_addr = packet.flow_addr()
+            if not self.flows.has_key(flow_addr): # create flow if it doesn't already exist
+                self.create_flow(packet, flow_addr)
+
+            flow = self.flows[flow_addr]
+            assert flow != None, 'expecting to find flow'
+
+            # track flow data
+            flow.activity = True
+            flow.time_last_active = packet.timestamp
+            flow.bytes_transferred += len(packet)
+            flow.packets_transferred += 1
+
+            if flow.in_circle:
+                return flow.queue.append(packet)
             return False
-        self.mark_if_firewalled(packet)
-        self.archive_packet(packet)
-
-        flow_addr = packet.flow_addr()
-        if not self.flows.has_key(flow_addr): # create flow if it doesn't already exist
-            self.create_flow(packet, flow_addr)
-
-        flow = self.flows[flow_addr]
-        assert flow != None, 'expecting to find flow'
-
-        # track flow data
-        flow.activity = True
-        flow.time_last_active = packet.timestamp
-        flow.bytes_transferred += len(packet)
-        flow.packets_transferred += 1
-
-        if flow.in_circle:
-            return flow.queue.append(packet)
-        return False
+        finally:
+            self.lock.release()
 
     def clean(self, now):
         """ remove inactive flows or stale packets in active flows """

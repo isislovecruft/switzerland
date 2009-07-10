@@ -110,22 +110,30 @@ class xAlice:
 
     def get_peers(self):
         peers = self.actual_alice.fm.peers.items()
-        return map(xPeer, peers)
+        return [xPeer(p, self.actual_alice.fm) for p in peers]
 
  
 class xPeer:
-    def __init__(self, ip_and_actual_peer):
+    def __init__(self, ip_and_actual_peer, flow_manager):
         self.ip, self.actual_peer = ip_and_actual_peer
+        self.fm=flow_manager
     def traceroute(self):
         if tr:
             return tr.route_to(self.ip)
         else:
             return None
-    def active_flows(self):
-        return []
-    def old_flows(self):
-        return []
+    def firewalled(self):
+        return self.actual_peer.firewalled
 
+    def new_flows(self):
+        self.fm.lock.acquire()
+        try:
+            xflows =  map(xFlow, self.fm.api_new_flows)
+            self.fm.api_new_flows = []
+            return xflows
+        finally:
+            self.fm.lock.release()
+        
 
 class xFlow:
     def __init__(self, actual_flow):
