@@ -58,72 +58,76 @@ class line_graph:
         for i in range(0,int(self.graph_xbins_actual)):
             histogram.append(0)
  
-        #try: 
-        if isinstance(packet_list[0][1], xPacket):  
-            # Handle detailed packet lists
-            # Count packets into bins
-            for packet_ts in [p[0] for p in packet_list]:
-                i =  packet_ts - self.min_timestamp
-                i = int(i/self.x_bin_size)
-                if i < len(histogram):
-                    histogram[i] = histogram[i] + 1
-                else:
-                    if debug_output:
-                        ''' This data is preserved for the next reload '''
-                        print "index", i, "out of range"
-        else:
-            # Handle total packet (not detailed) list
-            packet_list.sort()
-            updated_packet_list = list()
-            
-            prev_time = self.min_timestamp
-            
-            for p in packet_list:
-                num_packets = p[1]
-                cur_time = p[0]
-                time_range = cur_time - prev_time
-                for i in range(num_packets):
-                    new_time = prev_time + i * (time_range/num_packets) 
-                    updated_packet_list.append(new_time)
-                prev_time = cur_time
-                    
-            for packet_ts in updated_packet_list:
-                i =  packet_ts - self.min_timestamp
-                i = int(i/self.x_bin_size)
-                if i < len(histogram):
-                    histogram[i] = histogram[i] + 1
-                else:
-                    if debug_output:
-                        ''' This data is preserved for the next reload '''
-                        print "index", i, "out of range"    
-            
-        #except:
-        #    print "Something is wrong with the incoming packet data."
-        #    print "Check to make sure that the packet_list is not None."
+        try: 
+            if isinstance(packet_list[0][1], xPacket):  
+                # Handle detailed packet lists
+                # Count packets into bins
+                for packet_ts in [p[0] for p in packet_list]:
+                    i =  packet_ts - self.min_timestamp
+                    i = int(i/self.x_bin_size)
+                    if i < len(histogram):
+                        histogram[i] = histogram[i] + 1
+                    else:
+                        if debug_output:
+                            ''' This data is preserved for the next reload '''
+                            print "index", i, "out of range"
+            else:
+                # Handle total packet (not detailed) list
+                packet_list.sort()
+                updated_packet_list = list()
+                
+                prev_time = self.min_timestamp
+                
+                for p in packet_list:
+                    num_packets = int(p[1])
+                    cur_time = p[0]
+                    time_range = cur_time - prev_time
+                    for i in range(num_packets):
+                        new_time = prev_time + i * (time_range/num_packets) 
+                        updated_packet_list.append(new_time)
+                    prev_time = cur_time
+                        
+                for packet_ts in updated_packet_list:
+                    i =  packet_ts - self.min_timestamp
+                    i = int(i/self.x_bin_size)
+                    if i < len(histogram):
+                        histogram[i] = histogram[i] + 1
+                    else:
+                        if debug_output:
+                            ''' This data is preserved for the next reload '''
+                            print "index", i, "out of range"    
+                
+        except:
+            print "Something is wrong with the incoming packet data."
+            print "Check to make sure that the packet_list is not None."
             
         # Return histogram
         return histogram
     
-            
+    # Get maximum y value in histograms, so we can continue to adjust vertical
+    # size of graph        
     def get_y_hist_max(self, include_total=True):
         all_packcount = list()
         for ip in self.gui_flows:
-            print "get_y_hist_max gui flow", ip
-            if include_total:
+            if self.histograms[ip]['total'] != None:
                 all_packcount.extend(self.histograms[ip]['total'])
-            all_packcount.extend(self.histograms[ip]['modified'])
-            all_packcount.extend(self.histograms[ip]['injected'])
-            all_packcount.extend(self.histograms[ip]['dropped'])
-            print all_packcount
-                
-        self.y_hist_max = max(all_packcount)
+            if self.histograms[ip]['modified'] != None:
+                all_packcount.extend(self.histograms[ip]['modified'])
+            if self.histograms[ip]['injected'] != None:
+                all_packcount.extend(self.histograms[ip]['injected'])
+            if self.histograms[ip]['dropped'] != None:
+                all_packcount.extend(self.histograms[ip]['dropped'])
+                            
+        if len(all_packcount) > 0:
+            self.y_hist_max = max(all_packcount)
+        else:
+            self.y_hist_max = 0
         
     def get_min_max_time(self):
         # Find min and max timestamp
         all_timestamps = list()
         
         for ip in self.gui_flows :
-            print "xx ip", ip
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
             # only need the mins and maxes.
@@ -132,45 +136,43 @@ class line_graph:
             all_timestamps.extend((min(ts_list), max(ts_list)))
             ts_list = [p[0] for p in singleton_webgui.packet_data[ip]['modified']]
             all_timestamps.extend((min(ts_list), max(ts_list)))
-            print "total count", singleton_webgui.packet_data[ip]['total']
-        
+
         if len(all_timestamps) > 0:    
             self.max_timestamp = max(all_timestamps)
             self.min_timestamp = min(all_timestamps)
         else:
             self.max_timestamp = 0
             self.min_timestamp = 0        
-        print "max ts", self.max_timestamp, "min ts", self.min_timestamp
+
         
     # Pass in all flows and get bin size used if all of these were
     # plotted on same graph
     # flows = list of xFlows objects
     def get_hist_xbin_size(self):
-        
         range_timestamp = self.max_timestamp - self.min_timestamp
-        print "x calculations"
         
         (self.graph_xbins_actual, self.x_bin_size) = \
             self.get_round_bin_size(range_timestamp, self.graph_xbins)
-        
-        print "rough bin size", str(range_timestamp / self.graph_xbins), \
-            "bin size", self.x_bin_size
+
         # Return bin size (in seconds) 
         return self.x_bin_size
     
     def get_round_bin_size(self, range, bins):
         est_bin_size = float(range) / float(bins)
         if est_bin_size > 0:
-            print "range:", range, "bins:", bins, "est bin size:", est_bin_size
+
             binlog = int(-math.floor(math.log10(est_bin_size)))
             actual_bin_size = math.ceil(est_bin_size) 
             actual_bins = math.ceil((int(range) / est_bin_size))
-            print "actual bins:", actual_bins
+
             return (actual_bins, actual_bin_size)    
         return (1,1) # Empty data set
 
         
     def make_graph_data(self, name, histogram, point_shape="circle"):
+        
+        if histogram == None:
+            return ""
         
         i = 0
         self.x_bin_pixels = int(self.graph_width/self.graph_xbins_actual)
@@ -250,7 +252,6 @@ class line_graph:
             if singleton_webgui.packet_data.get(flow_ip) :
                 pass
             else:
-                print "Adding", flow_ip
                 singleton_webgui.packet_data[flow_ip] = dict()
                 singleton_webgui.packet_data[flow_ip]['dropped'] = list()
                 singleton_webgui.packet_data[flow_ip]['injected'] = list()
@@ -304,14 +305,17 @@ class line_graph:
             ip2 = ip2.replace("|tcp", " (tcp)")
             ip2 = ip2.replace("|ip", " (ip)")
             
+            
             entries.append((ip2, '''leg_''' + line_name + '''_dr''', ip2 + ''' dropped''', self.draw_colors[i%len(self.draw_colors)], "x"))
             entries.append((ip2, '''leg_''' + line_name + '''_in''', ip2 + ''' injected''', self.draw_colors[i%len(self.draw_colors)], "triangle"))
             entries.append((ip2, '''leg_''' + line_name + '''_mo''', ip2 + ''' modified''', self.draw_colors[i%len(self.draw_colors)], "square"))
             entries.append((ip2, '''leg_''' + line_name + '''_to''', ip2 + ''' total''', self.draw_colors[i%len(self.draw_colors)], ""))
             i = i + 1
+            print "entries", entries
+            print "selected", singleton_webgui.selected_flows
         render = web.template.render('templates')
         return render.packet_graph_legend(self.canvas_id,
-            entries)
+            entries, singleton_webgui.selected_flows)
      
     # Return graph HTML to render graph with HTML canvas element   
     def make_graph(self):
@@ -324,6 +328,7 @@ class line_graph:
             
         self.update_packet_data()
         self.get_min_max_time()
+        
         if self.max_timestamp != 0:
         
             # Get bin size for all flows
@@ -334,21 +339,34 @@ class line_graph:
             line_names = dict()
             # For each flow considered
             for ip in self.gui_flows:
+                line_name = ip.replace(":","_")
+                line_name = line_name.replace(".","_")
+                line_name = line_name.replace("|","_")
                 # Make a histogram
                 self.histograms[ip] = dict()
-                self.histograms[ip]['dropped'] = \
-                    self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
-                self.histograms[ip]['injected'] = \
-                    self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
-                self.histograms[ip]['modified'] = \
-                    self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
-                self.histograms[ip]['total'] = \
-                    self.make_histogram(singleton_webgui.packet_data[ip]['total'])           
-            
+                if singleton_webgui.selected_flows.get(line_name + "_dr") == 'on':
+                    self.histograms[ip]['dropped'] = \
+                        self.make_histogram(singleton_webgui.packet_data[ip]['dropped'])
+                else: 
+                    self.histograms[ip]['dropped'] = None
+                if singleton_webgui.selected_flows.get(line_name + "_in") == 'on':
+                    self.histograms[ip]['injected'] = \
+                        self.make_histogram(singleton_webgui.packet_data[ip]['injected'])
+                else: 
+                    self.histograms[ip]['injected'] = None
+                if singleton_webgui.selected_flows.get(line_name + "_mo") == 'on':
+                    self.histograms[ip]['modified'] = \
+                        self.make_histogram(singleton_webgui.packet_data[ip]['modified'])
+                else: 
+                    self.histograms[ip]['modified'] = None                
+                if singleton_webgui.selected_flows.get(line_name + "_to") == 'on':
+                    self.histograms[ip]['total'] = \
+                        self.make_histogram(singleton_webgui.packet_data[ip]['total'])           
+                else: 
+                    self.histograms[ip]['total'] = None 
             i = 0
             # Get maximum y value (# of packets)
             self.get_y_hist_max(True)
-            print "y max", self.y_hist_max
             
             for ip in self.gui_flows:
                 line_name = ip.replace(":","_")
@@ -421,7 +439,14 @@ class index:
 
     def POST(self):
         webin = web.input()
-        
+        singleton_webgui.selected_flows = dict()
+        for attr in webin:
+            print "full flow", attr
+            if attr.startswith('cb_'):
+                #format: cb_leg_149_169_192_185_16618__100_133_203_203_35748_tcp_dr
+                name = attr[7:]
+                print "flow", name
+                singleton_webgui.selected_flows[name] = "on"
         return self.main()
         
     def main(self):
@@ -499,9 +524,10 @@ class WebGUI():
         self.x_alice = xAlice(self.x_alice_config)
         self.packet_data = dict()
         self.active_flows = dict()
+        self.selected_flows = dict()
         self.web_app_config = dict()
         self.web_app_config['save_window'] = [60 * 60, "Save window", "Number of seconds to save"]
-        self.web_app_config['refresh_interval'] = [10, "Refresh interval", "Number of seconds between refresh"]
+        self.web_app_config['refresh_interval'] = [20, "Refresh interval", "Number of seconds between refresh"]
         self.urls = (
             '/', 'index', 
             '', 'index',

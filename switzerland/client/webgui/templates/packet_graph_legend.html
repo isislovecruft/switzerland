@@ -1,4 +1,4 @@
-$def with (canvas_id, entries)
+$def with (canvas_id, entries, selected)
            
 $# e = (ip, line name, label, color, symbol) 
 $ formName = 'frmLegend_' + canvas_id
@@ -7,7 +7,11 @@ $ submitCmd = 'document.' + formName + '.submit();'
 <form name="$formName" id="$formName" method="POST">
 <table>
     $for e in entries:
-        <tr><td><input type="checkbox" name="cb_$e[1]" value="on" onClick="$submitCmd"></td><td><canvas id="$e[1]" height="10" width="50">You need Safari or Firefox 1.5+ to see this image.</canvas></td><td></td><td>$:e[2]</td></tr>
+        $ selectName = e[1][4:]
+        <tr><td><input type="checkbox" name="cb_$e[1]" value="on" onClick="$submitCmd"
+        $if selected.get(selectName) == 'on':
+            checked
+        ></td><td><canvas id="$e[1]" height="10" width="50">You need Safari or Firefox 1.5+ to see this image.</canvas></td><td></td><td>$:e[2]</td></tr>
 </table>
 </form>
 
