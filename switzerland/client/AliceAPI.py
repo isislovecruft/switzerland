@@ -75,7 +75,14 @@ class xAlice:
         assert isinstance(config, ClientConfig)
         config.in_use = True
         self.config = config
+
+        # begin XXX This is supposed to be "equivalent" to Alice.main;
+        # work out what that means and unify the two!
         self.actual_alice = Alice(config.actual_config)
+        self.actual_alice.listener.start()
+        self.actual_alice.start()
+        # end XXX
+
         global tr
         tr = self.actual_alice.tr
         self.sinfo = {}

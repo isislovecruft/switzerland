@@ -22,7 +22,7 @@ def print_flow_tuple(f):
 class Flow:
     """A Flow is a 5-tuple of source ip:port, destination ip:port and protocol."""
 
-    timeout = 120 # seconds before a flow can be discarded
+    timeout = 600 # seconds before a flow can be discarded
 
     def __init__(self, inbound, src_ip, src_port, dest_ip, dest_port, proto, now, in_circle):
         assert isinstance(src_ip, types.StringType), 'expecting string src_ip'
