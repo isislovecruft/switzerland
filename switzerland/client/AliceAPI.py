@@ -168,13 +168,13 @@ class xFlow:
         self.reported_bytes = self.actual_flow.bytes_transferred
         return n
 
-    def get_new_dropped(self):
+    def get_new_dropped_packets(self):
         return 0
 
-    def get_new_injected(self):
+    def get_new_injected_packets(self):
         return 0
  
-    def get_new_modified(self):
+    def get_new_modified_packets(self):
         return 0
 
 class xPacket:
