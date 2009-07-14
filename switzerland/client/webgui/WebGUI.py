@@ -134,13 +134,13 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
             # only need the mins and maxes.
-            if len(ts_list > 0) :
+            if len(ts_list) > 0 :
                 all_timestamps.extend((min(ts_list), max(ts_list)))
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['injected']]
-            if len(ts_list > 0) :
+            if len(ts_list) > 0 :
                 all_timestamps.extend((min(ts_list), max(ts_list)))
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['modified']]
-            if len(ts_list > 0) :
+            if len(ts_list) > 0 :
                 all_timestamps.extend((min(ts_list), max(ts_list)))
 
         if len(all_timestamps) > 0:    
