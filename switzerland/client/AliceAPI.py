@@ -169,13 +169,13 @@ class xFlow:
         return n
 
     def get_new_dropped_packets(self):
-        return 0
+        return []
 
     def get_new_injected_packets(self):
-        return 0
+        return []
  
     def get_new_modified_packets(self):
-        return 0
+        return []
 
 class xPacket:
     def __init__(self, actual_packet):
