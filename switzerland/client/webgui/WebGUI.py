@@ -12,6 +12,7 @@ from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPac
 singleton_webgui = None
 debug_output = False
 
+
 class line_graph:
     def __init__(   self, 
                     canvas_id="cid",
@@ -133,11 +134,14 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
             # only need the mins and maxes.
-            all_timestamps.extend((min(ts_list), max(ts_list)))
+            if len(ts_list > 0) :
+                all_timestamps.extend((min(ts_list), max(ts_list)))
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['injected']]
-            all_timestamps.extend((min(ts_list), max(ts_list)))
+            if len(ts_list > 0) :
+                all_timestamps.extend((min(ts_list), max(ts_list)))
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['modified']]
-            all_timestamps.extend((min(ts_list), max(ts_list)))
+            if len(ts_list > 0) :
+                all_timestamps.extend((min(ts_list), max(ts_list)))
 
         if len(all_timestamps) > 0:    
             self.max_timestamp = max(all_timestamps)
