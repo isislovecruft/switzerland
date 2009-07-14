@@ -482,13 +482,10 @@ class packet_data:
     def update_active_flows(self):
         peers = singleton_webgui.x_alice.get_peers()
         for p in peers:
-            print "peer", p
-            for f in p.fm.flows:
-                print "flow", f
             flows = p.new_flows()
-            print "flows", flows
             if isinstance(flows, list):
                 for f in flows:
+                    print "flow", f.flow_tuple
                     ip = flow_key(f)
                     if self.active_flows.get(ip):
                         pass
