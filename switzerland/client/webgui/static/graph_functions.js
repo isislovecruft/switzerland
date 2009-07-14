@@ -3,8 +3,14 @@
     http://www.eff.org/testyourisp/switzerland
 */
 
-function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height, 
-        x_bins, y_bins, x_bin_pixels, x_bin_size, y_bin_pixels, y_bin_size) {
+function draw_axes(ctx, 
+        x_mar, y_mar, 
+        x_ax_mar, y_ax_mar, 
+        width, height, 
+        x_bins, y_bins, 
+        x_bin_pixels, x_bin_size, 
+        y_bin_pixels, y_bin_size, 
+        min_timestamp) {
         
     var graph_height = height - (2 * y_mar + y_ax_mar);
     var graph_width = width - (2 * x_mar + x_ax_mar);
@@ -17,22 +23,25 @@ function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height,
     ctx.lineTo(x_mar + x_ax_mar, height - (y_mar + y_ax_mar));
     ctx.lineTo(width - (x_mar), height - (y_mar + y_ax_mar));
     
-    
-    
     // Draw the y axis numbers and hash marks
     for (i = 0; i < y_bins; i++) {
         var y = y_mar + y_ax_mar + (y_bin_pixels * i);
-        ctx.moveTo((x_mar + x_ax_mar - 5), height - y);
-        ctx.lineTo((x_mar + x_ax_mar + 5), height - y);   
+  
         if (i % 5 == 0) {
+            ctx.moveTo((x_mar + x_ax_mar - 5), height - y);
+            ctx.lineTo((x_mar + x_ax_mar + 5), height - y); 
             ctx.save();
             var label = i * y_bin_size;
             var len = ctx.mozMeasureText(label); 
-            ctx.translate(x_ax_mar + 2 - len, height - y);
+            ctx.translate(x_ax_mar + 2 - len, height - y + 4);
             ctx.mozTextStyle = "8pt Arial, Helvetica"
             ctx.mozDrawText(Math.round(label*10)/10);
             ctx.restore();
-        }       
+        }    
+        else {
+            ctx.moveTo((x_mar + x_ax_mar - 3), height - y);
+            ctx.lineTo((x_mar + x_ax_mar + 3), height - y); 
+        }   
     }
     
     var rad=(Math.PI/180)*-90;
@@ -47,17 +56,23 @@ function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height,
     // Draw the x axis numbers and hash marks
     for (i = 0; i < x_bins; i++){
         var x = x_mar + x_ax_mar + (x_bin_pixels * i);
-        ctx.moveTo(x, height - (y_mar + y_ax_mar - 5));
-        ctx.lineTo(x, height - (y_mar + y_ax_mar + 5));
-        
+
         if (i % 5 == 0) {
+            ctx.moveTo(x, height - (y_mar + y_ax_mar - 5));
+            ctx.lineTo(x, height - (y_mar + y_ax_mar + 5));
             ctx.save();
-            var label = x_bin_size * i;
+            var label = epoch_to_time((x_bin_size * i) + min_timestamp, x_bin_size);
             var len = ctx.mozMeasureText(label); 
-            ctx.translate(x - len/2 , height - (y_mar + y_ax_mar - 14));
+            ctx.translate(x - len/2 , height - (y_mar + y_ax_mar - 18));
             ctx.mozTextStyle = "8pt Arial, Helvetica"
-            ctx.mozDrawText(Math.round(label*10)/10);
+            //This line will display seconds instead of time 
+            //label = Math.round(x_bin_size * i * 10) / 10; 
+            ctx.mozDrawText(label);
             ctx.restore();
+        }
+        else {
+            ctx.moveTo(x, height - (y_mar + y_ax_mar - 3));
+            ctx.lineTo(x, height - (y_mar + y_ax_mar + 3));
         }
         // moz*Text* are deprecated in 3.5, but necessary for 
         // Firefox 3.0 and compatible
@@ -66,7 +81,8 @@ function draw_axes(ctx, x_mar, y_mar, x_ax_mar, y_ax_mar, width, height,
         // TODO: Either update to filltext or add browser detection code
     }
     
-    label = "No. of Seconds";
+    //label = "No. of Seconds";
+    label = "Time";
     len = ctx.mozMeasureText(label); 
     ctx.save();
     ctx.translate( graph_width/2 - len/2, height - 2);
@@ -139,4 +155,25 @@ function legend_entry(id, width, height, color, shape) {
         ctx.lineTo(width, height/2);
         ctx.stroke(); 
     }
+}
+
+function epoch_to_time(epoch, bin_size) {
+
+    var ep = parseInt(epoch);
+    //alert("Epoch: " + ep);
+    if (ep < 10000000000) { ep *= 1000; }
+    var d = new Date();
+    d.setTime(ep);
+    h = "" + d.getHours();
+    if (h.length == 1) { h = "0" + h; }
+    m = "" + d.getMinutes();
+    //alert ("min " + m + " min length " + m.length);
+    if (m.length == 1) { m = "0" + m; }
+    s = "" + d.getSeconds();
+    if (s.length == 1) { s = "0" + s; }
+    
+    if (bin_size * 5 > 60) {
+        return (h + ":" +m);
+    }
+    return (h + ":" + m + ":" + s);
 }

@@ -22,7 +22,8 @@ $def with (graph_opts, graph_data_html)
                    $graph_opts['x_bin_pixels'],         // number of pixels per x bin
                    $graph_opts['x_bin_size'],           // number of seconds per x bin
                    $graph_opts['y_bin_pixels'], 
-                   $graph_opts['y_bin_size']);          // number of packets per y bin 
+                   $graph_opts['y_bin_size'],           // number of packets per y bin
+                   $graph_opts['min_timestamp']);          // minimum timestamp  
             $:graph_data_html 
         } else {
             alert('You need Safari or Firefox 1.5+ to see this graph.');

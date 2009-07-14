@@ -6,8 +6,8 @@ import sys
 import os
 import logging
 
-#from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
@@ -328,6 +328,7 @@ class line_graph:
             graph_opts['x_bin_size'] = self.x_bin_size
             graph_opts['y_bin_pixels'] = self.y_bin_pixels
             graph_opts['y_bin_size'] = self.y_bin_size
+            graph_opts['min_timestamp'] = self.min_timestamp
           
             # Finally, plot to canvas 
             # return html   
@@ -477,7 +478,11 @@ class packet_data:
     def update_active_flows(self):
         peers = singleton_webgui.x_alice.get_peers()
         for p in peers:
+            print "peer", p
+            for f in p.fm.flows:
+                print "flow", f
             flows = p.new_flows()
+            print "flows", flows
             if isinstance(flows, list):
                 for f in flows:
                     ip = flow_key(f)
@@ -485,6 +490,7 @@ class packet_data:
                         pass
                     else:
                         self.active_flows[ip] = f
+                        print "ADDING", ip
         for f in self.active_flows:
             if self.active_flows[f].is_active():
                 pass
