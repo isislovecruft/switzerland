@@ -149,7 +149,7 @@ class xFlow:
         return None
 
     def is_active(self):
-        return True
+        return self.actual_flow.active
     
     def get_new_packet_count(self):
         n = self.actual_flow.packets_transferred - self.reported_packets

@@ -231,6 +231,7 @@ class FlowManager:
               inactive = now - flow.time_last_active
               if inactive > Flow.timeout or flow.marked_for_deletion:
                   log.debug("Flow %s timed out, deleting", `flow`)
+                  flow.active = False
                   if flow.in_circle: # switzerland only knows about this flow if it's in alice's circle
                       self.deleted_flows.append(flow)
                   del self.flow_id_to_address[flow.id]
