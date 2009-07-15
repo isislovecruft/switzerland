@@ -5,7 +5,10 @@ import math
 import sys
 import os
 import logging
+import socket as s
+import switzerland.common.Flow
 
+from switzerland.common.Flow import print_flow_tuple
 from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
 #from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
@@ -386,7 +389,7 @@ class index:
         return self.main()
         
     def main(self):
-        render = web.template.render('templates')
+        render = web.template.render('templates', globals={'Flow': switzerland.common.Flow})
         menu = render.menu("main")
         graph = line_graph() 
         # Call make_graph FIRST to load data into structures
@@ -453,12 +456,12 @@ class config:
 
     
 def flow_key(f):
-
-    return str(f.flow_tuple[0]) + ":" + str(f.flow_tuple[1]) + "::" \
-        + str(f.flow_tuple[2]) + ":" + str(f.flow_tuple[3]) \
-        + "|" + str(f.flow_tuple[4])         
-
-
+    t = print_flow_tuple(f.flow_tuple)        
+    return str(t[0]) + ":" + str(t[1]) + "::" \
+        + str(t[2]) + ":" + str((t[3])) \
+        + "|" + str(t[4])        
+        
+        
 # Packet data persists between web page calls, graph does not.
 # Persistent data belongs in this object.
 class packet_data:
@@ -485,18 +488,25 @@ class packet_data:
             flows = p.new_flows()
             if isinstance(flows, list):
                 for f in flows:
-                    print "flow", f.flow_tuple
                     ip = flow_key(f)
                     if self.active_flows.get(ip):
                         pass
                     else:
                         self.active_flows[ip] = f
+                        line_name = ip.replace(":","_")
+                        line_name = line_name.replace(".","_")
+                        line_name = line_name.replace("|","_")
+                        self.selected_flows[line_name + "_mo"] = "on"
+                        self.selected_flows[line_name + "_dr"] = "on"
+                        self.selected_flows[line_name + "_in"] = "on"
+                        self.selected_flows[line_name + "_to"] = "on"
                         print "ADDING", ip
         for f in self.active_flows:
             if self.active_flows[f].is_active():
                 pass
             else:
                 del self.active_flows[f]
+                
           
     def delete_old_packets(self, packet_list, cutoff_time):
         new_packet_list = list()

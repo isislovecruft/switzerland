@@ -1,12 +1,15 @@
-$def with (flows)        
+$def with (flows)  
+$# Must be called with globals={'Flow': switzerland.common.Flow}      
 <table>
-        <caption>Active Flow List</caption>        
+        <caption>Active Flow List</caption>
+       
         $for f in flows:
+            $ items = Flow.print_flow_tuple(flows[f].flow_tuple) 
             <tr>
-            <td>$flows[f].flow_tuple[0]</td>
-            <td>$flows[f].flow_tuple[1]</td>
-            <td>$flows[f].flow_tuple[2]</td>
-            <td>$flows[f].flow_tuple[3]</td>
-            <td>$flows[f].flow_tuple[4]</td>
+            <td>$items[0]</td>
+            <td>$items[1]</td>
+            <td>$items[2]</td>
+            <td>$items[3]</td>
+            <td>$items[4]</td>
             </tr>
 </table>
