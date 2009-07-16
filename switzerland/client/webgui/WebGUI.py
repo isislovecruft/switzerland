@@ -409,50 +409,51 @@ class index:
 # List mutable configuration parameters, allow to change
 class config:
     def GET(self):  
-        render = web.template.render('templates', globals={'logging': logging})
-        menu = render.menu("config")
-        return render.config(menu,singleton_webgui.x_alice_config, 
-            singleton_webgui.x_alice_config.tweakable_options,
-            singleton_webgui.x_alice_config.immutable_options,
-            singleton_webgui.web_app_config)
-    
+        return self.main()    
+        
     def POST(self):  
         webin = web.input()
         if webin.form == "frmApplicationOpt":
             # Edit web application variables
             message = "Changes saved."
             try:
-                self.web_app_config['save_window'][0] = int(webin.save_window)
+                singleton_webgui.web_app_config['save_window'][0] = int(webin.save_window)
             except:
                 message = "The save window must be a number of seconds."
             try:
-                self.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
+                singleton_webgui.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
             except:
                 message = "The refresh interval must be a number of seconds."
+                print sys.exc_info()
                 
         else:
             # Edit tweakable variables
             message = "Changes saved."
             try:
                 #lvl =  self.LOG_LEVELS.get(webin.log_level, logging.NOTSET)
-                self.x_alice_config.set_option("log_level", int(webin.log_level))
+                singleton_webgui.x_alice_config.set_option("log_level", int(webin.log_level))
             except:
                 message = "The log_level must be a valid python logging log level (e.g. logging.DEBUG)"
             try:
-                self.x_alice_config.set_option("seriousness",  int(webin.seriousness))
+                singleton_webgui.x_alice_config.set_option("seriousness",  int(webin.seriousness))
             except:
                 message = "Seriousness must be an integer."
             try:
-                self.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
+                singleton_webgui.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
             except:
                 message = "The refresh interval must be a number of seconds."
-            
+        
+        return self.main(message)
+    
+    def main(self, message=""):
         render = web.template.render('templates', globals={'logging': logging})
         menu = render.menu("config")
-        return render.config(menu, singleton_webgui.packet_data.x_alice_config, 
-            singleton_webgui.packet_data.x_alice_config.tweakable_options,
-            singleton_webgui.packet_data.x_alice_config.immutable_options,
-            singleton_webgui.packet_data.web_app_config, message)
+        tweakable_options = singleton_webgui.x_alice_config.tweakable_options()
+        immutable_options = singleton_webgui.x_alice_config.immutable_options()
+        return render.config(menu, singleton_webgui.x_alice_config, 
+            tweakable_options,
+            immutable_options,
+            singleton_webgui.web_app_config, message)
 
     
 def flow_key(f):
