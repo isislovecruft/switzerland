@@ -501,12 +501,15 @@ class packet_data:
                         self.selected_flows[line_name + "_in"] = "on"
                         self.selected_flows[line_name + "_to"] = "on"
                         print "ADDING", ip
+        del_flows = list()
         for f in self.active_flows:
             if self.active_flows[f].is_active():
                 pass
             else:
-                del self.active_flows[f]
-                
+                del_flows.append(f)
+
+        for f in del_flows:
+            del self.active_flows[f]    
           
     def delete_old_packets(self, packet_list, cutoff_time):
         new_packet_list = list()
