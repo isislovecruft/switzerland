@@ -5,6 +5,12 @@ $ formName = 'frmLegend_' + canvas_id
 $ submitCmd = 'document.' + formName + '.submit();'
 
 <form name="$formName" id="$formName" method="POST">
+<input type="button" onClick="check_legend(document.$formName, false);" name="btnClear" value="Clear all">
+<input type="button" onClick="check_legend(document.$formName, true);$submitCmd" name="btnCheckAll" value="Check all">
+<input type="button" onClick="check_legend_group(document.$formName, '_mo', true);$submitCmd" name="btnCheckModified" value="Check all modified">
+<input type="button" onClick="check_legend_group(document.$formName, '_in', true);$submitCmd" name="btnCheckInjected" value="Check all injected">
+<input type="button" onClick="check_legend_group(document.$formName, '_dr', true);$submitCmd" name="btnCheckDropped" value="Check all dropped">
+<input type="button" onClick="check_legend_group(document.$formName, '_to', true);$submitCmd" name="btnCheckTotal" value="Check all total packets">
 <table>
     $for e in entries:
         $ selectName = e[1][4:]

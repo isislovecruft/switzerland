@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python -Wall
 import web
 import time
 import math
@@ -145,6 +145,9 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['modified']]
             if len(ts_list) > 0 :
                 all_timestamps.extend((min(ts_list), max(ts_list)))
+            ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['total']]
+            if len(ts_list) > 0 :
+                all_timestamps.extend((min(ts_list), max(ts_list)))
 
         if len(all_timestamps) > 0:    
             self.max_timestamp = max(all_timestamps)
@@ -184,8 +187,9 @@ class line_graph:
         
         if histogram == None:
             return ""
+        if len(histogram) == 0:
+            return ""
         
-        assert len(histogram) > 0
         assert self.graph_xbins_actual > 0
         
         i = 0
@@ -424,7 +428,7 @@ class config:
                 singleton_webgui.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
             except:
                 message = "The refresh interval must be a number of seconds."
-                print sys.exc_info()
+                
                 
         else:
             # Edit tweakable variables
@@ -517,6 +521,9 @@ class packet_data:
         for index, packet in enumerate(packet_list): 
             if packet[0] > cutoff_time:
                 new_packet_list.append(packet)
+            else:
+                if debug_output:
+                    print "Deleting packet..."
         packet_list = None
         return new_packet_list
 
@@ -548,9 +555,10 @@ class packet_data:
             self.packet_data[flow_ip]['modified'].extend( \
                 f.get_new_modified_packets())  
             
-            self.packet_data[flow_ip]['total'].extend(
-                [(time.time(),  f.get_new_packet_count()) ])
             
+            pack_count = f.get_new_packet_count()
+            self.packet_data[flow_ip]['total'].extend( \
+                [(time.time(), pack_count) ])
             
             self.packet_data[flow_ip]['dropped'] = \
                 self.delete_old_packets(
@@ -568,6 +576,7 @@ class packet_data:
                 self.delete_old_packets(
                 self.packet_data[flow_ip]['total'], 
                 self.cutoff_time)
+            
     
 class WebGUI():
     """ Run a GUI with monitoring features as a local web server """

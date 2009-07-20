@@ -157,6 +157,24 @@ function legend_entry(id, width, height, color, shape) {
     }
 }
 
+function check_legend(legend_form, checkbox_value) {   
+    for (var i = 0; i < legend_form.elements.length; i++ ) {
+        if (legend_form.elements[i].type == 'checkbox') {
+            legend_form.elements[i].checked = checkbox_value;
+        }
+    }
+}
+
+function check_legend_group(legend_form, group_str, checkbox_value) {
+    for (var i = 0; i < legend_form.elements.length; i++ ) {
+        if (legend_form.elements[i].type == 'checkbox') {
+            if (legend_form.elements[i].name.search(group_str) > -1) {
+                legend_form.elements[i].checked = checkbox_value;
+            }
+        }
+    }
+}
+
 function epoch_to_time(epoch, bin_size) {
 
     var ep = parseInt(epoch);
