@@ -1,4 +1,5 @@
-#!/usr/bin/python -Wall
+#!/usr/bin/env python
+
 import web
 import time
 import math
@@ -9,8 +10,8 @@ import socket as s
 import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
-from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
@@ -183,13 +184,19 @@ class line_graph:
         return (1,1) # Empty data set
 
         
-    def make_graph_data(self, name, histogram, point_shape="circle"):
+    def make_graph_data(self, name, histogram, point_shape="circle", 
+        color="black"):
         
         if histogram == None:
             return ""
         if len(histogram) == 0:
             return ""
         
+        # 253_160_101_119_2499__8_239_9_48_35991_TCP_to
+
+        (source_ip, source_port, dest_ip, dest_port, proto, packet_type, packet_type_long) = self.split_name(name)
+        
+        print name;
         assert self.graph_xbins_actual > 0
         
         i = 0
@@ -202,9 +209,9 @@ class line_graph:
             
         self.y_bin_pixels = int(self.graph_height/self.graph_ybins_actual)
         
-        html = "/* " + name + " " + point_shape + "*/\n"
-        xhtml = "var x_" + name + " = new Array("
-        yhtml = "var y_" + name + " = new Array("
+        html = "\n"
+        xhtml = "new Array("
+        yhtml = "new Array("
         
         # For each bin in histogram
         for b in histogram:
@@ -221,36 +228,62 @@ class line_graph:
             
         xhtml = xhtml[:-1]
         yhtml = yhtml[:-1]
-        xhtml = xhtml + ");"
-        yhtml = yhtml + ");"
+        xhtml = xhtml + ")"
+        yhtml = yhtml + ")"
+        indent = "            "
+        html = html + self.canvas_id + "_data['" + name + "']" 
+        html = html + " = new FlowData(\n" + indent
+        html = html + xhtml  + ",\n" + indent + yhtml + ",\n" + indent + self.canvas_context
+        html = html + ",\n" + indent + "'" + point_shape + "', '" + color + "',\n" + indent + "'" + name + "',\n "
+        html = html + indent + "'" + source_ip + "', '" + source_port + "',\n "
+        html = html + indent + "'" + dest_ip+ "', '" + dest_port + "' , '" + proto + "', '" + packet_type + "');\n\n"
         
-        html = xhtml + "\n" + yhtml + "\n"  
-        html = html + "make_line(" + self.canvas_context + ", x_" + name \
-            + ", y_" + name +", '" + point_shape +"')\n"
         # Return canvas-formatted graph data (for line drawing)
         return html
         
-
-
-
-    
+    def split_name(self, flow_name):
+        flow_name = flow_name.replace(":","_")
+        flow_name = flow_name.replace(".","_")
+        flow_name = flow_name.replace("|","_")
+        tuple = flow_name.replace("__", "_").split("_")
+        source_ip = ".".join(tuple[0:4])
+        dest_ip = ".".join(tuple[5:9])
+        source_port = tuple[4]
+        dest_port = tuple[9]
+        if len(tuple) > 10:
+            proto = tuple[10]
+        else:
+            proto = ""
+        if len(tuple) > 11:
+            packet_type = tuple[11]
+            if packet_type == "mo":
+                packet_type_long = "modified"
+            elif packet_type == "in":
+                packet_type_long = "injected"
+            elif packet_type == "dr":
+                packet_type_long = "dropped"
+            else:
+                packet_type_long = "total"
+        else:
+            packet_type = ""
+            packet_type_long = ""
+        return (source_ip, source_port, dest_ip, dest_port, proto, packet_type, packet_type_long)
+            
     # Legend for the graph
     # precondition: gui_flows must be set            
     def make_legend(self):
         i = 0
         entries = list()
         for ip in self.gui_flows:
-            line_name = ip.replace(":","_")
-            line_name = line_name.replace(".","_")
-            line_name = line_name.replace("|","_")
-            ip2 = ip.replace("::", ' <img src="/static/rarrow.png" alt="->"> ')
-            ip2 = ip2.replace("|tcp", " (tcp)")
-            ip2 = ip2.replace("|ip", " (ip)")
-            
-            entries.append((ip2, '''leg_''' + line_name + '''_dr''', ip2 + ''' dropped''', self.draw_colors[i%len(self.draw_colors)], "x"))
-            entries.append((ip2, '''leg_''' + line_name + '''_in''', ip2 + ''' injected''', self.draw_colors[i%len(self.draw_colors)], "triangle"))
-            entries.append((ip2, '''leg_''' + line_name + '''_mo''', ip2 + ''' modified''', self.draw_colors[i%len(self.draw_colors)], "square"))
-            entries.append((ip2, '''leg_''' + line_name + '''_to''', ip2 + ''' total''', self.draw_colors[i%len(self.draw_colors)], ""))
+            flow_name = ip.replace(":","_")
+            flow_name = flow_name.replace(".","_")
+            flow_name = flow_name.replace("|","_")
+            (source_ip, source_port, dest_ip, dest_port, proto, packet_type, packet_type_long) = self.split_name(flow_name)
+  
+            entries.append(('''leg_''' + flow_name + '''_dr''', source_ip, source_port, dest_ip, dest_port, proto,  '''dropped''' ))
+            entries.append(('''leg_''' + flow_name + '''_in''', source_ip, source_port, dest_ip, dest_port, proto, '''injected''' ))
+            entries.append(('''leg_''' + flow_name + '''_mo''', source_ip, source_port, dest_ip, dest_port, proto, '''modified''' ))
+            entries.append(('''leg_''' + flow_name + '''_to''', source_ip, source_port, dest_ip, dest_port, proto, '''total''' ))
             i = i + 1
 
         render = web.template.render('templates')
@@ -275,31 +308,33 @@ class line_graph:
             self.get_hist_xbin_size()
             self.histograms = dict()
 
-            graph_data_html = ""
-            line_names = dict()
+            indent = "         "
+            graph_data_html = indent + "var " + self.canvas_id + "_data = new Array();\n"
+            
+            flow_names = dict()
             # For each flow considered
             for ip in self.gui_flows:
-                line_name = ip.replace(":","_")
-                line_name = line_name.replace(".","_")
-                line_name = line_name.replace("|","_")
+                flow_name = ip.replace(":","_")
+                flow_name = flow_name.replace(".","_")
+                flow_name = flow_name.replace("|","_")
                 # Make a histogram
                 self.histograms[ip] = dict()
-                if singleton_webgui.packet_data.selected_flows.get(line_name + "_dr") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(flow_name + "_dr") == 'on':
                     self.histograms[ip]['dropped'] = \
                         self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['dropped'])
                 else: 
                     self.histograms[ip]['dropped'] = None
-                if singleton_webgui.packet_data.selected_flows.get(line_name + "_in") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(flow_name + "_in") == 'on':
                     self.histograms[ip]['injected'] = \
                         self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['injected'])
                 else: 
                     self.histograms[ip]['injected'] = None
-                if singleton_webgui.packet_data.selected_flows.get(line_name + "_mo") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(flow_name + "_mo") == 'on':
                     self.histograms[ip]['modified'] = \
                         self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['modified'])
                 else: 
                     self.histograms[ip]['modified'] = None                
-                if singleton_webgui.packet_data.selected_flows.get(line_name + "_to") == 'on':
+                if singleton_webgui.packet_data.selected_flows.get(flow_name + "_to") == 'on':
                     self.histograms[ip]['total'] = \
                         self.make_histogram(singleton_webgui.packet_data.packet_data[ip]['total'])           
                 else: 
@@ -309,18 +344,29 @@ class line_graph:
             self.get_y_hist_max(True)
             
             for ip in self.gui_flows:
-                line_name = ip.replace(":","_")
-                line_name = line_name.replace(".","_")
-                line_name = line_name.replace("|","_")
+                flow_name = ip.replace(":","_")
+                flow_name = flow_name.replace(".","_")
+                flow_name = flow_name.replace("|","_")
                 # Make graph data
-                graph_data_html = graph_data_html + self.canvas_context + '''.fillStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''
-                graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
-                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_dr", self.histograms[ip]['dropped'], "x")
-                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_in", self.histograms[ip]['injected'], "triangle")
-                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_mo", self.histograms[ip]['modified'], "square")
-                graph_data_html = graph_data_html + self.make_graph_data(line_name + "_to", self.histograms[ip]['total'], "total")
-                line_names[line_name] = line_name
+                color = self.draw_colors[i%len(self.draw_colors)];
+                #graph_data_html = graph_data_html + self.canvas_context + '''.fillStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''
+                #graph_data_html = graph_data_html + self.canvas_context + '''.strokeStyle = "''' + self.draw_colors[i%len(self.draw_colors)] + '''"\n'''            
+                
+                h = self.make_graph_data(flow_name + "_dr", self.histograms[ip]['dropped'], "x", color );
+                graph_data_html = graph_data_html + h
+                
+                h = self.make_graph_data(flow_name + "_in", self.histograms[ip]['injected'], "triangle", color );
+                graph_data_html = graph_data_html + h
+                                
+                h = self.make_graph_data(flow_name + "_mo", self.histograms[ip]['modified'], "square", color );
+                graph_data_html = graph_data_html + h  
+                              
+                h = self.make_graph_data(flow_name + "_to", self.histograms[ip]['total'], "total", color );
+                graph_data_html = graph_data_html + h 
+                               
+                flow_names[flow_name] = flow_name
                 i = i + 1
+            
             
             # Use a temporary dict to pass all fo the graph variables to the
             # JavaScript function
@@ -344,8 +390,8 @@ class line_graph:
             # Finally, plot to canvas 
             # return html   
             render = web.template.render('templates')
-            return render.packet_graph(graph_opts,
-                graph_data_html)
+            return render.packet_graph(graph_opts, 
+                graph_data_html, self.canvas_id + "_data")
         
         else:
             return "No data yet."        
@@ -454,10 +500,11 @@ class config:
         menu = render.menu("config")
         tweakable_options = singleton_webgui.x_alice_config.tweakable_options()
         immutable_options = singleton_webgui.x_alice_config.immutable_options()
-        return render.config(menu, singleton_webgui.x_alice_config, 
+        return render.config(menu, 
+            singleton_webgui.x_alice_config, 
             tweakable_options,
             immutable_options,
-            singleton_webgui.web_app_config, message)
+            singleton_webgui.web_app_config)
 
     
 def flow_key(f):
@@ -479,13 +526,13 @@ class packet_data:
     def init_gui_flows(self):
         self.update_active_flows()
         for ip in self.active_flows:
-            line_name = ip.replace(":","_")
-            line_name = line_name.replace(".","_")
-            line_name = line_name.replace("|","_")
-            self.selected_flows[line_name + "_mo"] = "on"
-            self.selected_flows[line_name + "_dr"] = "on"
-            self.selected_flows[line_name + "_in"] = "on"
-            self.selected_flows[line_name + "_to"] = "on"
+            flow_name = ip.replace(":","_")
+            flow_name = flow_name.replace(".","_")
+            flow_name = flow_name.replace("|","_")
+            self.selected_flows[flow_name + "_mo"] = "on"
+            self.selected_flows[flow_name + "_dr"] = "on"
+            self.selected_flows[flow_name + "_in"] = "on"
+            self.selected_flows[flow_name + "_to"] = "on"
 
     def update_active_flows(self):
         peers = singleton_webgui.x_alice.get_peers()
@@ -498,13 +545,13 @@ class packet_data:
                         pass
                     else:
                         self.active_flows[ip] = f
-                        line_name = ip.replace(":","_")
-                        line_name = line_name.replace(".","_")
-                        line_name = line_name.replace("|","_")
-                        self.selected_flows[line_name + "_mo"] = "on"
-                        self.selected_flows[line_name + "_dr"] = "on"
-                        self.selected_flows[line_name + "_in"] = "on"
-                        self.selected_flows[line_name + "_to"] = "on"
+                        flow_name = ip.replace(":","_")
+                        flow_name = flow_name.replace(".","_")
+                        flow_name = flow_name.replace("|","_")
+                        self.selected_flows[flow_name + "_mo"] = "on"
+                        self.selected_flows[flow_name + "_dr"] = "on"
+                        self.selected_flows[flow_name + "_in"] = "on"
+                        self.selected_flows[flow_name + "_to"] = "on"
                         print "ADDING", ip
         del_flows = list()
         for f in self.active_flows:

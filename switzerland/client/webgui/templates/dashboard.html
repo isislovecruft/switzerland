@@ -4,6 +4,7 @@ $# Main page with graph
 <script type="text/javascript">
     var curURL = unescape(window.location.pathname);
 
+
     function update_page(){
         setTimeout("window.location.replace( curURL );", $reload_seconds * 1000);    
     }
@@ -12,6 +13,7 @@ $# Main page with graph
     <head>
         <title>Switzerland</title>
         <script type="text/javascript" src="/static/graph_functions.js"></script>
+        <script type="text/javascript" src="/static/flow_data_object.js"></script>
         <link rel="stylesheet" type="text/css" href="/static/main.css"> 
     </head>
     <body onload="update_page()">

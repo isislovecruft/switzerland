@@ -2,6 +2,10 @@
 import time
 import random
 import logging
+import socket as s
+import binascii
+from switzerland.common.util import bin2int
+from switzerland.common import util
 
 def ClientConfig(self):
     '''A factory function for the API's ClientConfig objects.'''
@@ -19,10 +23,10 @@ class ClientConfig:
 
 
     def tweakable_options(self):
-        return self.tweakable_options
+        return self.tweakable
 
     def immutable_options(self):
-        return self.immutable_options
+        return self.immutable
 
     def extract_options_for_api(self):
         # These might turn into functions?
@@ -49,10 +53,10 @@ class ClientConfig:
         self.option_hash["packet_buffer_size"] = 25000
         self.option_hash["quiet"] = False         
                  
-        tweakable = self.tweakable_options = [("log_level", int),
+        self.tweakable = [("log_level", int),
         ("seriousness", int),
         ("do_cleaning", bool)]
-        immutable = self.immutable_options = [("host", ip),
+        self.immutable = [("host", ip),
         ("port", int),
         ("interface", string),
         ("skew", float),
@@ -134,23 +138,33 @@ class xPeer:
     def old_flows(self):
         return []
 
+def int2bin(num):
+    #print "num", num, "hex ver", hex(num), hex(num)[2:]
+    num = hex(num)[2:]
+    if len(num) % 2 == 1:
+        num = "0" + num
+    #print "trimmed", num
+    return binascii.unhexlify(num)
 
 class xFlow:
     def __init__(self, actual_flow):
         self.actual_flow = actual_flow
         #self.flow_tuple = self.actual_flow.summary()[3]
         self.flow_tuple = ( \
-            str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)), 
-            random.randint(1025,65000), 
-            str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)), 
-            random.randint(1025,65000), 
-            random.choice(('tcp','ip')))
+            s.inet_aton(str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255))), 
+            int2bin(random.randint(1025,65000)), 
+            s.inet_aton(str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255))), 
+            int2bin(random.randint(1025,65000)), 
+            int2bin(random.choice((4,6))))
         self.last_update = time.time()
         self.last_packet_count_time = time.time()
         self.last_byte_count_time = time.time()
         self.last_dropped_time = time.time()
         self.last_injected_time = time.time()
         self.last_modified_time = time.time()
+        
+    def get_id(self):
+        return self.actual_flow.id
 
     def get_pair(self):
         '''Return the matching flow in the other direction, or None if there
@@ -172,7 +186,7 @@ class xFlow:
     def get_new_packet_count(self):
         diff = time.time() - self.last_packet_count_time
         self.last_packet_count_time = time.time()
-        return (random.randint(10,20) * diff)
+        return (int(random.randint(10,20) * diff))
         
 
     def get_new_byte_count(self):

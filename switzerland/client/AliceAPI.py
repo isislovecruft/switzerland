@@ -148,6 +148,9 @@ class xFlow:
         self.reported_packets = 0
         self.reported_bytes = 0
 
+    def get_id(self):
+        return self.actual_flow.id
+    
     def get_pair(self):
         """
         Return the matching flow in the other direction, or None if there
@@ -160,6 +163,7 @@ class xFlow:
     
     def get_new_packet_count(self):
         n = self.actual_flow.packets_transferred - self.reported_packets
+        print "Getting packet count", n
         self.reported_packets = self.actual_flow.packets_transferred
         return n
 
