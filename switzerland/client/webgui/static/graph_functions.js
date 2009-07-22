@@ -135,11 +135,39 @@ var evMouseMove = function (ev) {
         y = ev.offsetY;
     }
     
+    var start = new Date().getTime();
+
     var retObj = graphObject.FindCollision(x,y);
+    var end = new Date().getTime();
+    var colTime = end - start;
+    var redrawTime;
+    var highlightTime;
+    var drawFlowTime;
+    
+    
+    
     if (typeof(retObj) != 'undefined') {
-        graphObject.RedrawData();
+        //graphObject.canvasContext.putImageData(graphObject.snapshot, 0, 0);
+        graphObject.canvasContext.fillStyle = 'white';        
+        graphObject.canvasContext.fillRect(0, 0, graphObject.width, graphObject.height);
+
+        graphObject.canvasContext.drawImage(graphObject.snapshotCanvas,0,0);
+        end = new Date().getTime();
+        redrawTime = end - start;
+
         highlightPoint(context, retObj.x, retObj.y, retObj.flow.shape);
+        end = new Date().getTime();
+        highlightTime = end - start;
+
         retObj.flow.Draw();
+        end = new Date().getTime();
+        drawFlowTime = end - start;
+
+        throw new Error("Find collision: " + colTime +
+        "\nRedraw data: " + redrawTime +
+        "\nHighlight point: " + highlightTime +
+        "\nRedraw flow: " + drawFlowTime);
+        
     } 
 }
 

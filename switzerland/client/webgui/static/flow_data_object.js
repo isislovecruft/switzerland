@@ -38,6 +38,10 @@ function FlowGraph(
    this.canvasElement.started = false;
    this.canvasElement.graphObject = this;
    this.canvasElement.addEventListener('mousemove', evMouseMove, false);
+   //this.snapshot;
+   this.snapshotCanvas = document.createElement('canvas');
+   this.snapshotCanvas.width = width;
+   this.snapshotCanvas.height = height;
 }
 
 
@@ -151,14 +155,15 @@ FlowGraph.prototype.RedrawData = function() {
 }
 
 FlowGraph.prototype.Draw = function() {
-    if (this.canvasContext) {            
+    if (this.canvasContext) {    
 
         this.DrawAxes(true);
 
         for (var f in this.flowData) {
             this.flowData[f].Draw();
         }
-
+        //this.snapshot = this.canvasContext.getImageData(0, 0, this.width, this.height);
+        this.snapshotCanvas.getContext('2d').drawImage(this.canvasElement,0,0);
     } else {
         // Error message should have already been displayed.
     }
@@ -180,12 +185,12 @@ FlowGraph.prototype.FindCollision = function(x, y) {
 }
 
 FlowGraph.prototype.DrawLegend = function() {
-    this.canvasContext.save();
+
     for (var f in this.flowData) {
         var canvasId = "leg_" + this.flowData[f].name;
         this.flowData[f].DrawLegend(canvasId);
     }
-    this.canvasContext.restore();
+
 }
 
 /* FlowData object representing just one flow */

@@ -48,7 +48,6 @@ class line_graph:
         self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
         
         self.gui_flows = None
-
         
         # JavaScript canvas context name
         self.canvas_context = canvas_context
@@ -192,11 +191,8 @@ class line_graph:
         if len(histogram) == 0:
             return ""
         
-        # 253_160_101_119_2499__8_239_9_48_35991_TCP_to
-
         (source_ip, source_port, dest_ip, dest_port, proto, packet_type, packet_type_long) = self.split_name(name)
         
-
         assert self.graph_xbins_actual > 0
         
         i = 0
@@ -454,6 +450,7 @@ class config:
         
     def POST(self):  
         webin = web.input()
+        message = ""
         if webin.form == "frmApplicationOpt":
             # Edit web application variables
             message = "Changes saved."
@@ -495,7 +492,8 @@ class config:
             singleton_webgui.x_alice_config, 
             tweakable_options,
             immutable_options,
-            singleton_webgui.web_app_config)
+            singleton_webgui.web_app_config,
+            message)
 
     
 def flow_key(f):
