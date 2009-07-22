@@ -4,7 +4,7 @@
 */
 
 
-function make_point(ctx, x, y, shape) {
+function makePoint(ctx, x, y, shape) {
     switch (shape) {
 
     case "x":
@@ -38,42 +38,46 @@ function make_point(ctx, x, y, shape) {
     }
 }
 
-function make_line(ctx, x_array, y_array, shape) {
-    if (x_array.length != y_array.length) {
-        alert("Lengths of data arrays do not match!");
-        return;
-    }
+function clearPoint(ctx,x,y) {
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#ffffff";
     ctx.beginPath();
-    ctx.moveTo(x_array[0], y_array[0]);
-    for (var i = 0; i < x_array.length; i++) {
-        ctx.lineTo(x_array[i], y_array[i]);
-    }
-    ctx.stroke();
-    make_point(ctx, x_array[0], y_array[0], shape);
-    for (var i = 0; i < x_array.length; i++) {
-        make_point(ctx, x_array[i], y_array[i], shape);
-    }
+    ctx.arc(x, y, 6, 0, Math.PI * 2, true);
+    ctx.fill();
+    ctx.restore();
 }
 
-function check_legend(legend_form, checkbox_value) {
-    for (var i = 0; i < legend_form.elements.length; i++) {
-        if (legend_form.elements[i].type == 'checkbox') {
-            legend_form.elements[i].checked = checkbox_value;
+function highlightPoint(ctx, x, y) {
+    ctx.save();
+    ctx.fillStyle = "#eeee00";
+    ctx.strokeStyle = "#eeee00";
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2, true);
+    ctx.fill();
+    ctx.restore();
+}
+
+
+function checkLegend(legendForm, checkboxValue) {
+    for (var i = 0; i < legendForm.elements.length; i++) {
+        if (legendForm.elements[i].type == 'checkbox') {
+            legendForm.elements[i].checked = checkboxValue;
         }
     }
 }
 
-function check_legend_group(legend_form, group_str, checkbox_value) {
-    for (var i = 0; i < legend_form.elements.length; i++) {
-        if (legend_form.elements[i].type == 'checkbox') {
-            if (legend_form.elements[i].name.search(group_str) > -1) {
-                legend_form.elements[i].checked = checkbox_value;
+function checkLegendGroup(legendForm, group_str, checkboxValue) {
+    for (var i = 0; i < legendForm.elements.length; i++) {
+        if (legendForm.elements[i].type == 'checkbox') {
+            if (legendForm.elements[i].name.search(group_str) > -1) {
+                legendForm.elements[i].checked = checkboxValue;
             }
         }
     }
 }
 
-function epoch_to_time(epoch, bin_size) {
+function epochToTime(epoch, binSize) {
 
     var ep = parseInt(epoch);
     //alert("Epoch: " + ep);
@@ -96,14 +100,54 @@ function epoch_to_time(epoch, bin_size) {
         s = "0" + s;
     }
 
-    if (bin_size * 5 > 60) {
+    if (binSize * 5 > 60) {
         return (h + ":" + m);
     }
     return (h + ":" + m + ":" + s);
 }
 
 
+/* This code is from 
+    http://dev.opera.com/articles/view/html5-canvas-painting/
+    */
+    
+var evMouseMove = function (ev) {
+    var x, y;
+    
+    var canvasElement = document.getElementById(ev.target.id);
+    var graphObject = ev.target.graphObject;
+    
+    var context;
+    
+    if (canvasElement.getContext) {            
+        context = canvasElement.getContext('2d');     
+    }
+    else {
+        alert('You need Safari or Firefox 1.5+ to see this graph.');
+    }
+    
+    // Get the mouse position relative to the canvas element.
+    if (ev.layerX || ev.layerX == 0) { // Firefox
+        x = ev.layerX;
+        y = ev.layerY;
+    } else if (ev.offsetX || ev.offsetX == 0) { // Opera
+        x = ev.offsetX;
+        y = ev.offsetY;
+    }
+    
+    var retObj = graphObject.FindCollision(x,y);
+    if (typeof(retObj) != 'undefined') {
+        graphObject.RedrawData();
+        highlightPoint(context, retObj.x, retObj.y, retObj.flow.shape);
+        retObj.flow.Draw();
+    } 
+}
 
-
-
+// Save some CPU by not taking the square root
+function withinDistance(x1, y1, x2, y2, dist) {
+    if (Math.pow((x1-x2),2) + Math.pow((y1-y2),2) < Math.pow(dist,2)) {
+        return true;
+    }
+    return false;
+}
 

@@ -7,12 +7,12 @@ $ submitCmd = 'document.' + formName + '.submit();'
 $ graphDrawLegendCmd = 'graph_' + canvas_id + '.DrawLegend();'
 
 <form name="$formName" id="$formName" method="POST">
-<input type="button" onClick="check_legend(document.$formName, false);" name="btnClear" value="Clear all">
-<input type="button" onClick="check_legend(document.$formName, true);$submitCmd" name="btnCheckAll" value="Check all">
-<input type="button" onClick="check_legend_group(document.$formName, '_mo', true);$submitCmd" name="btnCheckModified" value="Check all modified">
-<input type="button" onClick="check_legend_group(document.$formName, '_in', true);$submitCmd" name="btnCheckInjected" value="Check all injected">
-<input type="button" onClick="check_legend_group(document.$formName, '_dr', true);$submitCmd" name="btnCheckDropped" value="Check all dropped">
-<input type="button" onClick="check_legend_group(document.$formName, '_to', true);$submitCmd" name="btnCheckTotal" value="Check all total packets">
+<input type="button" onClick="checkLegend(document.$formName, false);" name="btnClear" value="Clear all">
+<input type="button" onClick="checkLegend(document.$formName, true);$submitCmd" name="btnCheckAll" value="Check all">
+<input type="button" onClick="checkLegendGroup(document.$formName, '_mo', true);$submitCmd" name="btnCheckModified" value="Check all modified">
+<input type="button" onClick="checkLegendGroup(document.$formName, '_in', true);$submitCmd" name="btnCheckInjected" value="Check all injected">
+<input type="button" onClick="checkLegendGroup(document.$formName, '_dr', true);$submitCmd" name="btnCheckDropped" value="Check all dropped">
+<input type="button" onClick="checkLegendGroup(document.$formName, '_to', true);$submitCmd" name="btnCheckTotal" value="Check all total packets">
 <table>
     $for (canvas_name, source_ip, source_port, dest_ip, dest_port, proto, packet_type) in entries:
         $ selectName = canvas_name[4:]

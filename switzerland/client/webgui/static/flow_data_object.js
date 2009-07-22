@@ -1,199 +1,201 @@
 
 /* FlowGraph Object representing the whole graph */
 function FlowGraph(
-                   canvas_context,
-                   canvas_element,
-                   canvas_id,
-                   flow_data, 
-                   x_margin,
-                   y_margin,
-                   x_axis_margin,
-                   y_axis_margin,
+                   canvasContext,
+                   canvasElement,
+                   canvasId,
+                   flowData, 
+                   xMargin,
+                   yMargin,
+                   xAxisMargin,
+                   yAxisMargin,
                    width,
                    height,
-                   graph_xbins_actual,
-                   graph_ybins,
-                   x_bin_pixels,
-                   x_bin_size,
-                   y_bin_pixels,
-                   y_bin_size,
-                   min_timestamp) {
+                   graphXBins,
+                   graphYBins,
+                   xBinPixels,
+                   xBinSize,
+                   yBinPixels,
+                   yBinSize,
+                   minTimestamp) {
                
-   this.canvas_context = canvas_context;
-   this.canvas_element = canvas_element;
-   this.flow_data = flow_data; 
-   this.x_margin = x_margin; 
-   this.y_margin = y_margin;
-   this.x_axis_margin = x_axis_margin;
-   this.y_axis_margin = y_axis_margin;
+   this.canvasContext = canvasContext;
+   this.canvasElement = canvasElement;
+   this.flowData = flowData; 
+   this.xMargin = xMargin; 
+   this.yMargin = yMargin;
+   this.xAxisMargin = xAxisMargin;
+   this.yAxisMargin = yAxisMargin;
    this.width = width;
    this.height = height;
-   this.graph_xbins_actual = graph_xbins_actual;
-   this.graph_ybins = graph_ybins;
-   this.x_bin_pixels = x_bin_pixels;
-   this.x_bin_size = x_bin_size;
-   this.y_bin_pixels = y_bin_pixels;
-   this.y_bin_size = y_bin_size;
-   this.min_timestamp = min_timestamp;
-   this.canvas_element.idName = canvas_id;
-   this.canvas_element.started = false;
-   this.canvas_element.addEventListener('mousemove', ev_mousemove, false);
-}
-
-
-/* This code is from 
-    http://dev.opera.com/articles/view/html5-canvas-painting/
-    */
-    
-var ev_mousemove = function (ev) {
-    var x, y;
-    
-    var canvas_element = document.getElementById(ev.target.id);
-    var context;
-    
-    if (canvas_element.getContext) {            
-        context = canvas_element.getContext('2d');     
-    }
-    else {
-        alert('You need Safari or Firefox 1.5+ to see this graph.');
-    }
-    
-    // Get the mouse position relative to the canvas element.
-    if (ev.layerX || ev.layerX == 0) { // Firefox
-        x = ev.layerX;
-        y = ev.layerY;
-    } else if (ev.offsetX || ev.offsetX == 0) { // Opera
-        x = ev.offsetX;
-        y = ev.offsetY;
-    }
-    // The event handler works like a drawing pencil which tracks the mouse 
-    // movements. We start drawing a path made up of lines.
-    if (!ev.target.started) {
-        context.beginPath();
-        context.moveTo(x, y);
-        ev.target.started = true;
-    } else {
-        context.lineTo(x, y);
-        context.stroke();
-    }
+   this.graphXBins = graphXBins;
+   this.graphYBins = graphYBins;
+   this.xBinPixels = xBinPixels;
+   this.xBinSize = xBinSize;
+   this.yBinPixels = yBinPixels;
+   this.yBinSize = yBinSize;
+   this.minTimestamp = minTimestamp;
+   this.canvasElement.started = false;
+   this.canvasElement.graphObject = this;
+   this.canvasElement.addEventListener('mousemove', evMouseMove, false);
 }
 
 
 
-FlowGraph.prototype.DrawAxes = function() {
 
-    var graph_height = this.height - (2 * this.y_margin + this.y_axis_margin);
-    var graph_width = this.width - (2 * this.x_margin + this.x_axis_margin);
 
-    this.canvas_context.strokeStyle = 'black';
-    this.canvas_context.textAlign = 'center';
+FlowGraph.prototype.DrawAxes = function(drawText) {
 
-    this.canvas_context.beginPath();
-    this.canvas_context.moveTo(this.x_margin + this.x_axis_margin, this.y_margin);
-    this.canvas_context.lineTo(this.x_margin + this.x_axis_margin, this.height - (this.y_margin + this.y_axis_margin));
-    this.canvas_context.lineTo(this.width - (this.x_margin), this.height - (this.y_margin + this.y_axis_margin));
+    if (typeof(drawText) == 'undefined') { drawText = true; }
+    
+    var graphheight = this.height - (2 * this.yMargin + this.yAxisMargin);
+    var graphwidth = this.width - (2 * this.xMargin + this.xAxisMargin);
+
+    this.canvasContext.strokeStyle = 'black';
+    this.canvasContext.textAlign = 'center';
+
+    this.canvasContext.beginPath();
+    this.canvasContext.moveTo(this.xMargin + this.xAxisMargin, this.yMargin);
+    this.canvasContext.lineTo(this.xMargin + this.xAxisMargin, this.height - (this.yMargin + this.yAxisMargin));
+    this.canvasContext.lineTo(this.width - (this.xMargin), this.height - (this.yMargin + this.yAxisMargin));
 
     // Draw the y axis numbers and hash marks
-    for (i = 0; i < this.graph_ybins; i++) {
-        var y = this.y_margin + this.y_axis_margin + (this.y_bin_pixels * i);
+    for (i = 0; i < this.graphYBins; i++) {
+        var y = this.yMargin + this.yAxisMargin + (this.yBinPixels * i);
 
         if (i % 5 == 0) {
-            this.canvas_context.moveTo((this.x_margin + this.x_axis_margin - 5), this.height - y);
-            this.canvas_context.lineTo((this.x_margin + this.x_axis_margin + 5), this.height - y);
-            this.canvas_context.save();
-            var label = i * this.y_bin_size;
-            var len = this.canvas_context.mozMeasureText(label);
-            this.canvas_context.translate(this.x_axis_margin + 2 - len, this.height - y + 4);
-            this.canvas_context.mozTextStyle = "8pt Arial, Helvetica"
-            this.canvas_context.mozDrawText(Math.round(label * 10) / 10);
-            this.canvas_context.restore();
+            this.canvasContext.moveTo((this.xMargin + this.xAxisMargin - 5), this.height - y);
+            this.canvasContext.lineTo((this.xMargin + this.xAxisMargin + 5), this.height - y);
+            if (drawText) {
+                this.canvasContext.save();
+                var label = i * this.yBinSize;
+                var len = this.canvasContext.mozMeasureText(label);
+                this.canvasContext.translate(this.xAxisMargin + 2 - len, this.height - y + 4);
+                this.canvasContext.mozTextStyle = "8pt Arial, Helvetica"
+                this.canvasContext.mozDrawText(Math.round(label * 10) / 10);
+                this.canvasContext.restore();
+            }
         }
         else {
-            this.canvas_context.moveTo((this.x_margin + this.x_axis_margin - 3), this.height - y);
-            this.canvas_context.lineTo((this.x_margin + this.x_axis_margin + 3), this.height - y);
+            this.canvasContext.moveTo((this.xMargin + this.xAxisMargin - 3), this.height - y);
+            this.canvasContext.lineTo((this.xMargin + this.xAxisMargin + 3), this.height - y);
         }
     }
 
-    var rad = (Math.PI / 180) * -90;
-    var label = "No. of Packets";
-    var len = this.canvas_context.mozMeasureText(label);
-    this.canvas_context.save();
-    this.canvas_context.translate(this.x_margin, this.height - graph_height / 2);
-    this.canvas_context.rotate(rad);
-    this.canvas_context.mozDrawText(label);
-    this.canvas_context.restore();
+    if (drawText) {
+        var rad = (Math.PI / 180) * -90;
+        var label = "No. of Packets";
+        var len = this.canvasContext.mozMeasureText(label);
+        this.canvasContext.save();
+        this.canvasContext.translate(this.xMargin, this.height - graphheight / 2);
+        this.canvasContext.rotate(rad);
+        this.canvasContext.mozDrawText(label);
+        this.canvasContext.restore();
+    }
 
     // Draw the x axis numbers and hash marks
-    for (i = 0; i < this.graph_xbins_actual; i++) {
-        var x = this.x_margin + this.x_axis_margin + (this.x_bin_pixels * i);
+    for (i = 0; i < this.graphXBins; i++) {
+        var x = this.xMargin + this.xAxisMargin + (this.xBinPixels * i);
 
         if (i % 5 == 0) {
-            this.canvas_context.moveTo(x, this.height - (this.y_margin + this.y_axis_margin - 5));
-            this.canvas_context.lineTo(x, this.height - (this.y_margin + this.y_axis_margin + 5));
-            this.canvas_context.save();
-            var label = epoch_to_time((this.x_bin_size * i) + this.min_timestamp, this.x_bin_size);
-            var len = this.canvas_context.mozMeasureText(label);
-            this.canvas_context.translate(x - len / 2, this.height - (this.y_margin + this.y_axis_margin - 18));
-            this.canvas_context.mozTextStyle = "8pt Arial, Helvetica"
-            //This line will display seconds instead of time 
-            //label = Math.round(this.x_bin_size * i * 10) / 10; 
-            this.canvas_context.mozDrawText(label);
-            this.canvas_context.restore();
+            this.canvasContext.moveTo(x, this.height - (this.yMargin + this.yAxisMargin - 5));
+            this.canvasContext.lineTo(x, this.height - (this.yMargin + this.yAxisMargin + 5));
+            if (drawText) {
+                this.canvasContext.save();
+                var label = epochToTime((this.xBinSize * i) + this.minTimestamp, this.xBinSize);
+                var len = this.canvasContext.mozMeasureText(label);
+                this.canvasContext.translate(x - len / 2, this.height - (this.yMargin + this.yAxisMargin - 18));
+                this.canvasContext.mozTextStyle = "8pt Arial, Helvetica"
+                //This line will display seconds instead of time 
+                //label = Math.round(this.xBinSize * i * 10) / 10; 
+                this.canvasContext.mozDrawText(label);
+                this.canvasContext.restore();
+            }
         }
         else {
-            this.canvas_context.moveTo(x, this.height - (this.y_margin + this.y_axis_margin - 3));
-            this.canvas_context.lineTo(x, this.height - (this.y_margin + this.y_axis_margin + 3));
+            this.canvasContext.moveTo(x, this.height - (this.yMargin + this.yAxisMargin - 3));
+            this.canvasContext.lineTo(x, this.height - (this.yMargin + this.yAxisMargin + 3));
         }
         // moz*Text* are deprecated in 3.5, but necessary for 
-        // Firefox 3.0 and compatible
-        // For Firefox 3.5 standard instead of this.canvas_context.MozDrawText
-        // this.canvas_context.fillText(bin_pixels * i, x, this.y_axis_margin - 12);
+        // Firefox 3.0
+        // For Firefox 3.5 standard instead of this.canvasContext.MozDrawText
+        // this.canvasContext.fillText(binPixels * i, x, this.yAxisMargin - 12);
         // TODO: Either update to filltext or add browser detection code
     }
 
     //label = "No. of Seconds";
-    label = "Time";
-    len = this.canvas_context.mozMeasureText(label);
-    this.canvas_context.save();
-    this.canvas_context.translate(graph_width / 2 - len / 2, this.height - 2);
-    this.canvas_context.mozDrawText(label);
-    this.canvas_context.restore();
-
-    this.canvas_context.stroke();
+    if (drawText) {
+        label = "Time";
+        len = this.canvasContext.mozMeasureText(label);
+        this.canvasContext.save();
+        this.canvasContext.translate(graphwidth / 2 - len / 2, this.height - 2);
+        this.canvasContext.mozDrawText(label);
+        this.canvasContext.restore();
+    }
+    this.canvasContext.stroke();
 }
 
-
-FlowGraph.prototype.Draw = function() {
-    if (this.canvas_context) {            
-        this.canvas_context.save();
-        this.DrawAxes();
-
-        for (var f in this.flow_data) {
-            this.flow_data[f].Draw();
+FlowGraph.prototype.RedrawData = function() {
+    if (this.canvasContext) {
+      var drawWidth = this.width - (this.xMargin + this.xAxisMargin);
+      var drawHeight = this.height - (this.yMargin + this.yAxisMargin);
+      this.canvasContext.clearRect(this.xMargin + this.xAxisMargin, 0, drawWidth, drawHeight);
+      this.DrawAxes(false);      
+      for (var f in this.flowData) {
+            this.flowData[f].Draw();
         }
-        this.canvas_context.restore();
+
     } else {
         // Error message should have already been displayed.
     }
 }
 
-FlowGraph.prototype.DrawLegend = function() {
-    this.canvas_context.save();
-    for (var f in this.flow_data) {
-        var canvas_id = "leg_" + this.flow_data[f].name;
-        this.flow_data[f].DrawLegend(canvas_id);
+FlowGraph.prototype.Draw = function() {
+    if (this.canvasContext) {            
+
+        this.DrawAxes(true);
+
+        for (var f in this.flowData) {
+            this.flowData[f].Draw();
+        }
+
+    } else {
+        // Error message should have already been displayed.
     }
-    this.canvas_context.restore();
+}
+
+
+
+
+FlowGraph.prototype.FindCollision = function(x, y) {
+    for (var f in this.flowData) {
+            var retVal = this.flowData[f].FindCollision(x,y);
+            
+            if (typeof(retVal) != 'undefined') {
+                //alert("Collision: "+ retVal.x + ", " +retVal.y);
+                return retVal
+            }
+            
+    }
+}
+
+FlowGraph.prototype.DrawLegend = function() {
+    this.canvasContext.save();
+    for (var f in this.flowData) {
+        var canvasId = "leg_" + this.flowData[f].name;
+        this.flowData[f].DrawLegend(canvasId);
+    }
+    this.canvasContext.restore();
 }
 
 /* FlowData object representing just one flow */
 
-function FlowData(x_list, y_list, context, shape, color, name, 
+function FlowData(xList, yList, context, shape, color, name, 
     source_ip, source_port, dest_ip, dest_port, protocol, packet_type ) {
  
-    this.canvas_context = context;
-    this.x_list = x_list;
-    this.y_list = y_list;
+    this.canvasContext = context;
+    this.xList = xList;
+    this.yList = yList;
     this.shape = typeof(shape) == 'undefined' ? '' : shape;
     this.color = typeof(color) == 'undefined' ? 'black' : color;
     this.packet_type = typeof(packet_type) == 'undefined' ? 'to' : packet_type;
@@ -207,55 +209,75 @@ function FlowData(x_list, y_list, context, shape, color, name,
 
 
 FlowData.prototype.Draw = function() {
-    if (this.x_list.length != this.y_list.length) {
-        alert("Lengths of data arrays do not match!\nx: "+ this.x_list.length + " y:" + this.y_list.length);
+    if (this.xList.length != this.yList.length) {
+        alert("Lengths of data arrays do not match!\nx: "+ this.xList.length + " y:" + this.yList.length);
         return;
     }
-    this.canvas_context.fillStyle = this.color;
-    this.canvas_context.strokeStyle = this.color;
-    this.canvas_context.beginPath();
-    this.canvas_context.moveTo(this.x_list[0], this.y_list[0]);       
-    for (var i = 0; i < this.x_list.length; i++){ 
-        this.canvas_context.lineTo(this.x_list[i], this.y_list[i]);
+    this.canvasContext.fillStyle = this.color;
+    this.canvasContext.strokeStyle = this.color;
+    this.canvasContext.beginPath();
+    this.canvasContext.moveTo(this.xList[0], this.yList[0]);       
+    for (var i = 0; i < this.xList.length; i++){ 
+        this.canvasContext.lineTo(this.xList[i], this.yList[i]);
     }
-    this.canvas_context.stroke();
-    make_point(this.canvas_context, this.x_list[0], this.y_list[0], this.shape);        
-    for (var i = 0; i < this.x_list.length; i++){ 
-        make_point(this.canvas_context, this.x_list[i], this.y_list[i], this.shape); 
+    this.canvasContext.stroke();
+    makePoint(this.canvasContext, this.xList[0], this.yList[0], this.shape);        
+    for (var i = 0; i < this.xList.length; i++){ 
+        makePoint(this.canvasContext, this.xList[i], this.yList[i], this.shape); 
     }
 }
 
-FlowData.prototype.DrawLegend = function(canvas_id) {
-    this.legend = new FlowDataLegend(this.shape, this.color, canvas_id);
+FlowData.prototype.ClearPoints = function() {
+    if (this.xList.length != this.yList.length) {
+        alert("Lengths of data arrays do not match!\nx: "+ this.xList.length + " y:" + this.yList.length);
+        return;
+    }
+    this.canvasContext.fillStyle = this.color;
+    this.canvasContext.strokeStyle = this.color;
+         
+    for (var i = 0; i < this.xList.length; i++){ 
+        clearPoint(this.canvasContext, this.xList[i], this.yList[i]); 
+    }
+}
+
+FlowData.prototype.DrawLegend = function(canvasId) {
+    this.legend = new FlowDataLegend(this.shape, this.color, canvasId);
     this.legend.Draw();
 }   
 
-
+FlowData.prototype.FindCollision = function(x, y) {
+    for (var i = 0; i < this.xList.length; i++){ 
+        if (withinDistance(x, y, this.xList[i], this.yList[i], 3) ) {
+            return {x:this.xList[i], y:this.yList[i], flow:this};
+        }
+    }
+    // return nothing (undefined)
+}
 
 /* FlowDataLegend object representing just the legend for one flow */
 
-function FlowDataLegend(shape, color, canvas_id, width, height) {
+function FlowDataLegend(shape, color, canvasId, width, height) {
     this.shape = typeof(shape) == 'undefined' ? '' : shape;
     this.color = typeof(color) == 'undefined' ? 'black' : color;
     this.width = typeof(width) == 'undefined' ? 50 : width;
     this.height = typeof(height) == 'undefined' ? 10 : height;
-    this.canvas_id = canvas_id;
+    this.canvasId = canvasId;
 }
 
 FlowDataLegend.prototype.Draw = function() {
     // Was the context set in the constructor?
-    if (typeof(this.canvas_id) == 'undefined') {
+    if (typeof(this.canvasId) == 'undefined') {
         // exit silently
         return;
     }   
-    this.legend_context = document.getElementById(this.canvas_id).getContext('2d');
-    this.legend_context.fillStyle = this.color;
-    this.legend_context.strokeStyle = this.color;
-    make_point(this.legend_context, this.width/2, this.height/2, this.shape); 
-    this.legend_context.beginPath();
-    this.legend_context.moveTo(0, this.height/2);
-    this.legend_context.lineTo(this.width, this.height/2);
-    this.legend_context.stroke(); 
+    this.legendContext = document.getElementById(this.canvasId).getContext('2d');
+    this.legendContext.fillStyle = this.color;
+    this.legendContext.strokeStyle = this.color;
+    makePoint(this.legendContext, this.width/2, this.height/2, this.shape); 
+    this.legendContext.beginPath();
+    this.legendContext.moveTo(0, this.height/2);
+    this.legendContext.lineTo(this.width, this.height/2);
+    this.legendContext.stroke(); 
 }
 
 

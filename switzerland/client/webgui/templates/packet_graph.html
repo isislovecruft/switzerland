@@ -22,14 +22,14 @@ $def with (graph_opts, graph_data_html, graph_data_array)
         alert('You need Safari or Firefox 1.5+ to see this graph.');
     }
             
-     
+    /* The data points for the packets vs time */ 
     $:graph_data_html        
 
-    
+    /* Object representing the graph and its data */
     var $graph_name = new FlowGraph(
                    $graph_opts['canvas_context'],
                    canvas_element,
-                   '$graph_opts['canvas_id']',
+                   '$graph_opts["canvas_id"]',
                    $graph_data_array, 
                    $graph_opts['x_margin'],
                    $graph_opts['y_margin'],
