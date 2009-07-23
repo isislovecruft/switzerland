@@ -632,7 +632,12 @@ class WebGUI():
             '/config', 'config')
         
     def main(self):
+
         self.app = web.application(self.urls, globals())
+ 
+        if len(sys.argv) > 1:
+            alice_opts = sys.argv
+            sys.argv[1:] = []
         # Uncomment to make inaccessible outside of localhost
         #sys.argv.insert(1,"127.0.0.1:8080")
         self.app.run()
