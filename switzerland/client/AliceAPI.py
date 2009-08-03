@@ -17,7 +17,13 @@ def connectServer(config):
 
 class ConfigError(Exception):
     pass
-    
+
+class ClientStopped(Exception):
+    """
+    This exception is raised if the client crashes or disconnects, if the
+    server dies, etc.
+    """
+    pass
 
 class ClientConfig:
     def __init__(self):
