@@ -21,7 +21,14 @@ class ConfigError(Exception):
 class ClientStopped(Exception):
     """
     This exception is raised if the client crashes or disconnects, if the
-    server dies, etc.
+    server dies, etc.  It will be raised with a two element data tuple
+    (summary, details)
+    
+    summary - a brief explanation of the disconnection event that all users
+              should be able to understand
+
+    details - a traceback showing a real underlying exception (if any)
+              and details of the disconnection event
     """
     pass
 
