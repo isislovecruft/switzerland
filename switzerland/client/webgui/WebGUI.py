@@ -10,8 +10,8 @@ import socket as s
 import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
-#from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
@@ -62,7 +62,7 @@ class line_graph:
         histogram = list()
         
         for i in range(0,int(self.graph_xbins_actual)):
-            histogram.append(0)
+            histogram.append([0,list()])
  
         try: 
             if isinstance(packet_list[0][1], xPacket):  
@@ -72,7 +72,7 @@ class line_graph:
                     i =  packet_ts - self.min_timestamp
                     i = int(i/self.x_bin_size)
                     if i < len(histogram):
-                        histogram[i] = histogram[i] + 1
+                        histogram[i][0] = histogram[i][0] + 1
                     else:
                         if debug_output:
                             ''' This data is preserved for the next reload '''
@@ -97,7 +97,7 @@ class line_graph:
                     i =  packet_ts - self.min_timestamp
                     i = int(i/self.x_bin_size)
                     if i < len(histogram):
-                        histogram[i] = histogram[i] + 1
+                        histogram[i][0] = histogram[i][0] + 1
                     else:
                         if debug_output:
                             ''' This data is preserved for the next reload '''
@@ -116,14 +116,14 @@ class line_graph:
         all_packcount = list()
         for ip in self.gui_flows:
             if self.histograms[ip]['total'] != None:
-                all_packcount.extend(self.histograms[ip]['total'])
+                all_packcount.extend([p[0] for p in self.histograms[ip]['total']])
             if self.histograms[ip]['modified'] != None:
-                all_packcount.extend(self.histograms[ip]['modified'])
+                all_packcount.extend([p[0] for p in self.histograms[ip]['modified']])
             if self.histograms[ip]['injected'] != None:
-                all_packcount.extend(self.histograms[ip]['injected'])
+                all_packcount.extend([p[0] for p in self.histograms[ip]['injected']])
             if self.histograms[ip]['dropped'] != None:
-                all_packcount.extend(self.histograms[ip]['dropped'])
-                            
+                all_packcount.extend([p[0] for p in self.histograms[ip]['dropped']])
+                          
         if len(all_packcount) > 0:
             self.y_hist_max = max(all_packcount)
         else:
@@ -148,6 +148,7 @@ class line_graph:
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['total']]
             if len(ts_list) > 0 :
                 all_timestamps.extend((min(ts_list), max(ts_list)))
+
 
         if len(all_timestamps) > 0:    
             self.max_timestamp = max(all_timestamps)
@@ -197,7 +198,7 @@ class line_graph:
         
         i = 0
         self.x_bin_pixels = int(self.graph_width/self.graph_xbins_actual)
-      
+ 
         (self.graph_ybins_actual, self.y_bin_size) = \
             self.get_round_bin_size(self.y_hist_max, self.graph_ybins)
             
@@ -215,7 +216,7 @@ class line_graph:
             # Get y from histogram value
             
             x = str(i * (self.x_bin_pixels) + self.x_axis_margin + self.x_margin)
-            y = b * self.y_bin_pixels / self.y_bin_size
+            y = b[0] * self.y_bin_pixels / self.y_bin_size
             
             y = str(self.height - (y + self.y_axis_margin + self.y_margin))
             xhtml = xhtml + x + ","
@@ -422,7 +423,7 @@ class index:
                 #format: cb_leg_149_169_192_185_16618__100_133_203_203_35748_tcp_dr
                 name = attr[7:]
                 #name format: 149_169_192_185_16618__100_133_203_203_35748_tcp_dr\
-                print "webin[attr]: ", attr, ":", webin[attr]
+                
                 if webin[attr] == 'on':
                     singleton_webgui.packet_data.selected_flows[name] = "on"
                 else:
@@ -438,11 +439,13 @@ class index:
         client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
         server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
         active_flows = render.flow_list(singleton_webgui.packet_data.active_flows)      
+        active_peers = render.peer_list(singleton_webgui.packet_data.active_peers)      
         legend = graph.make_legend()
         return render.dashboard(menu, 
             client_info, 
             server_info,
             active_flows,
+            active_peers,
             legend,
             graph_html,
             singleton_webgui.web_app_config['refresh_interval'][0])
@@ -516,6 +519,7 @@ class packet_data:
         self.packet_data = dict()
         self.active_flows = dict()
         self.selected_flows = dict()
+        self.active_peers = list()
 
     def init_gui_flows(self):
         self.update_active_flows()
@@ -529,6 +533,12 @@ class packet_data:
     def update_active_flows(self):
         peers = singleton_webgui.x_alice.get_peers()
         for p in peers:
+            # Only add a peer that is not in the list yet
+            try:
+                self.active_peers.index(s.inet_ntoa(p.ip))
+            except:
+                self.active_peers.append(s.inet_ntoa(p.ip))
+                
             flows = p.new_flows()
             if isinstance(flows, list):
                 for f in flows:

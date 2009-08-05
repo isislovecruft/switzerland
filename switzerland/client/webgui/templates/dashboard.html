@@ -1,4 +1,4 @@
-$def with (menu, client_info, server_info, active_flows, legend, graph, reload_seconds)
+$def with (menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds)
 $# Main page with graph
 <!DOCTYPE HTML>
 
@@ -26,8 +26,13 @@ $# Main page with graph
     <div id="serverinfo" class="page_section" >
     $:server_info
     </div>
+    <!-- Uncomment for active flow list (redundant to graph legend)
     <div id="activeflows" class="page_section" >
     $:active_flows
+    </div>
+    -->
+    <div id="activepeers" class="page_section" >
+    $:active_peers
     </div>
     <div id="graph" class="page_section" style="clear:left;">
     $:graph

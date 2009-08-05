@@ -20,7 +20,7 @@ $ graph_draw_legend_cmd = 'graph_' +  canvas_id + '.DrawLegend();'
                 checked
             ></td><td><canvas id="$canvas_name" height="10" width="50">You need Safari or Firefox 1.5+ to see this image.</canvas></td><td></td><td>$source_ip:$source_port<img src="/static/rarrow.png" alt="->">$dest_ip:$dest_port&nbsp;($proto)&nbsp;<!--$packet_type--></td></tr>
         $else:
-            <tr style="height:0;"><td ><input type="hidden" name="cb_$canvas_name" 
+            <tr style="height:0; visibility:collapse;"><td ><input type="hidden" name="cb_$canvas_name" 
             $if selected.get(select_name) == 'on':
                 value="on"
             $else:

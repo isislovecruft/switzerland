@@ -44,10 +44,6 @@ function FlowGraph(
    this.snapshotCanvas.height = height;
 }
 
-
-
-
-
 FlowGraph.prototype.DrawAxes = function(drawText) {
 
     if (typeof(drawText) == 'undefined') { drawText = true; }
@@ -110,7 +106,7 @@ FlowGraph.prototype.DrawAxes = function(drawText) {
                 var len = this.canvasContext.mozMeasureText(label);
                 this.canvasContext.translate(x - len / 2, this.height - (this.yMargin + this.yAxisMargin - 18));
                 this.canvasContext.mozTextStyle = "8pt Arial, Helvetica"
-                //This line will display seconds instead of time 
+                //This line will display seconds elapsed instead of time 
                 //label = Math.round(this.xBinSize * i * 10) / 10; 
                 this.canvasContext.mozDrawText(label);
                 this.canvasContext.restore();
@@ -124,10 +120,9 @@ FlowGraph.prototype.DrawAxes = function(drawText) {
         // Firefox 3.0
         // For Firefox 3.5 standard instead of this.canvasContext.MozDrawText
         // this.canvasContext.fillText(binPixels * i, x, this.yAxisMargin - 12);
-        // TODO: Either update to filltext or add browser detection code
+        // TODO: Either update to filltext or add browser detection code when 3.5 becomes standard
     }
 
-    //label = "No. of Seconds";
     if (drawText) {
         label = "Time";
         len = this.canvasContext.mozMeasureText(label);
@@ -150,7 +145,7 @@ FlowGraph.prototype.RedrawData = function() {
         }
 
     } else {
-        // Error message should have already been displayed.
+        // No canvas support error message should have already been displayed.
     }
 }
 
@@ -162,10 +157,9 @@ FlowGraph.prototype.Draw = function() {
         for (var f in this.flowData) {
             this.flowData[f].Draw();
         }
-        //this.snapshot = this.canvasContext.getImageData(0, 0, this.width, this.height);
         this.snapshotCanvas.getContext('2d').drawImage(this.canvasElement,0,0);
     } else {
-        // Error message should have already been displayed.
+        // No canvas support error message should have already been displayed.
     }
 }
 

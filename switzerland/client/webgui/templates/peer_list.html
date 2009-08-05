@@ -2,11 +2,7 @@ $def with (peers)
 <table>
         <caption>Active Peer List</caption>        
         $for peer in peers:
-            $for f in peer.new_flows():
                 <tr>
-                <td>$str(f.flow_tuple[0])</td>
-                <td>$str(f.flow_tuple[1])</td>
-                <td>$str(f.flow_tuple[2])</td>
-                <td>$str(f.flow_tuple[3])</td>
+                <td>$peer</td>
                 </tr>
 </table>
