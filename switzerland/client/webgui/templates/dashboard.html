@@ -1,17 +1,17 @@
 $def with (menu, client_info, server_info, active_flows, legend, graph, reload_seconds)
 $# Main page with graph
 <!DOCTYPE HTML>
-<script type="text/javascript">
-    var curURL = unescape(window.location.pathname);
 
-
-    function update_page(){
-        setTimeout("window.location.replace( curURL );", $reload_seconds * 1000);    
-    }
-</script>
 <html>
     <head>
         <title>Switzerland</title>
+        <script type="text/javascript">
+            var curURL = unescape(window.location.pathname);
+
+            function update_page(){
+                setTimeout("window.location.replace( curURL );", $reload_seconds * 1000);    
+            }
+        </script>
         <script type="text/javascript" src="/static/graph_functions.js"></script>
         <script type="text/javascript" src="/static/flow_data_object.js"></script>
         <link rel="stylesheet" type="text/css" href="/static/main.css"> 
@@ -20,21 +20,21 @@ $# Main page with graph
     <div id="menu" class="top_menu">
     $:menu
     </div>
-    <div class="container">
-    <div id="clientinfo" class="page_section">
+    <div id="clientinfo" class="page_section" style="clear:left;">
     $:client_info
     </div>
-    <div id="serverinfo" class="page_section">
+    <div id="serverinfo" class="page_section" >
     $:server_info
     </div>
-    <div id="activeflows" class="page_section">
+    <div id="activeflows" class="page_section" >
     $:active_flows
     </div>
-    </div>
-    <div id="graph" class="page_section">
+    <div id="graph" class="page_section" style="clear:left;">
     $:graph
+    </div> 
+    <div id="graphdetail" class="page_section">&nbsp;
     </div>
-    <div id="legend" class="page_section">
+    <div id="legend" class="page_section" style="clear:left;">
     $:legend
     </div>
 

@@ -188,7 +188,11 @@ FlowGraph.prototype.DrawLegend = function() {
 
     for (var f in this.flowData) {
         var canvasId = "leg_" + this.flowData[f].name;
-        this.flowData[f].DrawLegend(canvasId);
+        // Legend only contains TOTAL color key 
+        // TODO javascript substring _to
+        if (true) {
+            this.flowData[f].DrawLegend(canvasId);
+        }
     }
 
 }
@@ -274,15 +278,17 @@ FlowDataLegend.prototype.Draw = function() {
     if (typeof(this.canvasId) == 'undefined') {
         // exit silently
         return;
-    }   
-    this.legendContext = document.getElementById(this.canvasId).getContext('2d');
-    this.legendContext.fillStyle = this.color;
-    this.legendContext.strokeStyle = this.color;
-    makePoint(this.legendContext, this.width/2, this.height/2, this.shape); 
-    this.legendContext.beginPath();
-    this.legendContext.moveTo(0, this.height/2);
-    this.legendContext.lineTo(this.width, this.height/2);
-    this.legendContext.stroke(); 
+    }
+    if (document.getElementById(this.canvasId)) {   
+        this.legendContext = document.getElementById(this.canvasId).getContext('2d');
+        this.legendContext.fillStyle = this.color;
+        this.legendContext.strokeStyle = this.color;
+        makePoint(this.legendContext, this.width/2, this.height/2, this.shape); 
+        this.legendContext.beginPath();
+        this.legendContext.moveTo(0, this.height/2);
+        this.legendContext.lineTo(this.width, this.height/2);
+        this.legendContext.stroke(); 
+    }
 }
 
 

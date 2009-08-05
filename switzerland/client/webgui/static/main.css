@@ -3,30 +3,12 @@ body, th, td, p, div {
     font-family: Arial, Helvetica, sans-serif;
     font-size: small;
 }
-
-#clientinfo {
-	float: left;
-	width: 250px;
+.container {
+    border-style:solid;
+    border-width:1px;
+    border-color:red;
+    position: static;
 }
-#serverinfo { 
-	float: left;
-	width: 250px;
-}
-#activeflows {
-	float: left;
-}
-#legend {
-    float: left;
-    width: 500px;
-}
-#graph {
-	clear: both;
-	width: 820px;
-}
-caption {
-    font-weight: bold;
-}
-
 .page_section {
     border-style:solid;
     border-width:1px;
@@ -34,13 +16,34 @@ caption {
     margin: 4px;
     padding: 2px;
     width: 300px;
+    float: left;
+}
+#clientinfo {
+	width: 250px;
+}
+#serverinfo { 
+	width: 250px;
+}
+#activeflows {
+}
+#legend {
+    width: 500px;
+}
+#graph {
+	width: 828px;
+}
+#graphdetail {
+}
+.caption {
+    font-weight: bold;
 }
 
-.container {
-    clear: both;
-}
+
+
+
 
 .top_menu {
+    clear: both;
 }
 
 .menu_item {

@@ -8,6 +8,7 @@ $def with (graph_opts, graph_data_html, graph_data_array)
     /* Graph functions are given names unique to the graph, in case we want to support
        multiple graphs per page. */
     var $graph_opts['canvas_context'];
+
     $ graph_name = 'graph_' + graph_opts['canvas_id'] 
     $ graph_name_draw = graph_name + ".Draw();"
     var canvas_element = document.getElementById("$graph_opts['canvas_id']")

@@ -421,8 +421,12 @@ class index:
             if attr.startswith('cb_'):
                 #format: cb_leg_149_169_192_185_16618__100_133_203_203_35748_tcp_dr
                 name = attr[7:]
-                #name format: 149_169_192_185_16618__100_133_203_203_35748_tcp_dr
-                singleton_webgui.packet_data.selected_flows[name] = "on"
+                #name format: 149_169_192_185_16618__100_133_203_203_35748_tcp_dr\
+                print "webin[attr]: ", attr, ":", webin[attr]
+                if webin[attr] == 'on':
+                    singleton_webgui.packet_data.selected_flows[name] = "on"
+                else:
+                    singleton_webgui.packet_data.selected_flows[name] = "off"
         return self.main()
         
     def main(self):
