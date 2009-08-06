@@ -136,12 +136,14 @@ FlowGraph.prototype.DrawAxes = function(drawText) {
 
 FlowGraph.prototype.RedrawData = function() {
     if (this.canvasContext) {
-      var drawWidth = this.width - (this.xMargin + this.xAxisMargin);
-      var drawHeight = this.height - (this.yMargin + this.yAxisMargin);
-      this.canvasContext.clearRect(this.xMargin + this.xAxisMargin, 0, drawWidth, drawHeight);
-      this.DrawAxes(false);      
-      for (var f in this.flowData) {
-            this.flowData[f].Draw();
+        var drawWidth = this.width - (this.xMargin + this.xAxisMargin);
+        var drawHeight = this.height - (this.yMargin + this.yAxisMargin);
+        this.canvasContext.clearRect(this.xMargin + this.xAxisMargin, 0, drawWidth, drawHeight);
+        this.DrawAxes(false);      
+        for (var fd in this.flowData) {
+            if(typeof(this.flowData[fd].Draw) == 'function') {
+                this.flowData[fd].Draw();
+            }
         }
 
     } else {
@@ -151,11 +153,15 @@ FlowGraph.prototype.RedrawData = function() {
 
 FlowGraph.prototype.Draw = function() {
     if (this.canvasContext) {    
-
         this.DrawAxes(true);
-
-        for (var f in this.flowData) {
-            this.flowData[f].Draw();
+        for (var fd in this.flowData) {
+            
+            // Workaround for Prototype object modifications without
+            // locking in to Prototype object modifications
+            // http://www.prototypejs.org/api/array
+            if(typeof(this.flowData[fd].Draw) == 'function') {
+                this.flowData[fd].Draw();
+            }
         }
         this.snapshotCanvas.getContext('2d').drawImage(this.canvasElement,0,0);
     } else {
@@ -167,25 +173,24 @@ FlowGraph.prototype.Draw = function() {
 
 
 FlowGraph.prototype.FindCollision = function(x, y) {
-    for (var f in this.flowData) {
-            var retVal = this.flowData[f].FindCollision(x,y);
+    for (var fd in this.flowData) {
+        if (typeof(this.flowData[fd].FindCollision) == 'function') {
+            var retVal = this.flowData[fd].FindCollision(x,y);
             
             if (typeof(retVal) != 'undefined') {
-                //alert("Collision: "+ retVal.x + ", " +retVal.y);
                 return retVal
             }
+        }
             
     }
 }
 
 FlowGraph.prototype.DrawLegend = function() {
 
-    for (var f in this.flowData) {
-        var canvasId = "leg_" + this.flowData[f].name;
-        // Legend only contains TOTAL color key 
-        // TODO javascript substring _to
-        if (true) {
-            this.flowData[f].DrawLegend(canvasId);
+    for (var fd in this.flowData) {
+        var canvasId = "leg_" + this.flowData[fd].name;
+        if (typeof(this.flowData[fd].DrawLegend) == 'function') {
+            this.flowData[fd].DrawLegend(canvasId);
         }
     }
 

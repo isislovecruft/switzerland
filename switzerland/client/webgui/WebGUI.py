@@ -10,8 +10,8 @@ import socket as s
 import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
-from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
@@ -407,7 +407,18 @@ class line_graph:
         '''
         return html
  
-
+class ajax_server:
+    def GET(self):
+        webin = web.input()
+        command = webin.command
+        print "command", command
+        render = web.template.render('templates/ajax_response')
+        if command == 'packetInfo':
+            pi = render.packet_info("777")
+            print pi
+            return pi
+        return("command " + command);
+        
 class index:
     def GET(self):
         # No form input; maintain previous list of selected flows
@@ -643,6 +654,8 @@ class WebGUI():
         self.urls = (
             '/', 'index', 
             '', 'index',
+            '/ajax_server', 'ajax_server',
+            '/ajax_server/', 'ajax_server',
             '/config', 'config')
         
     def main(self):

@@ -7,14 +7,16 @@ $# Main page with graph
         <title>Switzerland</title>
         <script type="text/javascript">
             var curURL = unescape(window.location.pathname);
-
             function update_page(){
-                setTimeout("window.location.replace( curURL );", $reload_seconds * 1000);    
+                setTimeout("window.location.replace( curURL );", $reload_seconds * 10000);    
             }
         </script>
-        <script type="text/javascript" src="/static/graph_functions.js"></script>
-        <script type="text/javascript" src="/static/flow_data_object.js"></script>
-        <link rel="stylesheet" type="text/css" href="/static/main.css"> 
+
+        <script type="text/javascript" src="/static/js/ajax_client.js"></script>
+        <script type="text/javascript" src="/static/js/graph_functions.js"></script>
+        <script type="text/javascript" src="/static/js/flow_data_object.js"></script>
+        <script type="text/javascript" src="/static/js/prototype.js"></script>
+        <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
     </head>
     <body onload="update_page()">
     <div id="menu" class="top_menu">
@@ -37,6 +39,8 @@ $# Main page with graph
     <div id="graph" class="page_section" style="clear:left;">
     $:graph
     </div> 
+    <input type="button" onClick="getPacketInfo(1,1,'graphdetail');" name="getPacketDetail" value="Packet Detail" />
+
     <div id="graphdetail" class="page_section">&nbsp;
     </div>
     <div id="legend" class="page_section" style="clear:left;">
