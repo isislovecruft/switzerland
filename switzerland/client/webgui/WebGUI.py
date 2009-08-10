@@ -68,11 +68,16 @@ class line_graph:
             if isinstance(packet_list[0][1], xPacket):  
                 # Handle detailed packet lists
                 # Count packets into bins
-                for packet_ts in [p[0] for p in packet_list]:
+                #for packet_ts in [p[0] for p in packet_list]:
+                for p in packet_list:
+                    packet_ts = p[0]
                     i =  packet_ts - self.min_timestamp
                     i = int(i/self.x_bin_size)
                     if i < len(histogram):
+                        # Increase the packet count
                         histogram[i][0] = histogram[i][0] + 1
+                        # Add the packet detail to the list
+                        histogram[i][1].append(p[1])
                     else:
                         if debug_output:
                             ''' This data is preserved for the next reload '''
@@ -332,6 +337,7 @@ class line_graph:
                     self.histograms[flow_name]['total'] = None 
             i = 0
             # Get maximum y value (# of packets)
+            singleton_webgui.packet_data.current_histograms = self.histograms
             self.get_y_hist_max(True)
             
             for flow_name in self.gui_flows:
@@ -414,10 +420,26 @@ class ajax_server:
         print "command", command
         render = web.template.render('templates/ajax_response')
         if command == 'packetInfo':
-            pi = render.packet_info("777")
-            print pi
-            return pi
-        return("command " + command);
+            return self.packet_info(webin, render)
+        else:
+            return("command " + command)
+        
+    def packet_info(self, webin, render):
+        flow_name = webin.flowId
+        hist_bin = webin.histBinId
+        print "flow_name", flow_name
+        print "hist_bin", hist_bin
+        flow_name = flow_name[:-3]
+        print "flow_name", flow_name
+       
+        modified = singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]
+        injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
+        dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
+        print "modified", modified
+        pi = render.packet_info(modified, injected, dropped)
+        #print pi
+        return pi
+
         
 class index:
     def GET(self):
@@ -531,6 +553,7 @@ class packet_data:
         self.active_flows = dict()
         self.selected_flows = dict()
         self.active_peers = list()
+        self.current_histograms = None
 
     def init_gui_flows(self):
         self.update_active_flows()

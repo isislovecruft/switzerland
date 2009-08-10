@@ -256,7 +256,7 @@ FlowData.prototype.DrawLegend = function(canvasId) {
 FlowData.prototype.FindCollision = function(x, y) {
     for (var i = 0; i < this.xList.length; i++){ 
         if (withinDistance(x, y, this.xList[i], this.yList[i], 3) ) {
-            return {x:this.xList[i], y:this.yList[i], flow:this};
+            return {x:this.xList[i], y:this.yList[i], flow:this, bin:i};
         }
     }
     // return nothing (undefined)

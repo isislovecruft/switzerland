@@ -1,5 +1,16 @@
-$def with (total)        
+$def with (modified_list, injected_list, dropped_list)        
 <table>
-        <caption>Packet Info</caption>        
-        <tr><td>Total</td><td>$total</td></tr>
+        <caption>Dropped</caption>
+        $for p in dropped_list:
+                <tr><td>$p.get_summary_string()</td></tr>
+</table>
+<table>
+        <caption>Injected</caption>        
+        $for p in injected_list:
+                <tr><td>$p.get_summary_string()</td></tr>
+</table>
+<table>
+        <caption>Modified</caption>        
+        $for p in modified_list:
+                <tr><td>$p.get_summary_string()</td></tr>
 </table>
