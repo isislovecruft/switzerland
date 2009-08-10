@@ -421,21 +421,25 @@ class ajax_server:
         render = web.template.render('templates/ajax_response')
         if command == 'packetInfo':
             return self.packet_info(webin, render)
+        if command == 'updateGraph':
+            return self.update_graph(webin, render)
         else:
             return("command " + command)
+        
+    def update_graph(self, webin, render):
+        graph = line_graph() 
+        # Call make_graph FIRST to load data into structures
+        graph_html = graph.make_graph() 
+        return graph_html
         
     def packet_info(self, webin, render):
         flow_name = webin.flowId
         hist_bin = webin.histBinId
-        print "flow_name", flow_name
-        print "hist_bin", hist_bin
         flow_name = flow_name[:-3]
-        print "flow_name", flow_name
-       
         modified = singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]
         injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
         dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
-        print "modified", modified
+
         pi = render.packet_info(modified, injected, dropped)
         #print pi
         return pi

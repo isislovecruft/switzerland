@@ -6,10 +6,14 @@ $# Main page with graph
     <head>
         <title>Switzerland</title>
         <script type="text/javascript">
-            var curURL = unescape(window.location.pathname);
-            function update_page(){
-                setTimeout("window.location.replace( curURL );", $reload_seconds * 10000);    
+            var graph_cid;
+            setInterval ( "updatePage();", $reload_seconds * 1000 );
+            
+            function updatePage() {
+                updateGraph('graph');    
             }
+            
+            
         </script>
 
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>
@@ -18,7 +22,7 @@ $# Main page with graph
         <script type="text/javascript" src="/static/js/prototype.js"></script>
         <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
     </head>
-    <body onload="update_page()">
+    <body>
     <div id="menu" class="top_menu">
     $:menu
     </div>
@@ -39,7 +43,7 @@ $# Main page with graph
     <div id="graph" class="page_section" style="clear:left;">
     $:graph
     </div> 
-    <input type="button" onClick="getPacketInfo(1,1,'graphdetail');" name="getPacketDetail" value="Packet Detail" />
+    <input type="button" onClick="updateGraph('graph');" name="btnUpdateGraph" value="UpdateGraph" />
 
     <div id="graphdetail" class="page_section">&nbsp;
     </div>

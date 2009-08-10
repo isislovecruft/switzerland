@@ -180,6 +180,7 @@ function withinDistance(x1, y1, x2, y2, dist) {
     return false;
 }
 
+
 function toggleFlow(legendForm, flowName){
     for (var i = 0; i < legendForm.elements.length; i++) {
         if (legendForm.elements[i].type == 'hidden') {

@@ -6,19 +6,23 @@ $ form_name = 'frmLegend_' + canvas_id
 $ submit_cmd = 'document.' + form_name + '.submit();'
 $ graph_draw_legend_cmd = 'graph_' +  canvas_id + '.DrawLegend();'
 
-<form name="$form_name" id="$form_name" method="POST">
+<form name="$form_name" id="$form_name" method="GET" action="/ajax_server">
 <input type="button" onClick="checkLegend(document.$form_name, false);" name="btnClear" value="Clear all">
 <input type="button" onClick="checkLegend(document.$form_name, true);$submit_cmd" name="btnCheckAll" value="Check all">
+
 <table>
     $for (canvas_name, source_ip, source_port, dest_ip, dest_port, proto, packet_type) in entries:
         $ select_name = canvas_name[4:]
         $ flow_name = select_name[:-3]
         $ total_name = flow_name + "_to"
         $if packet_type == 'total':
-            <tr><td><input type="checkbox" name="cb_$canvas_name" value="on" onClick="toggleFlow(document.$form_name, '$flow_name');$submit_cmd"
+            <tr><td><input type="checkbox" name="cb_$canvas_name" value="on" onClick="updateLegend(document.$form_name, '$flow_name');"
             $if selected.get(select_name) == 'on':
                 checked
-            ></td><td><canvas id="$canvas_name" height="10" width="50">You need Safari or Firefox 1.5+ to see this image.</canvas></td><td></td><td>$source_ip:$source_port<img src="/static/images/rarrow.png" alt="->">$dest_ip:$dest_port&nbsp;($proto)&nbsp;<!--$packet_type--></td></tr>
+            ></td>
+            <td><canvas id="$canvas_name" height="10" width="50">You need Safari or Firefox 1.5+ to see this image.</canvas></td>
+            <td></td>
+            <td>$source_ip:$source_port<img src="/static/images/rarrow.png" alt="->">$dest_ip:$dest_port&nbsp;($proto)&nbsp;<!--$packet_type--></td></tr>
         $else:
             <tr style="height:0; visibility:collapse;"><td ><input type="hidden" name="cb_$canvas_name" 
             $if selected.get(select_name) == 'on':
@@ -27,8 +31,15 @@ $ graph_draw_legend_cmd = 'graph_' +  canvas_id + '.DrawLegend();'
                 value="off"
             ></td></tr>
 </table>
+<input type="hidden" name="command" value="updateGraph">
 </form>
 
 <script type="text/javascript">
-     $graph_draw_legend_cmd  
+     $graph_draw_legend_cmd
+     
+     function updateLegend(form, flowName){
+        toggleFlow(form, flowName);
+        $$('$form_name').request();
+     }
+     
 </script>
