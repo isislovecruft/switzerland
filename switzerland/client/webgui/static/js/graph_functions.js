@@ -73,27 +73,6 @@ function checkLegend(legendForm, checkboxValue) {
     }
 }
 
-/* Checks a group of legend checkboxes by packet type
-   Ex: checkLegendGroup(document.$form_name, '_mo', true);
- */
-function checkLegendGroup(legendForm, group_str, checkboxValue) {
-    for (var i = 0; i < legendForm.elements.length; i++) {
-        if (legendForm.elements[i].type == 'checkbox') {
-            if (legendForm.elements[i].name.search(group_str) > -1) {
-                legendForm.elements[i].checked = checkboxValue;
-            }
-        }
-        if ((legendForm.elements[i].type == 'hidden') && 
-        (legendForm.elements[i].name.search(group_str) > -1)) {
-            if (checkboxValue) {
-                legendForm.elements[i].value = 'on';
-            }
-            else {
-                legendForm.elements[i].value = 'off';
-            }
-        }
-    }
-}
 
 function epochToTime(epoch, binSize) {
 
@@ -180,27 +159,31 @@ function withinDistance(x1, y1, x2, y2, dist) {
     return false;
 }
 
-
-function toggleFlow(legendForm, flowName){
+function updateFlow(legendForm, graphObj, activeFlows, checked){
     for (var i = 0; i < legendForm.elements.length; i++) {
-        if (legendForm.elements[i].type == 'hidden') {
-            if (legendForm.elements[i].name.search(flowName) > -1) {
-                if (legendForm.elements['cb_leg_' + flowName + '_to']) {
-                    
-                    if (legendForm.elements['cb_leg_' + flowName + '_to'].checked) {
-                        legendForm.elements[i].value = 'on';
-                     
-                    }
-                    else {
-                        legendForm.elements[i].value = 'off';
-                    }
+        if (legendForm.elements[i].type == 'checkbox') {
+            if (legendForm.elements[i].name.search('cb_leg_') > -1) {
+                elName = legendForm.elements[i].name;
+                flowName = elName.substring(7, elName.length - 3);
+
+                if (legendForm.elements[i].checked) {
+                    activeFlows[flowName + '_to'] = true;
+                    activeFlows[flowName + '_mo'] = true;
+                    activeFlows[flowName + '_dr'] = true;
+                    activeFlows[flowName + '_in'] = true;
                 }
                 else {
-                    legendForm.elements[i].value = 'off';
+                    activeFlows[flowName + '_to'] = false;
+                    activeFlows[flowName + '_mo'] = false;
+                    activeFlows[flowName + '_dr'] = false;
+                    activeFlows[flowName + '_in'] = false;
                 }
             }
         }
     }
-    return false;
+
+    graphObj.activeFlows = activeFlows;
+
+    graphObj.RedrawData();
 }
 

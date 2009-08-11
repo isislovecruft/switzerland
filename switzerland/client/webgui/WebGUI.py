@@ -47,7 +47,7 @@ class line_graph:
         self.graph_height = height - (self.y_axis_margin + 2 * self.y_margin)
         self.graph_width = width - (self.x_axis_margin + 2 * self.x_margin)
         
-        self.gui_flows = None
+        
         
         # JavaScript canvas context name
         self.canvas_context = canvas_context
@@ -119,7 +119,7 @@ class line_graph:
     # size of graph        
     def get_y_hist_max(self, include_total=True):
         all_packcount = list()
-        for ip in self.gui_flows:
+        for ip in singleton_webgui.packet_data.active_flows:
             if self.histograms[ip]['total'] != None:
                 all_packcount.extend([p[0] for p in self.histograms[ip]['total']])
             if self.histograms[ip]['modified'] != None:
@@ -138,7 +138,7 @@ class line_graph:
         # Find min and max timestamp
         all_timestamps = list()
         
-        for ip in self.gui_flows :
+        for ip in singleton_webgui.packet_data.active_flows :
             ts_list = [p[0] for p in singleton_webgui.packet_data.packet_data[ip]['dropped']]
             # Rather than concatenating ALL the timestamps, we
             # only need the mins and maxes.
@@ -269,18 +269,16 @@ class line_graph:
             packet_type_long = ""
         return (source_ip, source_port, dest_ip, dest_port, proto, packet_type, packet_type_long)
             
-    # Legend for the graph
-    # precondition: gui_flows must be set            
+    # Legend for the graph         
     def make_legend(self):
         i = 0
         entries = list()
-        for flow_name in self.gui_flows:
+        for flow_name in singleton_webgui.packet_data.active_flows:
 
             (source_ip, source_port, dest_ip, dest_port, proto, packet_type, packet_type_long) = self.split_name(flow_name)
-  
-            entries.append(('''leg_''' + flow_name + '''_dr''', source_ip, source_port, dest_ip, dest_port, proto,  '''dropped''' ))
-            entries.append(('''leg_''' + flow_name + '''_in''', source_ip, source_port, dest_ip, dest_port, proto, '''injected''' ))
-            entries.append(('''leg_''' + flow_name + '''_mo''', source_ip, source_port, dest_ip, dest_port, proto, '''modified''' ))
+            #entries.append(('''leg_''' + flow_name + '''_dr''', source_ip, source_port, dest_ip, dest_port, proto,  '''dropped''' ))
+            #entries.append(('''leg_''' + flow_name + '''_in''', source_ip, source_port, dest_ip, dest_port, proto, '''injected''' ))
+            #entries.append(('''leg_''' + flow_name + '''_mo''', source_ip, source_port, dest_ip, dest_port, proto, '''modified''' ))
             entries.append(('''leg_''' + flow_name + '''_to''', source_ip, source_port, dest_ip, dest_port, proto, '''total''' ))
             i = i + 1
 
@@ -293,9 +291,6 @@ class line_graph:
         singleton_webgui.packet_data.update_active_flows()        
         # Update which flows we care about
         # For now, all of them.  Will update to those selected by GUI
-        self.gui_flows = dict()
-        for f in singleton_webgui.packet_data.active_flows:
-            self.gui_flows[f] = singleton_webgui.packet_data.active_flows[f]
             
         singleton_webgui.packet_data.update_packet_data()
         self.get_min_max_time()
@@ -311,7 +306,7 @@ class line_graph:
             
             flow_names = dict()
             # For each flow considered
-            for flow_name in self.gui_flows:
+            for flow_name in singleton_webgui.packet_data.active_flows:
 
                 # Make a histogram
                 self.histograms[flow_name] = dict()
@@ -340,7 +335,7 @@ class line_graph:
             singleton_webgui.packet_data.current_histograms = self.histograms
             self.get_y_hist_max(True)
             
-            for flow_name in self.gui_flows:
+            for flow_name in singleton_webgui.packet_data.active_flows:
                 
 
                 # Make graph data
@@ -423,6 +418,10 @@ class ajax_server:
             return self.packet_info(webin, render)
         if command == 'updateGraph':
             return self.update_graph(webin, render)
+        if command == 'updateLegend':
+            return self.update_legend(webin, render)
+        if command == 'toggleFlow':
+            return self.toggle_flow(webin, render)
         else:
             return("command " + command)
         
@@ -430,7 +429,12 @@ class ajax_server:
         graph = line_graph() 
         # Call make_graph FIRST to load data into structures
         graph_html = graph.make_graph() 
+        singleton_webgui.packet_data.current_graph = graph
         return graph_html
+    
+    def update_legend(self, webin, render):
+        legend_html = singleton_webgui.packet_data.current_graph.make_legend()
+        return legend_html
         
     def packet_info(self, webin, render):
         flow_name = webin.flowId
@@ -439,11 +443,9 @@ class ajax_server:
         modified = singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]
         injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
         dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
-
         pi = render.packet_info(modified, injected, dropped)
         #print pi
         return pi
-
         
 class index:
     def GET(self):
@@ -451,20 +453,6 @@ class index:
         return self.main()
 
     def POST(self):
-        webin = web.input()
-        # Reset list of selected flows and rebuild from form input
-        singleton_webgui.packet_data.selected_flows = dict()
-        for attr in webin:
-            # Add flows with checked checkboxes to selected flows
-            if attr.startswith('cb_'):
-                #format: cb_leg_149_169_192_185_16618__100_133_203_203_35748_tcp_dr
-                name = attr[7:]
-                #name format: 149_169_192_185_16618__100_133_203_203_35748_tcp_dr\
-                
-                if webin[attr] == 'on':
-                    singleton_webgui.packet_data.selected_flows[name] = "on"
-                else:
-                    singleton_webgui.packet_data.selected_flows[name] = "off"
         return self.main()
         
     def main(self):
@@ -473,6 +461,7 @@ class index:
         graph = line_graph() 
         # Call make_graph FIRST to load data into structures
         graph_html = graph.make_graph() 
+        singleton_webgui.packet_data.current_graph = graph
         client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
         server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
         active_flows = render.flow_list(singleton_webgui.packet_data.active_flows)      
@@ -558,8 +547,9 @@ class packet_data:
         self.selected_flows = dict()
         self.active_peers = list()
         self.current_histograms = None
+        self.current_graph = None
 
-    def init_gui_flows(self):
+    def init_selected_flows(self):
         self.update_active_flows()
         for flow_name in self.active_flows:
 
@@ -707,5 +697,5 @@ if __name__ == "__main__":
     os.chdir(os.path.abspath(pathname))
 
     singleton_webgui = WebGUI()
-    singleton_webgui.packet_data.init_gui_flows()
+    singleton_webgui.packet_data.init_selected_flows()
     singleton_webgui.main()

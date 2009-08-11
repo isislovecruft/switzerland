@@ -6,14 +6,19 @@ $# Main page with graph
     <head>
         <title>Switzerland</title>
         <script type="text/javascript">
-            var graph_cid;
-            setInterval ( "updatePage();", $reload_seconds * 1000 );
+            var graphCid;
+            var activeFlows = new Array();
+            var tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
             
             function updatePage() {
-                updateGraph('graph');    
+                updateGraph('graph');
             }
             
-            
+            function toggleFlow(formName, checked){
+                clearInterval(tid);
+                updateFlow(formName, graphCid, activeFlows, checked);
+                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
+            }
         </script>
 
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>

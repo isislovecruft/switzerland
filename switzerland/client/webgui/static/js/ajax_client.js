@@ -11,7 +11,7 @@ function getPacketInfo(flowId, histBinId, container) {
 		responseContainer.update(transport.responseText);
 	},
 	onFailure: function(transport) {
-		alert("Something has gone wrong.")
+		alert("Something has gone wrong with getting packet details.")
 	}}
     );
 }
@@ -29,7 +29,26 @@ function updateGraph(container) {
 		responseContainer.update(transport.responseText);
 	},
 	onFailure: function(transport) {
-		alert("Something has gone wrong.")
+		alert("Something has gone wrong with updating the graph.")
 	}}
     );
 }
+
+function updateLegend(container) {
+
+    // Use the prototype library to get a cross-browser AJAX request
+    
+    new Ajax.Request('/ajax_server', {
+	method: 'get',
+	parameters: {command: 'updateLegend' },
+	onSuccess: function(transport) {
+	    var responseContainer = $(container);
+		
+	    responseContainer.update(transport.responseText);
+	},
+	onFailure: function(transport) {
+		alert("Something has gone wrong with updating the graph.")
+	}}
+    );
+}
+

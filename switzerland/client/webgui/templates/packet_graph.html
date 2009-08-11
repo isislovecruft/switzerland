@@ -9,8 +9,9 @@ $def with (graph_opts, graph_data_html, graph_data_array)
        multiple graphs per page. */
     var $graph_opts['canvas_context'];
 
-    $ graph_name = 'graph_' + graph_opts['canvas_id'] 
+    $ graph_name = 'graph' + graph_opts['canvas_id'].capitalize() 
     $ graph_name_draw = graph_name + ".Draw();"
+    $ graph_name_active_flows = graph_name + ".activeFlows = activeFlows;"
     var canvas_element = document.getElementById("$graph_opts['canvas_id']")
 
     
@@ -48,6 +49,7 @@ $def with (graph_opts, graph_data_html, graph_data_array)
                    $graph_opts['min_timestamp']
     );
     
+    $graph_name_active_flows
     $graph_name_draw
 
 </script>

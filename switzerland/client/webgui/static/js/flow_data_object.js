@@ -42,6 +42,7 @@ function FlowGraph(
    this.snapshotCanvas = document.createElement('canvas');
    this.snapshotCanvas.width = width;
    this.snapshotCanvas.height = height;
+   this.exists = "I exist!";
 }
 
 FlowGraph.prototype.DrawAxes = function(drawText) {
@@ -139,10 +140,13 @@ FlowGraph.prototype.RedrawData = function() {
         var drawWidth = this.width - (this.xMargin + this.xAxisMargin);
         var drawHeight = this.height - (this.yMargin + this.yAxisMargin);
         this.canvasContext.clearRect(this.xMargin + this.xAxisMargin, 0, drawWidth, drawHeight);
-        this.DrawAxes(false);      
+        this.DrawAxes(false);
+
         for (var fd in this.flowData) {
-            if(typeof(this.flowData[fd].Draw) == 'function') {
-                this.flowData[fd].Draw();
+            if (this.activeFlows[fd]!= false) {
+                if(typeof(this.flowData[fd].Draw) == 'function') {
+                    this.flowData[fd].Draw();
+                }
             }
         }
 
@@ -156,11 +160,14 @@ FlowGraph.prototype.Draw = function() {
         this.DrawAxes(true);
         for (var fd in this.flowData) {
             
-            // Workaround for Prototype object modifications without
-            // locking in to Prototype object modifications
-            // http://www.prototypejs.org/api/array
-            if(typeof(this.flowData[fd].Draw) == 'function') {
-                this.flowData[fd].Draw();
+                if (this.activeFlows[fd]!= false) {
+                
+                // Workaround for Prototype object modifications without
+                // locking in to Prototype object modifications
+                // http://www.prototypejs.org/api/array
+                if(typeof(this.flowData[fd].Draw) == 'function') {
+                    this.flowData[fd].Draw();
+                }
             }
         }
         this.snapshotCanvas.getContext('2d').drawImage(this.canvasElement,0,0);
@@ -213,6 +220,7 @@ function FlowData(xList, yList, context, shape, color, name,
     this.source_port = source_port;
     this.dest_port = dest_port;
     this.protocol = protocol;
+    this.active = true;
 }
 
 
