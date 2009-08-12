@@ -126,6 +126,8 @@ class xPeer:
         self.fake_flows = list()
         self.firewalled = False
         self.sent_flows = False
+        self.ip = s.inet_aton(str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)))
+   
     def traceroute(self):
         return "Here is the route to this peer"
     def new_flows(self):
@@ -209,5 +211,7 @@ class xFlow:
 
 class xPacket:
     def __init__(self):
-        pass
-
+        self.summary_string = str(random.randint(1000000000,9999999999))
+    
+    def get_summary_string(self):
+        return self.summary_string
