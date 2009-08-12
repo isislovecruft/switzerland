@@ -53,6 +53,7 @@ FlowGraph.prototype.DrawAxes = function(drawText) {
     var graphwidth = this.width - (2 * this.xMargin + this.xAxisMargin);
 
     this.canvasContext.strokeStyle = 'black';
+    this.canvasContext.fillStyle = 'black';
     this.canvasContext.textAlign = 'center';
 
     this.canvasContext.beginPath();
@@ -139,8 +140,9 @@ FlowGraph.prototype.RedrawData = function() {
     if (this.canvasContext) {
         var drawWidth = this.width - (this.xMargin + this.xAxisMargin);
         var drawHeight = this.height - (this.yMargin + this.yAxisMargin);
-        this.canvasContext.clearRect(this.xMargin + this.xAxisMargin, 0, drawWidth, drawHeight);
-        this.DrawAxes(false);
+        //this.canvasContext.clearRect(this.xMargin + this.xAxisMargin, 0, drawWidth, drawHeight);
+        this.canvasContext.clearRect(0, 0, this.width, this.height);
+        this.DrawAxes(true);
 
         for (var fd in this.flowData) {
             if (this.activeFlows[fd]!= false) {
@@ -149,7 +151,8 @@ FlowGraph.prototype.RedrawData = function() {
                 }
             }
         }
-
+        this.snapshotCanvas.getContext('2d').clearRect(0,0,this.width,this.height);
+        this.snapshotCanvas.getContext('2d').drawImage(this.canvasElement,0,0);
     } else {
         // No canvas support error message should have already been displayed.
     }
@@ -181,14 +184,15 @@ FlowGraph.prototype.Draw = function() {
 
 FlowGraph.prototype.FindCollision = function(x, y) {
     for (var fd in this.flowData) {
-        if (typeof(this.flowData[fd].FindCollision) == 'function') {
-            var retVal = this.flowData[fd].FindCollision(x,y);
-            
-            if (typeof(retVal) != 'undefined') {
-                return retVal
+        if (this.activeFlows[fd]!= false) { 
+            if (typeof(this.flowData[fd].FindCollision) == 'function') {
+                var retVal = this.flowData[fd].FindCollision(x,y);
+                
+                if (typeof(retVal) != 'undefined') {
+                    return retVal
+                }
             }
-        }
-            
+        }    
     }
 }
 

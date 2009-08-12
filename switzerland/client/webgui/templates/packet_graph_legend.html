@@ -3,13 +3,30 @@ $def with (canvas_id, entries, selected)
 $# entry = (canvas_name, source_ip, source_port, dest_ip, dest_port, proto, packet_type)
 
 $ form_name = 'frmLegend_' + canvas_id
-$ submit_cmd = 'document.' + form_name + '.submit();'
 $ graph_obj = 'graph' + canvas_id.capitalize()
 $ graph_draw_legend_cmd = 'graph' + canvas_id.capitalize() + '.DrawLegend();'
 
+<table>
+    <tr>
+        <td><canvas id="canTo$canvas_id" height="10" width="28">You need Safari or Firefox 1.5+ to see this image.</canvas> Total # Packets</td>
+        <td><canvas id="canDr$canvas_id" height="10" width="28">You need Safari or Firefox 1.5+ to see this image.</canvas> Dropped</td>
+        <td><canvas id="canIn$canvas_id" height="10" width="28">You need Safari or Firefox 1.5+ to see this image.</canvas> Injected</td>
+        <td><canvas id="canMo$canvas_id" height="10" width="28">You need Safari or Firefox 1.5+ to see this image.</canvas> Modified</td>
+    </tr>
+</table>
+<script type="text/javascript">
+    var toLeg = new FlowDataLegend('', 'black', 'canTo$canvas_id', 28 );
+    var drLeg = new FlowDataLegend('x', 'black', 'canDr$canvas_id', 28 );
+    var inLeg = new FlowDataLegend('triangle', 'black', 'canIn$canvas_id', 28 );
+    var moLeg = new FlowDataLegend('square', 'black', 'canMo$canvas_id', 28 );
+    toLeg.Draw();
+    drLeg.Draw();
+    inLeg.Draw();
+    moLeg.Draw();
+</script>
 <form name="$form_name" id="$form_name" method="GET" action="/ajax_server">
-<input type="button" onClick="checkLegend(document.$form_name, false);" name="btnClear" value="Clear all">
-<input type="button" onClick="checkLegend(document.$form_name, true);$submit_cmd" name="btnCheckAll" value="Check all">
+<input type="button" onClick="toggleAll(document.$form_name, false);" name="btnClear" value="Clear all">
+<input type="button" onClick="toggleAll(document.$form_name, true);" name="btnCheckAll" value="Check all">
 
 <table>
     $for (canvas_name, source_ip, source_port, dest_ip, dest_port, proto, packet_type) in entries:
@@ -18,7 +35,7 @@ $ graph_draw_legend_cmd = 'graph' + canvas_id.capitalize() + '.DrawLegend();'
         $ total_name = flow_name + "_to"
         $if packet_type == 'total':
             <tr><td><input type="checkbox" name="cb_$canvas_name" value="on"
-            onClick="toggleFlow($form_name, this.checked);" checked></td>
+            onClick="toggleFlow($form_name);" checked></td>
             <td><canvas id="$canvas_name" height="10" width="50">You need Safari or Firefox 1.5+ to see this image.</canvas></td>
             <td></td>
             <td>$source_ip:$source_port<img src="/static/images/rarrow.png" alt="->">$dest_ip:$dest_port&nbsp;($proto)&nbsp;<!--$packet_type--></td></tr>

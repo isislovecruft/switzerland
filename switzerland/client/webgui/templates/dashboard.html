@@ -8,17 +8,23 @@ $# Main page with graph
         <script type="text/javascript">
             var graphCid;
             var activeFlows = new Array();
-            var tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
+            var tid = setInterval ( "updatePage();", $reload_seconds * 10000 );
             
             function updatePage() {
                 updateGraph('graph');
             }
             
-            function toggleFlow(formName, checked){
+            function toggleFlow(formName){
                 clearInterval(tid);
-                updateFlow(formName, graphCid, activeFlows, checked);
-                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
+                updateFlow(formName, graphCid, activeFlows);
+                tid = setInterval ( "updatePage();", $reload_seconds * 10000 );
             }
+            
+            function toggleAll(formName, checked) {
+                clearInterval(tid);
+                checkLegend(formName, checked, graphCid, activeFlows);
+                tid = setInterval ( "updatePage();", $reload_seconds * 10000 );
+            }       
         </script>
 
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>
@@ -48,8 +54,6 @@ $# Main page with graph
     <div id="graph" class="page_section" style="clear:left;">
     $:graph
     </div> 
-    <input type="button" onClick="updateGraph('graph');" name="btnUpdateGraph" value="UpdateGraph" />
-
     <div id="graphdetail" class="page_section">&nbsp;
     </div>
     <div id="legend" class="page_section" style="clear:left;">

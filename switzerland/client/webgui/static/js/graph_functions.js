@@ -59,19 +59,7 @@ function highlightPoint(ctx, x, y) {
 }
 
 
-function checkLegend(legendForm, checkboxValue) {
-    for (var i = 0; i < legendForm.elements.length; i++) {
-        if (legendForm.elements[i].type == 'checkbox') {
-            legendForm.elements[i].checked = checkboxValue;
-        }
-        if ((legendForm.elements[i].type == 'hidden') && checkboxValue){
-            legendForm.elements[i].value = 'on';
-        }
-        if ((legendForm.elements[i].type == 'hidden') && !checkboxValue){
-            legendForm.elements[i].value = 'off';
-        }
-    }
-}
+
 
 
 function epochToTime(epoch, binSize) {
@@ -144,7 +132,7 @@ var evMouseMove = function (ev) {
         highlightPoint(context, retObj.x, retObj.y, retObj.flow.shape);
         getPacketInfo(retObj.flow.name,retObj.bin,'graphdetail');
         
-        document.getElementById("graphdetail").innerHTML="Packet Data Here: " + retObj.x + "," + retObj.y;
+        //document.getElementById("graphdetail").innerHTML="Packet Data Here: " + retObj.x + "," + retObj.y;
         retObj.flow.Draw();
 
 
@@ -159,7 +147,7 @@ function withinDistance(x1, y1, x2, y2, dist) {
     return false;
 }
 
-function updateFlow(legendForm, graphObj, activeFlows, checked){
+function updateFlow(legendForm, graphObj, activeFlows){
     for (var i = 0; i < legendForm.elements.length; i++) {
         if (legendForm.elements[i].type == 'checkbox') {
             if (legendForm.elements[i].name.search('cb_leg_') > -1) {
@@ -185,5 +173,14 @@ function updateFlow(legendForm, graphObj, activeFlows, checked){
     graphObj.activeFlows = activeFlows;
 
     graphObj.RedrawData();
+}
+
+function checkLegend(legendForm, checkboxValue, graphObj, activeFlows) {   
+    for (var i = 0; i < legendForm.elements.length; i++ ) {
+        if (legendForm.elements[i].type == 'checkbox') {
+            legendForm.elements[i].checked = checkboxValue;
+        }
+    }
+    updateFlow(legendForm, graphObj, activeFlows);
 }
 
