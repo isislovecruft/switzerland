@@ -8,7 +8,7 @@ $# Main page with graph
         <script type="text/javascript">
             var graphCid;
             var activeFlows = new Array();
-            var tid = setInterval ( "updatePage();", $reload_seconds * 10000 );
+            var tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
             
             function updatePage() {
                 updateGraph('graph');
@@ -17,13 +17,13 @@ $# Main page with graph
             function toggleFlow(formName){
                 clearInterval(tid);
                 updateFlow(formName, graphCid, activeFlows);
-                tid = setInterval ( "updatePage();", $reload_seconds * 10000 );
+                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
             }
             
             function toggleAll(formName, checked) {
                 clearInterval(tid);
                 checkLegend(formName, checked, graphCid, activeFlows);
-                tid = setInterval ( "updatePage();", $reload_seconds * 10000 );
+                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
             }       
         </script>
 
