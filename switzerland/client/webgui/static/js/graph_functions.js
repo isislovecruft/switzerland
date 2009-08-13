@@ -3,7 +3,7 @@
     http://www.eff.org/testyourisp/switzerland
 */
 
-
+// Draw a data point
 function makePoint(ctx, x, y, shape) {
     switch (shape) {
 
@@ -38,16 +38,7 @@ function makePoint(ctx, x, y, shape) {
     }
 }
 
-function clearPoint(ctx,x,y) {
-    ctx.save();
-    ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(x, y, 6, 0, Math.PI * 2, true);
-    ctx.fill();
-    ctx.restore();
-}
-
+// Highlight a data point with a yellow circle
 function highlightPoint(ctx, x, y) {
     ctx.save();
     ctx.fillStyle = "#eeee00";
@@ -58,10 +49,7 @@ function highlightPoint(ctx, x, y) {
     ctx.restore();
 }
 
-
-
-
-
+// Turn an epoch into a human-readable time
 function epochToTime(epoch, binSize) {
 
     var ep = parseInt(epoch);
@@ -92,10 +80,14 @@ function epochToTime(epoch, binSize) {
 }
 
 
-/* This code is modified from 
-    http://dev.opera.com/articles/view/html5-canvas-painting/
-    */
+// The mouse position retrieval code here is based on code at
+// "Creating an HTML 5 canvas painting application" by Mihai Sucan (17 Mar 2009)
+// http://dev.opera.com/articles/view/html5-canvas-painting/ 
     
+// This code is triggered by a mousemove event on the graph canvas
+// evMouseMove checks if the mouse is over a data point and highlights
+// that point.  It also makes an ajax call to the web application for
+// detailed packet information.
 var evMouseMove = function (ev) {
     var x, y;
     
@@ -135,10 +127,10 @@ var evMouseMove = function (ev) {
         //document.getElementById("graphdetail").innerHTML="Packet Data Here: " + retObj.x + "," + retObj.y;
         retObj.flow.Draw();
 
-
     } 
 }
 
+// This is used to find collisions
 // Save some CPU by not taking the square root
 function withinDistance(x1, y1, x2, y2, dist) {
     if (Math.pow((x1-x2),2) + Math.pow((y1-y2),2) < Math.pow(dist,2)) {
@@ -147,6 +139,8 @@ function withinDistance(x1, y1, x2, y2, dist) {
     return false;
 }
 
+// If a flow is checked or unchecked in the legend, all of the related packet
+// type flows are updated (modified, dropped, injected)
 function updateFlow(legendForm, graphObj, activeFlows){
     for (var i = 0; i < legendForm.elements.length; i++) {
         if (legendForm.elements[i].type == 'checkbox') {
@@ -175,6 +169,7 @@ function updateFlow(legendForm, graphObj, activeFlows){
     graphObj.RedrawData();
 }
 
+// Check all checkboxes in the legend
 function checkLegend(legendForm, checkboxValue, graphObj, activeFlows) {   
     for (var i = 0; i < legendForm.elements.length; i++ ) {
         if (legendForm.elements[i].type == 'checkbox') {

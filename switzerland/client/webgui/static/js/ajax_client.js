@@ -1,6 +1,9 @@
-function getPacketInfo(flowId, histBinId, container) {
 
-    // Use the prototype library to get a cross-browser AJAX request
+// The functions in this file depend on the prototype library
+// http://www.prototypejs.org/
+
+// Get detailed packet information (returns HTML)
+function getPacketInfo(flowId, histBinId, container) {
     
     new Ajax.Request('/ajax_server', {
 	method: 'get',
@@ -16,9 +19,8 @@ function getPacketInfo(flowId, histBinId, container) {
     );
 }
 
+// Get new JavaScript defining the graph (returns JavaScript/HTML)
 function updateGraph(container) {
-
-    // Use the prototype library to get a cross-browser AJAX request
     
     new Ajax.Request('/ajax_server', {
 	method: 'get',
@@ -34,9 +36,8 @@ function updateGraph(container) {
     );
 }
 
+// Get new JavaScript defining the graph legend (returns JavaScript/HTML) 
 function updateLegend(container) {
-
-    // Use the prototype library to get a cross-browser AJAX request
     
     new Ajax.Request('/ajax_server', {
 	method: 'get',

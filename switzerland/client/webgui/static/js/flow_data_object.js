@@ -1,5 +1,5 @@
 
-/* FlowGraph Object representing the whole graph */
+// FlowGraph Object representing the whole graph
 function FlowGraph(
                    canvasContext,
                    canvasElement,
@@ -21,28 +21,38 @@ function FlowGraph(
                
    this.canvasContext = canvasContext;
    this.canvasElement = canvasElement;
-   this.flowData = flowData; 
+   // flowData is an object representing all of the data points and flow
+   // information coming from the application server
+   this.flowData = flowData;
+   // xMargin/yMargin are whitespace around the edges
    this.xMargin = xMargin; 
    this.yMargin = yMargin;
+   // xAxisMargin/yAxisMargin are the space at the left and bottom allowed
+   // for the axes and labels
    this.xAxisMargin = xAxisMargin;
    this.yAxisMargin = yAxisMargin;
    this.width = width;
    this.height = height;
+   // graphXBins/graphYBins are the number of bins along each axis
    this.graphXBins = graphXBins;
    this.graphYBins = graphYBins;
+   // xBinPixels/yBinPixels are number of pixels per bin
    this.xBinPixels = xBinPixels;
+   // xBinSize is the number of seconds per bin
    this.xBinSize = xBinSize;
    this.yBinPixels = yBinPixels;
+   // yBinSize is the number of packets per bin
    this.yBinSize = yBinSize;
+   // minTimestamp becomes the value of x at the origin
    this.minTimestamp = minTimestamp;
-   this.canvasElement.started = false;
+   // make this object accessible from calls on the canvas element
    this.canvasElement.graphObject = this;
+   // event listener for mouseover
    this.canvasElement.addEventListener('mousemove', evMouseMove, false);
-   //this.snapshot;
+   // the snapshot keeps a copy of the graph for quick redraw
    this.snapshotCanvas = document.createElement('canvas');
    this.snapshotCanvas.width = width;
    this.snapshotCanvas.height = height;
-   this.exists = "I exist!";
 }
 
 FlowGraph.prototype.DrawAxes = function(drawText) {
@@ -136,6 +146,8 @@ FlowGraph.prototype.DrawAxes = function(drawText) {
     this.canvasContext.stroke();
 }
 
+// This function (RedrawData) clears the background before drawing the graph.
+// Draw does not clear the background. 
 FlowGraph.prototype.RedrawData = function() {
     if (this.canvasContext) {
         var drawWidth = this.width - (this.xMargin + this.xAxisMargin);
@@ -181,7 +193,8 @@ FlowGraph.prototype.Draw = function() {
 
 
 
-
+// FindCollision finds where the mouse position (passed as x,y) intersects
+// with a data point
 FlowGraph.prototype.FindCollision = function(x, y) {
     for (var fd in this.flowData) {
         if (this.activeFlows[fd]!= false) { 
@@ -196,6 +209,7 @@ FlowGraph.prototype.FindCollision = function(x, y) {
     }
 }
 
+// Draw the mini-canvasses for the legend
 FlowGraph.prototype.DrawLegend = function() {
 
     for (var fd in this.flowData) {
@@ -203,12 +217,15 @@ FlowGraph.prototype.DrawLegend = function() {
         if (typeof(this.flowData[fd].DrawLegend) == 'function') {
             this.flowData[fd].DrawLegend(canvasId);
         }
+        else {
+            alert("type of flowdata" + typeof(this.flowData[fd].DrawLegend))
+        }
     }
 
 }
 
-/* FlowData object representing just one flow */
 
+// FlowData object representing just one flow
 function FlowData(xList, yList, context, shape, color, name, 
     source_ip, source_port, dest_ip, dest_port, protocol, packet_type ) {
  
@@ -247,24 +264,13 @@ FlowData.prototype.Draw = function() {
     }
 }
 
-FlowData.prototype.ClearPoints = function() {
-    if (this.xList.length != this.yList.length) {
-        alert("Lengths of data arrays do not match!\nx: "+ this.xList.length + " y:" + this.yList.length);
-        return;
-    }
-    this.canvasContext.fillStyle = this.color;
-    this.canvasContext.strokeStyle = this.color;
-         
-    for (var i = 0; i < this.xList.length; i++){ 
-        clearPoint(this.canvasContext, this.xList[i], this.yList[i]); 
-    }
-}
-
+// Create and draw the legend entry (a small canvas)
 FlowData.prototype.DrawLegend = function(canvasId) {
     this.legend = new FlowDataLegend(this.shape, this.color, canvasId);
     this.legend.Draw();
 }   
 
+// Find if the mouse position (at x,y) corresponds with a data point
 FlowData.prototype.FindCollision = function(x, y) {
     for (var i = 0; i < this.xList.length; i++){ 
         if (withinDistance(x, y, this.xList[i], this.yList[i], 3) ) {
@@ -274,7 +280,7 @@ FlowData.prototype.FindCollision = function(x, y) {
     // return nothing (undefined)
 }
 
-/* FlowDataLegend object representing just the legend for one flow */
+// FlowDataLegend object representing the legend for one flow 
 
 function FlowDataLegend(shape, color, canvasId, width, height) {
     this.shape = typeof(shape) == 'undefined' ? '' : shape;

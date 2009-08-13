@@ -12,7 +12,11 @@ $# Main page with graph
             
             function updatePage() {
                 updateGraph('graph');
+                updateLegend('legend');
             }
+            
+            $# toggleFlow and toggleAll are called from packet_graph_legend.html,
+            $# but they are defined here with the other references to tid
             
             function toggleFlow(formName){
                 clearInterval(tid);
@@ -43,11 +47,11 @@ $# Main page with graph
     <div id="serverinfo" class="page_section" >
     $:server_info
     </div>
-    <!-- Uncomment for active flow list (redundant to graph legend)
-    <div id="activeflows" class="page_section" >
-    $:active_flows
-    </div>
-    -->
+    $# Uncomment for active flow list (redundant to graph legend)
+    $# <div id="activeflows" class="page_section" >
+    $# $:active_flows
+    $# </div>
+    
     <div id="activepeers" class="page_section" >
     $:active_peers
     </div>
