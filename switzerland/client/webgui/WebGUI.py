@@ -10,8 +10,8 @@ import socket as s
 import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
-#from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 singleton_webgui = None
 debug_output = False
