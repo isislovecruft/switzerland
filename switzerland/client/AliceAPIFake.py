@@ -215,3 +215,18 @@ class xPacket:
     
     def get_summary_string(self):
         return self.summary_string
+    
+    def timestamp(self):
+        pass
+    
+    def get_summary_fields(self):
+        ret_fields = dict()
+        ret_fields("ip_id") = ""
+        ret_fields("tcp_flags") = ""
+        ret_fields("tcp_seqno") = ""
+        ret_fields("payload_size") = ""
+        
+    def get_details(self):
+        pass
+    
+    
