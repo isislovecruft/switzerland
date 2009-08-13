@@ -221,10 +221,12 @@ class xPacket:
     
     def get_summary_fields(self):
         ret_fields = dict()
-        ret_fields("ip_id") = ""
-        ret_fields("tcp_flags") = ""
-        ret_fields("tcp_seqno") = ""
-        ret_fields("payload_size") = ""
+        ret_fields['ip_id'] = ''
+        ret_fields['tcp_flags'] = ''
+        ret_fields['tcp_seqno'] = ''
+        ret_fields['payload_size'] = ''
+        return ret_fields
+        
         
     def get_details(self):
         pass
