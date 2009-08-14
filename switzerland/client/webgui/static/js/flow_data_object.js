@@ -218,7 +218,7 @@ FlowGraph.prototype.DrawLegend = function() {
             this.flowData[fd].DrawLegend(canvasId);
         }
         else {
-            alert("type of flowdata" + typeof(this.flowData[fd].DrawLegend))
+            //alert("type of flowdata " + typeof(this.flowData[fd].DrawLegend))
         }
     }
 
