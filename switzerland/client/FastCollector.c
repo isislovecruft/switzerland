@@ -11,10 +11,15 @@ behind that the entire circular buffer is full.
 
 Usage:
 
-FastCollector [-b buffersize] [interface]
-FastCollector -f [filename]
+FastCollector [-d] [-b buffersize] [interface]
+FastCollector [-d] -f [filename]
 
 buffersize is measured in number of packets
+
+-d causes FastCollector to delete the circular buffer as it exits; this
+   isn't the default due to complicated issues deriving from PacketCollector's
+   efforts to shred the file if possible.
+
 */
 
 #ifdef WIN32
