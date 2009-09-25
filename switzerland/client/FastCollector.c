@@ -1,3 +1,22 @@
+/* FastCollector.c
+
+FastCollector is a simple C program that uses libpcap to capture IP packets,
+and writes them into a circular buffer temporary file.
+
+FastCollector exists to relieve other programs of the realtime requirement to
+fetch packets from the operating system via libpcap before the kernel's
+buffers overflow.  Switzerland's PacketCollector code reads through the
+circular buffer, and won't suffer from an overflow unless it gets so far
+behind that the entire circular buffer is full.
+
+Usage:
+
+FastCollector [-b buffersize] [interface]
+FastCollector -f [filename]
+
+buffersize is measured in number of packets
+*/
+
 #ifdef WIN32
 # define _CRT_SECURE_NO_WARNINGS
 #endif
