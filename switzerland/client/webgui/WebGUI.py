@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+# Run as
+# ./switzerlanclient/webgui/WebGUI.py --fake
+# Where --fake optionally specifies the bogus demo
+# that can run without a network
+
 import web
 import time
 import math
@@ -9,12 +14,10 @@ import logging
 import socket as s
 import switzerland.common.Flow
 
+# Test of scapy import
+from switzerland.lib.shrunk_scapy.layers.inet import IP
+from switzerland.lib.shrunk_scapy.layers.l2 import Ether
 from switzerland.common.Flow import print_flow_tuple
-from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
-# Use AliceAPIFake instead of AliceAPI when you have no peers or no internet connection
-# It generates somewhat reasonable random data
-# Make sure to comment out AliceAPI line above if you are using this.
-#from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
 # singleton_webgui is the most important object!  All data that persists between
 # calls to this web application server is tied to this instance.
@@ -475,7 +478,10 @@ class ajax_server:
         injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
         dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
         pi = render.packet_info(modified, injected, dropped)
-        #print pi
+        
+        for m in modified:
+            print "modified: " + m.get_summary_string()
+        print pi
         return pi
         
 class index:
@@ -716,7 +722,7 @@ class WebGUI():
             alice_opts = sys.argv
             sys.argv[1:] = []
         # Comment out the following line to make accessible outside of localhost
-        sys.argv.insert(1,"127.0.0.1:8080")
+        #sys.argv.insert(1,"127.0.0.1:8080")
         self.app.run()
     
 
@@ -728,6 +734,14 @@ if __name__ == "__main__":
     # If we don't, the script can't find all of the static and template files
     pathname = os.path.dirname(sys.argv[0])
     os.chdir(os.path.abspath(pathname))
+    
+    # Use AliceAPIFake instead of AliceAPI when you have no peers or no internet connection
+    # It generates somewhat reasonable random data
+   
+    if len(sys.argv) > 1 and sys.argv[1] == '--fake':
+      from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+    else:
+      from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
     singleton_webgui = WebGUI()
     singleton_webgui.packet_data.init_visible_flows()

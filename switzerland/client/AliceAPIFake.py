@@ -4,8 +4,11 @@ import random
 import logging
 import socket as s
 import binascii
+import pickle
+
 from switzerland.common.util import bin2int
 from switzerland.common import util
+from switzerland.lib.shrunk_scapy.layers.l2 import Ether
 
 def ClientConfig(self):
     '''A factory function for the API's ClientConfig objects.'''
@@ -212,14 +215,22 @@ class xFlow:
 class xPacket:
     def __init__(self):
         self.summary_string = str(random.randint(1000000000,9999999999))
+        fileHandle = open('fake_data/' + 'packet1279077254.72')
+        temp_data = pickle.load(fileHandle) 
+        self.timestamp = 1279077254.72
+        self.actual_packet = Packet(self.timestamp, temp_data, None)
     
     def get_summary_string(self):
-        return self.summary_string
+        return Ether(self.actual_packet.original_data).summary()
+    
+    def raw_data(self):
+        return self.actual_packet.original_data    
     
     def timestamp(self):
-        pass
+        return self.timestamp
     
     def get_summary_fields(self):
+        e = Ether(self.actual_packet.original_data)
         ret_fields = dict()
         ret_fields['ip_id'] = ''
         ret_fields['tcp_flags'] = ''
@@ -227,8 +238,24 @@ class xPacket:
         ret_fields['payload_size'] = ''
         return ret_fields
         
-        
     def get_details(self):
         pass
     
-    
+class Packet:
+    """Captured user packet (IP datagram)."""
+
+    def __init__(self, timestamp, data, alice, hash=None, has_ll=True):
+        """Create a new packet.
+        timestamp: when received, seconds since epoch
+        data: (string) link layer data
+        hash: (string) hash of packet contents
+        """
+        self.timestamp = timestamp
+        self.alice = alice
+        self.private_ip = s.inet_aton(str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)) + '.' + str(random.randint(1,255)))
+        self.strip_link_layer = has_ll
+        self.original_data = data
+        self.hash = hash
+        self.reported = False
+        self._flow_addr = None
+        self.key = "XXX frogs"   
