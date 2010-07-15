@@ -167,6 +167,13 @@ class AliceConfig:
         print '                             packets will be written. "-" for none.'
         print "                             (defaults to " + default_pcap_logdir + ")"
         print "  -q, --quiet                Do not print output"
+        if sys.argv[0].endswith('WebGUI.py'):
+            print "  -a, --webaddr              Sets the ip address to run the Switzerland client"
+            print "                             web server (defaults to 0.0.0.0)"
+            print "  -w, --webport              Sets the port to run the Switzerland client"
+            print "                             web server (defaults to 8080)"
+            print "  -F, --fake                 Runs WebGUI in an off-network demonstration mode"
+            print "                             with fake data"   
         print
         if exit: sys.exit(0)
 

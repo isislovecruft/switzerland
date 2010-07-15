@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Run as
-# ./switzerlanclient/webgui/WebGUI.py --fake
+# ./switzerland/client/webgui/WebGUI.py --fake
 # Where --fake optionally specifies the bogus demo
 # that can run without a network
 
@@ -11,18 +11,24 @@ import math
 import sys
 import os
 import logging
+import getopt
 import socket as s
 import switzerland.common.Flow
+
+
 
 # Test of scapy import
 from switzerland.lib.shrunk_scapy.layers.inet import IP
 from switzerland.lib.shrunk_scapy.layers.l2 import Ether
 from switzerland.common.Flow import print_flow_tuple
+from switzerland.client.AliceConfig import AliceConfig
 
 # singleton_webgui is the most important object!  All data that persists between
 # calls to this web application server is tied to this instance.
 singleton_webgui = None
 debug_output = False
+web_py_server = '0.0.0.0'
+web_py_port = '8080'
 
 # The line_graph class represents the line graph and all of its data.
 class line_graph:
@@ -721,12 +727,9 @@ class WebGUI():
         if len(sys.argv) > 1:
             alice_opts = sys.argv
             sys.argv[1:] = []
-        # Comment out the following line to make accessible outside of localhost
-        #sys.argv.insert(1,"127.0.0.1:8080")
+        # Use 127.0.0.1 instead of 0.0.0.0 to make accessible outside of localhost
+        sys.argv.insert(1, web_py_server + ":" + web_py_port)
         self.app.run()
-    
-
-
 
 if __name__ == "__main__":
 
@@ -735,13 +738,41 @@ if __name__ == "__main__":
     pathname = os.path.dirname(sys.argv[0])
     os.chdir(os.path.abspath(pathname))
     
+    try:
+        optlist, args = getopt.gnu_getopt(sys.argv[1:], 'Fa:w:s:p:i:l:u:L:P:f:b:hqv', 
+                    ['fake', 'webaddr=', 'webport=',
+                    'server=', 'port=', 'interface=', 'ip=', 'help',
+                    'private-ip=', 'public-ip=', 'logfile=', 'pcap-logs=',
+                    'quiet', 'uncertain-time', 'verbose', 'buffer='])
+    except:
+        print "raised exception"
+        AliceConfig().usage();
+    
+    useFake = False
+    newArgList = []
+    newArgList.append(sys.argv[0])
+
+    for option, argument in optlist:
+        print option + " arg: " + argument
+        if option in ("-F", "--fake"):
+            useFake = True
+        elif option in ("-a", "--webaddr"):
+            web_py_server = argument
+        elif option in ("-w", "--webport"):
+            web_py_port = argument
+        else:
+            newArgList.append(option)
+            if argument is not None and len(argument) > 0:
+                newArgList.append(argument)
+    
+    sys.argv = newArgList   
     # Use AliceAPIFake instead of AliceAPI when you have no peers or no internet connection
     # It generates somewhat reasonable random data
-   
-    if len(sys.argv) > 1 and sys.argv[1] == '--fake':
-      from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
+    
+    if useFake:
+        from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket
     else:
-      from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
+        from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
     singleton_webgui = WebGUI()
     singleton_webgui.packet_data.init_visible_flows()
