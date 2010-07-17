@@ -1,17 +1,56 @@
 $def with (modified_list, injected_list, dropped_list)        
 $# This is where the packet info is formatted for display
 <table>
-        <caption>Dropped</caption>
-        $for p in dropped_list:
-                <tr><td>$p.get_summary_string()</td></tr>
+    <caption>Dropped</caption>
+    $for p in injected_list:
+        <tr><td>
+        $ (layer_order, layers) = p.get_ether_info()
+        <table><tr>
+        $for layer_name in layer_order:
+            <td valign="top">
+            <table>
+            <tr><th colspan="2">$layer_name</th></tr>
+            $ layer = layers[layer_name]
+            $for key in layer.keys():
+            	<tr><td>$key</td><td>$layer[key]</td></tr>
+            </table>
+            </td>
+        </tr></table>
+        </td></tr>
 </table>
 <table>
-        <caption>Injected</caption>        
-        $for p in injected_list:
-                <tr><td>$p.get_summary_string()</td></tr>
+    <caption>Injected</caption>        
+    $for p in injected_list:
+        <tr><td>
+        $ (layer_order, layers) = p.get_ether_info()
+        <table><tr>
+        $for layer_name in layer_order:
+            <td valign="top">
+            <table>
+            <tr><th colspan="2">$layer_name</th></tr>
+            $ layer = layers[layer_name]
+            $for key in layer.keys():
+            	<tr><td>$key</td><td>$layer[key]</td></tr>
+            </table>
+            </td>
+        </tr></table>
+        </td></tr>
 </table>
 <table>
-        <caption>Modified</caption>        
-        $for p in modified_list:
-                <tr><td>$p.get_summary_string()</td></tr>
+    <caption>Modified</caption>        
+    $for p in modified_list:
+        <tr><td>
+        $ (layer_order, layers) = p.get_ether_info()
+        <table><tr>
+        $for layer_name in layer_order:
+            <td  valign="top">
+            <table>
+            <tr><th colspan="2">$layer_name</th></tr>
+            $ layer = layers[layer_name]
+            $for key in layer.keys():
+            	<tr><td>$key</td><td>$layer[key]</td></tr>
+            </table>
+            </td>
+        </tr></table>
+        </td></tr>
 </table>

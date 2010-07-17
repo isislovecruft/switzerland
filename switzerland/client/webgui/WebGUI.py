@@ -15,11 +15,6 @@ import getopt
 import socket as s
 import switzerland.common.Flow
 
-
-
-# Test of scapy import
-from switzerland.lib.shrunk_scapy.layers.inet import IP
-from switzerland.lib.shrunk_scapy.layers.l2 import Ether
 from switzerland.common.Flow import print_flow_tuple
 from switzerland.client.AliceConfig import AliceConfig
 
@@ -484,7 +479,6 @@ class ajax_server:
         injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
         dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
         pi = render.packet_info(modified, injected, dropped)
-        
         for m in modified:
             print "modified: " + m.get_summary_string()
         print pi

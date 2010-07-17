@@ -15,7 +15,7 @@ body, th, td, p, div {
     border-color:black;
     margin: 4px;
     padding: 2px;
-    width: 300px;
+
     float: left;
 }
 #clientinfo {
@@ -25,6 +25,7 @@ body, th, td, p, div {
 	width: 250px;
 }
 #activeflows {
+	
 }
 #legend {
     width: 500px;
@@ -33,6 +34,7 @@ body, th, td, p, div {
 	width: 828px;
 }
 #graphdetail {
+
 }
 .caption {
     font-weight: bold;

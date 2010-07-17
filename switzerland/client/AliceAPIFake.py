@@ -5,10 +5,14 @@ import logging
 import socket as s
 import binascii
 import pickle
+import types
 
 from switzerland.common.util import bin2int
 from switzerland.common import util
-from switzerland.lib.shrunk_scapy.layers.l2 import Ether
+try:
+    from scapy import Ether
+except:
+    from switzerland.lib.shrunk_scapy.layers.l2 import Ether
 
 def ClientConfig(self):
     '''A factory function for the API's ClientConfig objects.'''
@@ -223,6 +227,27 @@ class xPacket:
     def get_summary_string(self):
         return Ether(self.actual_packet.original_data).summary()
     
+    def get_ether_info(self):
+        layer = Ether(self.actual_packet.original_data)
+        result = dict()
+        layer_order = list()
+        while layer is not None:
+            temp_dict = dict()
+            layer_order.append(layer.name)
+            for key in layer.fields:
+                try:
+                    value = str(layer.fields[key])
+                    temp_dict[key] = value
+                except:
+                    print "Exception on " + key
+                    pass
+            result[layer.name] = temp_dict
+            if layer.payload is not None and len(layer.payload) > 0:
+                layer = layer.payload
+            else:
+                layer = None
+        return (layer_order, result)
+
     def raw_data(self):
         return self.actual_packet.original_data    
     

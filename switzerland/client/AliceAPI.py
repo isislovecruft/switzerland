@@ -5,6 +5,11 @@ from switzerland.client.Alice import Alice
 from switzerland.client.Packet import Packet
 from switzerland.client.AliceConfig import AliceConfig,alice_options
 
+try:
+    from scapy import Ether
+except:
+    from switzerland.lib.shrunk_scapy.layers.l2 import Ether
+
 
 # XXX none of this does any locking at the moment.
 # That's probably okay because of the Global Interpreter Lock and
@@ -218,4 +223,25 @@ class xPacket:
         
     def get_details(self):
         pass
+    
+    def get_ether_info(self):
+        layer = Ether(self.actual_packet.original_data)
+        result = dict()
+        layer_order = list()
+        while layer is not None:
+            temp_dict = dict()
+            layer_order.append(layer.name)
+            for key in layer.fields:
+                try:
+                    value = str(layer.fields[key])
+                    temp_dict[key] = value
+                except:
+                    print "Exception on " + key
+                    pass
+            result[layer.name] = temp_dict
+            if layer.payload is not None and len(layer.payload) > 0:
+                layer = layer.payload
+            else:
+                layer = None
+        return (layer_order, result)
     
