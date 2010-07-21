@@ -3,18 +3,30 @@
 // http://www.prototypejs.org/
 
 // Get detailed packet information (returns HTML)
-function getPacketInfo(flowId, histBinId, container) {
+function getPacketInfo(flowId, histBinId, packetWin) {
     
     new Ajax.Request('/ajax_server', {
 	method: 'get',
 	parameters: {command: 'packetInfo', histBinId: histBinId, flowId: flowId},
 	onSuccess: function(transport) {
-	    var responseContainer = $(container);
-		
-		responseContainer.update(transport.responseText);
+		packetWin.document.write(transport.responseText);
 	},
 	onFailure: function(transport) {
 		alert("Something has gone wrong with getting packet details.")
+	}}
+    );
+}
+
+function launchWireshark(flowId, histBinId) {
+    
+    new Ajax.Request('/ajax_server', {
+	method: 'get',
+	parameters: {command: 'launchWireshark', histBinId: histBinId, flowId: flowId},
+	onSuccess: function(transport) {
+		// pass
+	},
+	onFailure: function(transport) {
+		alert("Something has gone wrong with launching Wireshark.")
 	}}
     );
 }

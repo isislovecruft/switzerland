@@ -30,11 +30,11 @@ $# Main page with graph
                 tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
             }       
         </script>
-
+        <script type="text/javascript" src="/static/js/prototype.js"></script>
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>
         <script type="text/javascript" src="/static/js/graph_functions.js"></script>
+
         <script type="text/javascript" src="/static/js/flow_data_object.js"></script>
-        <script type="text/javascript" src="/static/js/prototype.js"></script>
         <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
     </head>
     <body>
@@ -58,11 +58,14 @@ $# Main page with graph
     <div id="graph" class="page_section" style="clear:left;">
     $:graph
     </div> 
-    <div id="graphdetail" class="page_section">&nbsp;
-    </div>
     <div id="legend" class="page_section" style="clear:left;">
     $:legend
     </div>
-
-    <body>
+    <div id="graphcontextmenu">
+    <div class="contextmenuitem"><a href="#detail" onClick="openDetailWindow();">Show packet details</a></div>
+    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark();">Show packets in Wireshark</a></div>
+    </div>
+    <script type="text/javascript" src="/static/js/graph_context_menu.js"></script>
+    </body>
 </html>
+

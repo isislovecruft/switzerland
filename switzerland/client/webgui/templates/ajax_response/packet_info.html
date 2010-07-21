@@ -1,5 +1,12 @@
 $def with (modified_list, injected_list, dropped_list)        
 $# This is where the packet info is formatted for display
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Packet Detail</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
+</head>
+<body>
 <table>
     <caption>Dropped</caption>
     $for p in injected_list:
@@ -54,3 +61,5 @@ $# This is where the packet info is formatted for display
         </tr></table>
         </td></tr>
 </table>
+</body>
+</html>

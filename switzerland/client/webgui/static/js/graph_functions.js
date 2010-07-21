@@ -122,12 +122,14 @@ var evMouseMove = function (ev) {
         graphObject.canvasContext.drawImage(graphObject.snapshotCanvas,0,0);
 
         highlightPoint(context, retObj.x, retObj.y, retObj.flow.shape);
-        getPacketInfo(retObj.flow.name,retObj.bin,'graphdetail');
+       
         
-        //document.getElementById("graphdetail").innerHTML="Packet Data Here: " + retObj.x + "," + retObj.y;
         retObj.flow.Draw();
-
+        enableContext(retObj.flow.name,retObj.bin);
     } 
+    else {
+    	disableContext();
+    }
 }
 
 // This is used to find collisions

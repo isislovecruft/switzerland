@@ -17,6 +17,7 @@ import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
 from switzerland.client.AliceConfig import AliceConfig
+from scapy import wireshark
 
 # singleton_webgui is the most important object!  All data that persists between
 # calls to this web application server is tied to this instance.
@@ -452,6 +453,8 @@ class ajax_server:
             return self.update_graph(webin, render)
         if command == 'updateLegend':
             return self.update_legend(webin, render)
+        if command == 'launchWireshark':
+            return self.launch_wireshark(webin, render)
         else:
             return("command " + command)
      
@@ -480,6 +483,24 @@ class ajax_server:
         dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
         pi = render.packet_info(modified, injected, dropped)
         return pi
+    
+    # Attempt to launch wireshark using scapy
+    def launch_wireshark(self, webin, render):
+        print "I'm totally launching wireshark now."
+        flow_name = webin.flowId
+        hist_bin = webin.histBinId
+        flow_name = flow_name[:-3]  
+        
+        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
+        packetList = list()
+        packetList.extend(p_list)
+        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
+        packetList.extend(p_list)
+        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
+        packetList.extend(p_list)
+        wireshark(packetList)
+        return "success"
+
         
 class index:
     def GET(self):

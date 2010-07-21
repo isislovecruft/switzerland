@@ -36,13 +36,34 @@ body, th, td, p, div {
 #graphdetail {
 
 }
+#graphcontextmenu {
+	background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+	display: none; 
+	position: absolute;
+}
+.contextmenuitem {
+    color: black;
+}
+
+.contextmenuitem a,
+.contextmenuitem a:visited,
+.contextmenuitem a:active,
+.contextmenuitem a:link {
+	color: black;
+	text-decoration: none;
+}
+
+.contextmenuitem a:hover {
+	color: blue;
+	text-decoration: none;
+}
+
 .caption {
     font-weight: bold;
 }
-
-
-
-
 
 .top_menu {
     clear: both;
