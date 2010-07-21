@@ -9,6 +9,7 @@ import types
 
 from switzerland.common.util import bin2int
 from switzerland.common import util
+from scapy import rdpcap
 try:
     from scapy import Ether
 except:
@@ -219,16 +220,20 @@ class xFlow:
 class xPacket:
     def __init__(self):
         self.summary_string = str(random.randint(1000000000,9999999999))
-        fileHandle = open('fake_data/' + 'packet1279077254.72')
-        temp_data = pickle.load(fileHandle) 
+        #fileHandle = open('fake_data/' + 'packet1279077254.72')
+        #temp_data = pickle.load(fileHandle) 
+        temp_data = rdpcap('fake_data/' + 'http.pcap')
         self.timestamp = 1279077254.72
-        self.actual_packet = Packet(self.timestamp, temp_data, None)
+        self.actual_packet = Packet(self.timestamp, temp_data[0], None)
     
     def get_summary_string(self):
         return Ether(self.actual_packet.original_data).summary()
     
     def get_ether_info(self):
-        layer = Ether(self.actual_packet.original_data)
+        if isinstance(self.actual_packet.original_data, Ether) :
+            layer = self.actual_packet.original_data
+        else:
+            layer = Ether(self.actual_packet.original_data)
         result = dict()
         layer_order = list()
         while layer is not None:

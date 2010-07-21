@@ -479,9 +479,6 @@ class ajax_server:
         injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
         dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
         pi = render.packet_info(modified, injected, dropped)
-        for m in modified:
-            print "modified: " + m.get_summary_string()
-        print pi
         return pi
         
 class index:
@@ -747,7 +744,6 @@ if __name__ == "__main__":
     newArgList.append(sys.argv[0])
 
     for option, argument in optlist:
-        print option + " arg: " + argument
         if option in ("-F", "--fake"):
             useFake = True
         elif option in ("-a", "--webaddr"):
