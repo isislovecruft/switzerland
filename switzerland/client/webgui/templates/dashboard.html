@@ -14,42 +14,63 @@ $# Main page with graph
                 updateGraph('graph');
                 updateLegend('legend');
             }
-            
+
             $# toggleFlow and toggleAll are called from packet_graph_legend.html,
             $# but they are defined here with the other references to tid
-            
+
             function toggleFlow(formName){
                 clearInterval(tid);
                 updateFlow(formName, graphCid, activeFlows);
-                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
+                startTimer($reload_seconds);
             }
-            
+
             function toggleAll(formName, checked) {
                 clearInterval(tid);
                 checkLegend(formName, checked, graphCid, activeFlows);
-                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
-            }       
+                startTimer($reload_seconds);
+            }
+            function delayTimerStart(delaySeconds, timerSeconds) {
+				setTimeout(function(){tid = setInterval ( "updatePage();", timerSeconds * 1000 );},
+						delaySeconds * 1000);
+			}
+
+			function startTimer(seconds) {
+				tid = setInterval ( "updatePage();", seconds * 1000 );
+			}
+
+
+			delayTimerStart(tid, 3, $reload_seconds);
         </script>
         <script type="text/javascript" src="/static/js/prototype.js"></script>
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>
         <script type="text/javascript" src="/static/js/graph_functions.js"></script>
-
         <script type="text/javascript" src="/static/js/flow_data_object.js"></script>
-        <script type="text/javascript">
-        	delayTimerStart(tid, 3, $reload_seconds);
-        </script>
-        <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
+        <link rel="stylesheet" type="text/css" href="/static/css/main.css">
     </head>
     <body>
     <div id="menu" class="top_menu">
     $:menu
     </div>
     <div id="clientcontrol">
-    <input type="button" id="startButton" name="startButton" value="Start Switzerland Client Service" 
-    onClick="controlClient('start', tid, $reload_seconds, 'startButton','stopButton');" />
-    <input type="button" id="stopButton" name="stopButton" value="Stop Switzerland Client Service" 
-    onClick="controlClient('stop', tid, $reload_seconds, 'startButton','stopButton');"/>
+    <input type="button" id="startButton" name="startButton" value="Start Switzerland Client Service"
+    onClick="controlClient('start', $reload_seconds, 'startButton','stopButton');" />
+    <input type="button" id="stopButton" name="stopButton" value="Stop Switzerland Client Service"
+    onClick="controlClient('stop', $reload_seconds, 'startButton','stopButton');"/>
     <script type="text/javascript">
+		function controlClient(commandString, seconds, startBtn, stopBtn) {
+			if (commandString == 'start') {
+				showRunningStatus(startBtn, stopBtn);
+				clientServiceControl(commandString, null);
+				delayTimerStart(5, seconds);
+			}
+			if (commandString == 'stop') {
+				showStoppedStatus(startBtn, stopBtn);
+				clearInterval(tid);
+				setTimeout(function(){clientServiceControl(commandString, null)},
+						2000);
+			}
+		}
+
     $if client_status == 'running':
         showRunningStatus('startButton','stopButton');
     $else:
@@ -66,13 +87,13 @@ $# Main page with graph
     $# <div id="activeflows" class="page_section" >
     $# $:active_flows
     $# </div>
-    
+
     <div id="activepeers" class="page_section" >
     $:active_peers
     </div>
     <div id="graph" class="page_section" style="clear:left;">
     $:graph
-    </div> 
+    </div>
     <div id="legend" class="page_section" style="clear:left;">
     $:legend
     </div>

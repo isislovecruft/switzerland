@@ -192,28 +192,3 @@ function showRunningStatus(startBtn, stopBtn){
 	$(stopBtn).disabled = false;
 }
 
-function delayTimerStart(timer, delaySeconds, timerSeconds) {
-	setTimeout(function(){startTimer(timer, timerSeconds)},
-			delaySeconds * 1000);
-}
-
-function startTimer(timer, seconds) {
-	timer = setInterval ( "updatePage();", seconds * 1000 );
-}
-
-function controlClient(commandString, timer, seconds, startBtn, stopBtn) {
-
-	if (commandString == 'start'){
-		$(startBtn).disabled = true;
-		$(stopBtn).disabled = false;
-		clientServiceControl(commandString, null);
-		delayTimerStart(timer, 5, seconds);
-	}
-	if (commandString == 'stop') {
-		$(startBtn).disabled = false;
-		$(stopBtn).disabled = true;
-		clearInterval(timer);
-		setTimeout(function(){clientServiceControl(commandString, null)},
-				2000);
-	}
-}
