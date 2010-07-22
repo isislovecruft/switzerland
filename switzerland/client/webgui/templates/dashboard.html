@@ -1,4 +1,4 @@
-$def with (menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds)
+$def with (client_status, menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds)
 $# Main page with graph
 <!DOCTYPE HTML>
 
@@ -8,8 +8,8 @@ $# Main page with graph
         <script type="text/javascript">
             var graphCid;
             var activeFlows = new Array();
-            var tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
-            
+            var tid;
+
             function updatePage() {
                 updateGraph('graph');
                 updateLegend('legend');
@@ -35,11 +35,26 @@ $# Main page with graph
         <script type="text/javascript" src="/static/js/graph_functions.js"></script>
 
         <script type="text/javascript" src="/static/js/flow_data_object.js"></script>
+        <script type="text/javascript">
+        	delayTimerStart(tid, 3, $reload_seconds);
+        </script>
         <link rel="stylesheet" type="text/css" href="/static/css/main.css"> 
     </head>
     <body>
     <div id="menu" class="top_menu">
     $:menu
+    </div>
+    <div id="clientcontrol">
+    <input type="button" id="startButton" name="startButton" value="Start Switzerland Client Service" 
+    onClick="controlClient('start', tid, $reload_seconds, 'startButton','stopButton');" />
+    <input type="button" id="stopButton" name="stopButton" value="Stop Switzerland Client Service" 
+    onClick="controlClient('stop', tid, $reload_seconds, 'startButton','stopButton');"/>
+    <script type="text/javascript">
+    $if client_status == 'running':
+        showRunningStatus('startButton','stopButton');
+    $else:
+    	showStoppedStatus('startButton','stopButton');
+    </script>
     </div>
     <div id="clientinfo" class="page_section" style="clear:left;">
     $:client_info

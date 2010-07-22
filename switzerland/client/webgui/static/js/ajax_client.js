@@ -65,3 +65,19 @@ function updateLegend(container) {
     );
 }
 
+// Start/stop/restart Switzerland client
+function clientServiceControl(commandString, container) {
+    
+    new Ajax.Request('/ajax_server', {
+	method: 'get',
+	parameters: {command: 'clientServiceControl', commandString: commandString },
+	onSuccess: function(transport) {
+	    //var responseContainer = $(container);
+	    //responseContainer.update(transport.responseText);
+		// do nothing for now.
+	},
+	onFailure: function(transport) {
+		alert("Something has gone wrong controlling the client service.")
+	}}
+    );
+}

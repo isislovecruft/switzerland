@@ -455,38 +455,55 @@ class ajax_server:
             return self.update_legend(webin, render)
         if command == 'launchWireshark':
             return self.launch_wireshark(webin, render)
+        if command == 'clientServiceControl':
+            return self.client_service_control(webin, render)
         else:
-            return("command " + command)
+            return("no handler for command " + command)
      
     # Update the graph data from incoming switzerland data and send new
     # JavaScript to the browser   
     def update_graph(self, webin, render):
-        graph = line_graph() 
-        # Call make_graph FIRST to load data into structures
-        graph_html = graph.make_graph() 
-        singleton_webgui.packet_data.current_graph = graph
-        return graph_html
+        if singleton_webgui.client_status == 'running':
+            graph = line_graph() 
+            # Call make_graph FIRST to load data into structures
+            if graph is not None:
+                graph_html = graph.make_graph() 
+                singleton_webgui.packet_data.current_graph = graph
+                return graph_html
+            else:
+                return "<p>The Switzerland client is collecting packets.  Please wait a few seconds...</p>"
+        else:
+            return "<p>The Switzerland client service is stopped.</p>"
     
     # Send a new legend to the browser (important as flows change)
     def update_legend(self, webin, render):
-        legend_html = singleton_webgui.packet_data.current_graph.make_legend()
-        return legend_html
+        if singleton_webgui.client_status == 'running':
+            if singleton_webgui.packet_data is not None and singleton_webgui.packet_data.current_graph is not None:
+                legend_html = singleton_webgui.packet_data.current_graph.make_legend()
+                return legend_html
+            else:
+                return "<p>The Switzerland client is collecting packets.  Please wait a few seconds...</p>"
+        else:
+            return "<p>The Switzerland client service is stopped.</p>"
     
     # Send packet info details to the browser
     # TODO: xPacket is not implemented so we have no good data to send.    
     def packet_info(self, webin, render):
-        flow_name = webin.flowId
-        hist_bin = webin.histBinId
-        flow_name = flow_name[:-3]
-        modified = singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]
-        injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
-        dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
-        pi = render.packet_info(modified, injected, dropped)
-        return pi
+        if singleton_webgui.client_status == 'running':
+            flow_name = webin.flowId
+            hist_bin = webin.histBinId
+            flow_name = flow_name[:-3]
+            modified = singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]
+            injected = singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]
+            dropped = singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]
+            pi = render.packet_info(modified, injected, dropped)
+            return pi
+        else:
+            return None
     
     # Attempt to launch wireshark using scapy
     def launch_wireshark(self, webin, render):
-        print "I'm totally launching wireshark now."
+
         flow_name = webin.flowId
         hist_bin = webin.histBinId
         flow_name = flow_name[:-3]  
@@ -498,9 +515,18 @@ class ajax_server:
         packetList.extend(p_list)
         p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
         packetList.extend(p_list)
-        wireshark(packetList)
-        return "success"
+        returnValue = wireshark(packetList)
+        print "wireshark return value" + str(returnValue)
+        return returnValue
 
+    def client_service_control(self, webin, render):
+        commandString = webin.commandString
+        if (commandString == 'stop'):
+            singleton_webgui.stopService()
+            return "<p>stopped</p>"
+        if (commandString == 'start'):
+            singleton_webgui.startService()
+            return "<p>running</p>"
         
 class index:
     def GET(self):
@@ -524,7 +550,9 @@ class index:
         active_flows = render.flow_list(singleton_webgui.packet_data.active_flows)      
         active_peers = render.peer_list(singleton_webgui.packet_data.active_peers)      
         legend = graph.make_legend()
-        return render.dashboard(menu, 
+        return render.dashboard(
+            singleton_webgui.client_status,
+            menu, 
             client_info, 
             server_info,
             active_flows,
@@ -716,10 +744,6 @@ class packet_data:
 class WebGUI():
                 
     def __init__(self):
-        self.x_alice_config = ClientConfig()
-        self.x_alice = xAlice(self.x_alice_config)
-        self.packet_data = packet_data()
-        
         self.web_app_config = dict()
         self.web_app_config['save_window'] = [60 * 60, 
             "Save window", "Number of seconds to save"]
@@ -731,9 +755,27 @@ class WebGUI():
             '/ajax_server', 'ajax_server',
             '/ajax_server/', 'ajax_server',
             '/config', 'config')
+        self.client_status = 'stopped'
+        
+        
+    def startService(self):
+        self.x_alice_config = ClientConfig()
+        self.x_alice = xAlice(self.x_alice_config)
+        self.packet_data = packet_data()
+        self.packet_data.init_visible_flows()
+        self.client_status = 'running'
+        print "Starting Switzerland client service..."
+        
+    def stopService(self):
+        self.x_alice_config = None
+        self.x_alice = None
+        self.packet_data = None
+        self.client_status = 'stopped'
+        print "Stopping Switzerland client service..."
         
     def main(self):
 
+        self.startService()
         self.app = web.application(self.urls, globals())
  
         if len(sys.argv) > 1:
@@ -757,7 +799,6 @@ if __name__ == "__main__":
                     'private-ip=', 'public-ip=', 'logfile=', 'pcap-logs=',
                     'quiet', 'uncertain-time', 'verbose', 'buffer='])
     except:
-        print "raised exception"
         AliceConfig().usage();
     
     useFake = False
@@ -786,5 +827,4 @@ if __name__ == "__main__":
         from switzerland.client.AliceAPI import xAlice, ClientConfig, xPeer, xFlow, xPacket
 
     singleton_webgui = WebGUI()
-    singleton_webgui.packet_data.init_visible_flows()
     singleton_webgui.main()

@@ -9,15 +9,22 @@ body, th, td, p, div {
     border-color:red;
     position: static;
 }
+
 .page_section {
     border-style:solid;
     border-width:1px;
     border-color:black;
     margin: 4px;
     padding: 2px;
-
     float: left;
 }
+
+#clientcontrol {
+	margin: 4px;
+    padding: 2px;
+	clear: both;
+}
+
 #clientinfo {
 	width: 250px;
 }
