@@ -9,7 +9,13 @@ import types
 
 from switzerland.common.util import bin2int
 from switzerland.common import util
-from scapy import rdpcap
+rdpcap_available = True
+
+try:
+    from scapy import rdpcap
+except:
+    rdpcap_availabe = False
+    
 try:
     from scapy import Ether
 except:
@@ -222,7 +228,12 @@ class xPacket:
         self.summary_string = str(random.randint(1000000000,9999999999))
         #fileHandle = open('fake_data/' + 'packet1279077254.72')
         #temp_data = pickle.load(fileHandle) 
-        temp_data = rdpcap('fake_data/' + 'http.pcap')
+        temp_data = ["Bogus"]
+        if rdpcap_available:
+            try:
+                temp_data = rdpcap('fake_data/' + 'http.pcap')
+            except:
+                pass
         self.timestamp = 1279077254.72
         self.actual_packet = Packet(self.timestamp, temp_data[0], None)
     

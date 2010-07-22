@@ -17,7 +17,12 @@ import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
 from switzerland.client.AliceConfig import AliceConfig
-from scapy import wireshark
+
+wireshark_available = True
+try:
+    from scapy import wireshark
+except:
+    wireshark_available = False
 
 # singleton_webgui is the most important object!  All data that persists between
 # calls to this web application server is tied to this instance.
@@ -503,21 +508,21 @@ class ajax_server:
     
     # Attempt to launch wireshark using scapy
     def launch_wireshark(self, webin, render):
-
-        flow_name = webin.flowId
-        hist_bin = webin.histBinId
-        flow_name = flow_name[:-3]  
+        if wireshark_available:
+            flow_name = webin.flowId
+            hist_bin = webin.histBinId
+            flow_name = flow_name[:-3]  
         
-        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
-        packetList = list()
-        packetList.extend(p_list)
-        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
-        packetList.extend(p_list)
-        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
-        packetList.extend(p_list)
-        returnValue = wireshark(packetList)
-        print "wireshark return value" + str(returnValue)
-        return returnValue
+            p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
+            packetList = list()
+            packetList.extend(p_list)
+            p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
+            packetList.extend(p_list)
+            p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
+            packetList.extend(p_list)
+            returnValue = wireshark(packetList)
+            print "wireshark return value" + str(returnValue)
+            return returnValue
 
     def client_service_control(self, webin, render):
         commandString = webin.commandString
