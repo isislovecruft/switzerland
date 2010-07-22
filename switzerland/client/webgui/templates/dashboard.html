@@ -21,25 +21,25 @@ $# Main page with graph
             function toggleFlow(formName){
                 clearInterval(tid);
                 updateFlow(formName, graphCid, activeFlows);
-                startTimer($reload_seconds);
+                startTimer();
             }
 
             function toggleAll(formName, checked) {
                 clearInterval(tid);
                 checkLegend(formName, checked, graphCid, activeFlows);
-                startTimer($reload_seconds);
+                startTimer();
             }
-            function delayTimerStart(delaySeconds, timerSeconds) {
-				setTimeout(function(){tid = setInterval ( "updatePage();", timerSeconds * 1000 );},
-						delaySeconds * 1000);
-			}
+            function delayStartTimer(delaySeconds) {
+                setTimeout(function(){tid = setInterval ( "updatePage();", $reload_seconds * 1000 );},
+                        delaySeconds * 1000);
+            }
 
-			function startTimer(seconds) {
-				tid = setInterval ( "updatePage();", seconds * 1000 );
-			}
+            function startTimer() {
+                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
+            }
 
 
-			delayTimerStart(tid, 3, $reload_seconds);
+            delayStartTimer(3);
         </script>
         <script type="text/javascript" src="/static/js/prototype.js"></script>
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>
@@ -57,24 +57,24 @@ $# Main page with graph
     <input type="button" id="stopButton" name="stopButton" value="Stop Switzerland Client Service"
     onClick="controlClient('stop', $reload_seconds, 'startButton','stopButton');"/>
     <script type="text/javascript">
-		function controlClient(commandString, seconds, startBtn, stopBtn) {
-			if (commandString == 'start') {
-				showRunningStatus(startBtn, stopBtn);
-				clientServiceControl(commandString, null);
-				delayTimerStart(5, seconds);
-			}
-			if (commandString == 'stop') {
-				showStoppedStatus(startBtn, stopBtn);
-				clearInterval(tid);
-				setTimeout(function(){clientServiceControl(commandString, null)},
-						2000);
-			}
-		}
+        function controlClient(commandString, seconds, startBtn, stopBtn) {
+            if (commandString == 'start') {
+                showRunningStatus(startBtn, stopBtn);
+                clientServiceControl(commandString, null);
+                delayStartTimer(3);
+            }
+            if (commandString == 'stop') {
+                showStoppedStatus(startBtn, stopBtn);
+                clearInterval(tid);
+                setTimeout(function(){clientServiceControl(commandString, null)},
+                        2000);
+            }
+        }
 
     $if client_status == 'running':
         showRunningStatus('startButton','stopButton');
     $else:
-    	showStoppedStatus('startButton','stopButton');
+        showStoppedStatus('startButton','stopButton');
     </script>
     </div>
     <div id="clientinfo" class="page_section" style="clear:left;">
