@@ -34,7 +34,7 @@ char errbuf[PCAP_ERRBUF_SIZE];
 
 #define PLAYBACK_SLEEP 1000
 
-#define MAX_PACKET_SIZE 1600
+#define MAX_PACKET_SIZE 9600
 //#define PACKETS 25000
 long PACKETS = 25000;
 #define ENTRY_SIZE sizeof(PacketEntry)
@@ -336,7 +336,7 @@ void cleanup() {
 
 int main(int argc,char *argv[])
 {
-  assert(sizeof(PacketEntry) == 1616 &&
+  assert(sizeof(PacketEntry) == (MAX_PACKET_SIZE + 16) &&
       "Your compiler didn't pack struct packet_entry like we foolishly expected, bailing");
   get_args(argc, argv);
   open_buffer();

@@ -11,7 +11,7 @@ $# Main configuration page
     $:menu
     </div>
     
-    <div class="container">
+    
     <div id="message">$message</div>
     <div id="applicationoptions" class="page_section">
     <form name="frmApplicationOpt" id="frmApplicationOpt" method="POST">
@@ -57,6 +57,17 @@ $# Main configuration page
                         selected
                     >not set</option>
                 </select>
+            $elif opt[0] in ('do_cleaning'):
+                <select name="$opt[0]">
+	                <option value="True"
+	                $if config.get_option(opt[0]) == True or config.get_option(opt[0]) =='True':
+	                    selected
+	                >True</option>
+	                <option value="False"
+	                $if config.get_option(opt[0]) == False or config.get_option(opt[0]) =='False':
+	                    selected                    
+	                >False</option>
+                </select>
             $else:
                 <input name="$opt[0]" value="$config.get_option(opt[0])">
             </td></tr>
@@ -65,12 +76,28 @@ $# Main configuration page
     <input type="submit" value="Save changes"></form>
     </div>
     <div id="immutableoptions" class="page_section">
+    <form name="frmImmutableOpt" id="frmImmutableOpt" method="POST">
     <table>
         <caption>Immutable Options</caption>
         $for opt in immutable_options: 
-            <tr><td>$opt[0]</td><td>$config.get_option(opt[0])</td></tr>
+        	<tr><td>$opt[0]</td>
+            $if opt[0] in ('use_ntp','force_private_ip','force_public_ip','quiet','filter_packets'):
+                <td><select name="$opt[0]">
+	                <option value="True"
+	                $if config.get_option(opt[0]) == True or config.get_option(opt[0]) =='True':
+	                    selected
+	                >True</option>
+	                <option value="False"
+	                $if config.get_option(opt[0]) == False or config.get_option(opt[0]) =='False':
+	                    selected                    
+	                >False</option>
+                </select></td></tr>
+            $else:
+                <td><input name="$opt[0]" value="$config.get_option(opt[0])"></td></tr>
     </table>
+    <input type="hidden" name="form" value="frmImmutableOpt">
+    <input type="submit" value="Save changes"></form>
     </div>
-    </div>
+    
     </body>
 </html>

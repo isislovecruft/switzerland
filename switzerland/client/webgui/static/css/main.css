@@ -19,6 +19,13 @@ body, th, td, p, div {
     float: left;
 }
 
+#message {
+	border-style:solid;
+    border-width:1px;
+    border-color:red;
+	clear:both
+}
+
 #clientcontrol {
 	margin: 4px;
     padding: 2px;
@@ -75,6 +82,8 @@ body, th, td, p, div {
 .top_menu {
     clear: both;
 }
+
+
 
 .menu_item {
     float: left; 

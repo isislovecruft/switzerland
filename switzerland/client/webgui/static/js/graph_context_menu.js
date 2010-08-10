@@ -101,9 +101,9 @@ function openDetailWindow() {
 			graphContextDetailWindow);
 }
 	
-function openWireshark() {
+function openWireshark(packetType) {
 	launchWireshark(graphContextMenuFlowName,
-			graphContextMenuBin);
+			graphContextMenuBin, packetType);
 }
 
 initContextMenu();

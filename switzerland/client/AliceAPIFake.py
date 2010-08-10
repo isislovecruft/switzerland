@@ -9,17 +9,29 @@ import types
 
 from switzerland.common.util import bin2int
 from switzerland.common import util
+from switzerland.client.AliceConfig import AliceConfig,alice_options
 rdpcap_available = True
+ether_available = True
+
 
 try:
-    from scapy import rdpcap
+    from scapy.all import rdpcap
 except:
-    rdpcap_availabe = False
+    try:
+        from scapy import rdpcap
+    except:
+        rdpcap_available = False
+        print "WARNING: No rdpcap available."
+
     
 try:
-    from scapy import Ether
+    from scapy.all import Ether
 except:
-    from switzerland.lib.shrunk_scapy.layers.l2 import Ether
+    try:
+        from scapy import Ether
+    except:
+        ether_available = False
+        print "WARNING: Install Scapy library.  Not found, not loaded."
 
 def ClientConfig(self):
     '''A factory function for the API's ClientConfig objects.'''
@@ -28,13 +40,14 @@ def ClientConfig(self):
 def connectServer(self, config):
     return xAlice(config)
     
+
 class ClientConfig:
     def __init__(self):
-        # Fake for no AliceConfig
-        self.option_hash = dict()
-        #self.actual_config = AliceConfig()
+        self.actual_config = AliceConfig(getopt=True)
         self.extract_options_for_api()
-
+        self.in_use = False # this AliceConfig instance is in use by a client
+                            # that's connected to a server
+        self.option_hash = dict()
 
     def tweakable_options(self):
         return self.tweakable
@@ -43,52 +56,40 @@ class ClientConfig:
         return self.immutable
 
     def extract_options_for_api(self):
-        # These might turn into functions?
-        hostname = "hostname"
-        path = "path"
-        string = "string"
-        ip = "ip"
-
         """
         AliceAPI will feed these to code that may want to know about options
         it can change
         """
-        self.option_hash["host"] = "switzerland.eff.org"
-        self.option_hash["port"] = 7778
-        self.option_hash["interface"] = None
-        self.option_hash["skew"] = 0.0
-        self.option_hash["log_level"] = logging.DEBUG
-        self.option_hash["seriousness"] = 0
-        self.option_hash["do_cleaning"] = True
-        self.option_hash["use_ntp"] = True
-        self.option_hash["filter_packets"] = True
-        self.option_hash["force_public_ip"] = False
-        self.option_hash["force_private_ip"] = False
-        self.option_hash["packet_buffer_size"] = 25000
-        self.option_hash["quiet"] = False         
-                 
-        self.tweakable = [("log_level", int),
-        ("seriousness", int),
-        ("do_cleaning", bool)]
-        self.immutable = [("host", ip),
-        ("port", int),
-        ("interface", string),
-        ("skew", float),
-        ("use_ntp", bool),
-        ("filter_packets", bool),
-        ("force_public_ip", bool),
-        ("force_private_ip", bool),
-        ("packet_buffer_size", int),
-        ("quiet", bool)]
+        self.tweakable = []
+        self.immutable = []
+        for opt, info in alice_options.items():
+            default, type, mutable, visible = info
+            if visible:
+                if mutable:
+                    self.tweakable.append((opt,type))
+                else:
+                    self.immutable.append((opt,type))
 
+    def set_option(self, option, value):
+        try:
+            default, type, mutable, visible = alice_options[option]
+        except:
+            raise KeyError, '"%s" is not a valid option name' % option
 
-    def set_option(self,option,value):
-        if self.option_hash[option] != None:
-            self.option_hash[option] = value
-            
-        
-    def get_option(self,option):
-        return self.option_hash.get(option)
+        if not visible:
+            raise ConfigError, "trying to set a hidden option"
+
+        if self.in_use and not mutable:
+            raise ConfigError, "Trying to set an immutable variable for a running client"
+
+        # XXX check the type here
+        self.actual_config.__dict__[option] = value
+
+    def get_option(self, option):
+        if option not in alice_options:
+            raise KeyError, '"%s" is not a valid option name' % option
+        return self.actual_config.__dict__[option]
+    
 
 class xAlice:
     def __init__(self, config):
@@ -241,28 +242,33 @@ class xPacket:
         return Ether(self.actual_packet.original_data).summary()
     
     def get_ether_info(self):
-        if isinstance(self.actual_packet.original_data, Ether) :
-            layer = self.actual_packet.original_data
-        else:
-            layer = Ether(self.actual_packet.original_data)
-        result = dict()
-        layer_order = list()
-        while layer is not None:
-            temp_dict = dict()
-            layer_order.append(layer.name)
-            for key in layer.fields:
-                try:
-                    value = str(layer.fields[key])
-                    temp_dict[key] = value
-                except:
-                    print "Exception on " + key
-                    pass
-            result[layer.name] = temp_dict
-            if layer.payload is not None and len(layer.payload) > 0:
-                layer = layer.payload
+        if ether_available:
+            if isinstance(self.actual_packet.original_data, Ether) :
+                layer = self.actual_packet.original_data
             else:
-                layer = None
-        return (layer_order, result)
+                layer = Ether(self.actual_packet.original_data)
+            result = dict()
+            layer_order = list()
+            while layer is not None:
+                temp_dict = dict()
+                layer_order.append(layer.name)
+                if layer.fields is not None:
+                    for key in layer.fields:
+                        try:
+                            value = str(layer.fields[key])
+                            temp_dict[key] = value
+                        except:
+                            print "Exception on " + key
+                            pass
+                result[layer.name] = temp_dict
+                if layer.payload is not None and len(layer.payload) > 0:
+                    layer = layer.payload
+                else:
+                    layer = None
+            return (layer_order, result)
+        else:
+            return (['WARNING'], {'WARNING' : 
+                {'WARNING' : "Install Scapy library.  Not found, not loaded."}} )
 
     def raw_data(self):
         return self.actual_packet.original_data    

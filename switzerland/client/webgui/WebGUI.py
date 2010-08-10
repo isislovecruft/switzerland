@@ -16,13 +16,22 @@ import socket as s
 import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
-from switzerland.client.AliceConfig import AliceConfig
+from switzerland.client.AliceConfig import AliceConfig, alice_options
+from xml.dom.minidom import parse, parseString, getDOMImplementation
+from os import path
 
 wireshark_available = True
+
 try:
-    from scapy import wireshark
+    from scapy.all import wireshark
 except:
-    wireshark_available = False
+    try:
+        from scapy import wireshark
+    except:
+        wireshark_available = False
+        print "WARNING: Wireshark not available through Scapy."
+
+
 
 # singleton_webgui is the most important object!  All data that persists between
 # calls to this web application server is tied to this instance.
@@ -30,6 +39,12 @@ singleton_webgui = None
 debug_output = False
 web_py_server = '0.0.0.0'
 web_py_port = '8080'
+config_filename = 'config/config.xml'
+short_opt_list = 'Fa:w:s:p:i:l:u:L:P:f:b:hqv'
+long_opt_list = ['fake', 'webaddr=', 'webport=',
+                    'server=', 'port=', 'interface=', 'ip=', 'help',
+                    'private-ip=', 'public-ip=', 'logfile=', 'pcap-logs=',
+                    'quiet', 'uncertain-time', 'verbose', 'buffer=']
 
 # The line_graph class represents the line graph and all of its data.
 class line_graph:
@@ -459,7 +474,8 @@ class ajax_server:
         if command == 'updateLegend':
             return self.update_legend(webin, render)
         if command == 'launchWireshark':
-            return self.launch_wireshark(webin, render)
+            packet_type = webin.packetType
+            return self.launch_wireshark(webin, packet_type, render)
         if command == 'clientServiceControl':
             return self.client_service_control(webin, render)
         else:
@@ -507,22 +523,31 @@ class ajax_server:
             return None
     
     # Attempt to launch wireshark using scapy
-    def launch_wireshark(self, webin, render):
+    def launch_wireshark(self, webin, packet_type, render):
         if wireshark_available:
             flow_name = webin.flowId
             hist_bin = webin.histBinId
             flow_name = flow_name[:-3]  
+            packet_list = list()
         
-            p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
-            packetList = list()
-            packetList.extend(p_list)
-            p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
-            packetList.extend(p_list)
-            p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
-            packetList.extend(p_list)
-            returnValue = wireshark(packetList)
-            print "wireshark return value" + str(returnValue)
-            return returnValue
+            if packet_type == 'dropped':
+                p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
+                packet_list.extend(p_list)
+            if packet_type == 'injected':
+                p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
+                packet_list.extend(p_list)
+            if packet_type == 'modified':
+                p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
+                packet_list.extend(p_list)
+            if len(packet_list) > 0:
+                return_value = wireshark(packet_list)
+                print "Wireshark return value" + str(return_value)
+            else:
+                print "Will not launch wireshark for list of 0 packets."
+                return_value = "Will not launch wireshark for list of 0 packets."
+            return return_value
+        else:
+            print "WARNING: Wireshark not available through Scapy."
 
     def client_service_control(self, webin, render):
         commandString = webin.commandString
@@ -574,6 +599,12 @@ class config:
         
     def POST(self):  
         webin = web.input()
+        
+        temp_immutables = dict()
+        
+        for (option_name, option_type) in singleton_webgui.x_alice_config.immutable_options():
+            temp_immutables[option_name] = str(singleton_webgui.x_alice_config.get_option(option_name))
+        
         message = ""
         if webin.form == "frmApplicationOpt":
             # Edit web application variables
@@ -587,7 +618,15 @@ class config:
             except:
                 message = "The refresh interval must be a number of seconds."
                 
-                
+        elif webin.form == "frmImmutableOpt":
+            # These can't be changed on the fly, so they are saved to a temporary structure
+            # and written to file by save_config
+            message = "Changes saved.  You must restart the Switzerland client for these changes to take effect."
+            for key in webin.keys():
+                  post_value = webin.get(key)
+                  if len(post_value) > 0 and key != 'form':
+                      temp_immutables[key] = str(post_value)
+                      print "Setting " + key + " to " + post_value
         else:
             # Edit tweakable variables
             message = "Changes saved."
@@ -605,6 +644,7 @@ class config:
             except:
                 message = "The refresh interval must be a number of seconds."
         
+        singleton_webgui.save_config(temp_immutables, config_filename)
         return self.main(message)
     
     def main(self, message=""):
@@ -619,13 +659,7 @@ class config:
             singleton_webgui.web_app_config,
             message)
 
-# Turn a flow tuple into a suitable hash key (replace . and : with _)    
-def flow_key(f):
-    t = print_flow_tuple(f.flow_tuple)
-            
-    return str(t[0].replace(".","_")) + "_" + str(t[1]) + "__" \
-        + str(t[2].replace(".","_")) + "_" + str((t[3])) \
-        + "_" + str(t[4])        
+     
         
         
 # Packet data persists between web page calls
@@ -697,7 +731,6 @@ class packet_data:
 
                 
     def update_packet_data(self):
-        
         # For each active flow
         for flow_ip in self.active_flows:
             # If flow does not exist in dictionary object, add
@@ -745,7 +778,43 @@ class packet_data:
                 self.packet_data[flow_ip]['total'], 
                 self.cutoff_time)
             
+
+# Definition of getText from Python documentation
+#http://docs.python.org/library/xml.dom.minidom.html
+def getText(nodelist):
+    rc = []
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE:
+            rc.append(node.data)
+    return ''.join(rc)
+
     
+def make_element(dom, tag, contents):
+    new_element = dom.createElement(tag)
+    if contents is None or contents == 'None':
+        contents = ""
+    new_element.appendChild(dom.createTextNode(contents))
+    return new_element
+    
+# Turn a flow tuple into a suitable hash key (replace . and : with _)    
+def flow_key(f):
+    t = print_flow_tuple(f.flow_tuple)
+            
+    return str(t[0].replace(".","_")) + "_" + str(t[1]) + "__" \
+        + str(t[2].replace(".","_")) + "_" + str((t[3])) \
+        + "_" + str(t[4])   
+
+def optlist_contains(optlist, checklist):
+    for option, argument in optlist:
+        if option in checklist:
+            return True
+    return False
+
+# str2bool is from Brian Bondy http://stackoverflow.com/questions/715417/converting-from-a-string-to-boolean-in-python
+def str2bool(s):
+  return s.lower() in ["yes", "true", "t", "1"]
+
+
 class WebGUI():
                 
     def __init__(self):
@@ -765,6 +834,7 @@ class WebGUI():
         
     def startService(self):
         self.x_alice_config = ClientConfig()
+        self.load_config(config_filename)
         self.x_alice = xAlice(self.x_alice_config)
         self.packet_data = packet_data()
         self.packet_data.init_visible_flows()
@@ -790,6 +860,110 @@ class WebGUI():
         sys.argv.insert(1, web_py_server + ":" + web_py_port)
         self.app.run()
 
+    def load_config(self, filename, override_cmdline=False):
+        if os.path.isfile(filename):
+            print "Attempting to load configuration file."
+            print "If this causes problems, delete file config/config.xml to use defaults."
+            config_dom = parse(filename)
+            
+            # Immutable
+            for (option_name, option_type) in self.x_alice_config.immutable_options():
+                temp = getText(config_dom.getElementsByTagName(option_name)[0].childNodes).strip()
+                print "Setting " + option_name + ": " + temp
+                if temp is not None and len(temp) > 0:
+                    if option_type == int:
+                        temp = int(temp)
+                    if option_type == float:
+                        temp = float(temp)
+                    if option_type == bool:
+                        temp = str2bool(temp)
+                    self.x_alice_config.set_option(option_name, temp)
+                
+            # Mutable
+            for (option_name, option_type) in self.x_alice_config.tweakable_options():
+                temp = getText(config_dom.getElementsByTagName(option_name)[0].childNodes).strip()
+                print "Setting " + option_name + ": " + temp
+                if temp is not None and len(temp) > 0:
+                    if option_type == int:
+                        temp = int(temp)
+                    if option_type == float:
+                        temp = float(temp)
+                    if option_type == bool:
+                        temp = str2bool(temp)
+                    self.x_alice_config.set_option(option_name, temp)
+
+            # Web
+            for key in self.web_app_config.keys():
+                temp = getText(config_dom.getElementsByTagName(key)[0].childNodes).strip()
+                print "Setting " + key + ": " + temp
+                if temp is not None and len(temp) > 0:
+                    self.web_app_config[key][0] = int(temp)
+        
+            # optlist, args = getopt.gnu_getopt(sys.argv[1:], short_opt_list, 
+            #    long_opt_list)
+
+            # newArgList = []
+            # newArgList.append(sys.argv[0])
+
+            # Workaround the fact that we call the Switzerland command line client
+            # and must transfer some information as command line options
+            #===================================================================
+            # if override_cmdline:
+            #    for option, argument in optlist:
+            #        if option in ("-s", "--server", "-i", "--interface"):
+            #            pass # Effectively delete old option
+            #        else:
+            #            newArgList.append(option)
+            #            if argument is not None and len(argument) > 0:
+            #                newArgList.append(argument)
+            #        newArgList.append("--server")
+            #        newArgList.append(self.x_alice_config.get_option('host'))
+            #        newArgList.append("--interface")
+            #        newArgList.append(self.x_alice_config.get_option('interface'))
+            # else:
+            #    for option, argument in optlist:
+            #        newArgList.append(option)
+            #        if argument is not None and len(argument) > 0:
+            #            newArgList.append(argument)
+            #    if not optlist_contains(optlist, ("-s", "--server")):
+            #        print "appending server" + self.x_alice_config.get_option('host')
+            #        newArgList.append("--server")
+            #        newArgList.append(self.x_alice_config.get_option('host'))
+            #    if not optlist_contains(optlist, ("-i", "--interface")):
+            #        print "appending interface" + self.x_alice_config.get_option('interface')
+            #        newArgList.append("--interface")
+            #        newArgList.append(self.x_alice_config.get_option('interface'))
+            #    
+            # sys.argv = newArgList
+            #===================================================================
+            print "Configuration file loaded."
+        else:
+            print "No configuration file.  Using default values."
+                
+    def save_config(self, temp_immutables, filename):
+        impl = getDOMImplementation()
+        new_config = impl.createDocument(None, "configuration", None)
+        top_element = new_config.documentElement
+        for (option_name, type) in self.x_alice_config.tweakable_options():
+            val = str(singleton_webgui.x_alice_config.get_option(option_name))
+            new_child = make_element(new_config, 
+                                  option_name ,
+                                  val)
+            top_element.appendChild(new_child)
+        for option_name in temp_immutables.keys():
+            new_child = make_element(new_config, 
+                                  option_name ,
+                                  temp_immutables[option_name])
+            top_element.appendChild(new_child)
+        for option_name in self.web_app_config.keys():
+            config_value = self.web_app_config.get(option_name)
+            config_value = config_value[0]
+            top_element.appendChild(make_element(new_config, 
+                                  option_name ,
+                                  str(config_value)))
+        out_file = open(filename,"w")
+        new_config.writexml(out_file, '', '    ', "\n", "ISO-8859-1")
+
 if __name__ == "__main__":
 
     # We have to change the working directory to the directory of the WebGUI script
@@ -798,11 +972,8 @@ if __name__ == "__main__":
     os.chdir(os.path.abspath(pathname))
     
     try:
-        optlist, args = getopt.gnu_getopt(sys.argv[1:], 'Fa:w:s:p:i:l:u:L:P:f:b:hqv', 
-                    ['fake', 'webaddr=', 'webport=',
-                    'server=', 'port=', 'interface=', 'ip=', 'help',
-                    'private-ip=', 'public-ip=', 'logfile=', 'pcap-logs=',
-                    'quiet', 'uncertain-time', 'verbose', 'buffer='])
+        optlist, args = getopt.gnu_getopt(sys.argv[1:], short_opt_list, 
+                    long_opt_list)
     except:
         AliceConfig().usage();
     
@@ -825,6 +996,7 @@ if __name__ == "__main__":
     sys.argv = newArgList   
     # Use AliceAPIFake instead of AliceAPI when you have no peers or no internet connection
     # It generates somewhat reasonable random data
+    
     
     if useFake:
         from switzerland.client.AliceAPIFake import xAlice, ClientConfig, xPeer, xFlow, xPacket

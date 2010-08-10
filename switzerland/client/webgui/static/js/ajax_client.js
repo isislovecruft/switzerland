@@ -17,11 +17,11 @@ function getPacketInfo(flowId, histBinId, packetWin) {
     );
 }
 
-function launchWireshark(flowId, histBinId) {
+function launchWireshark(flowId, histBinId, packetType) {
     
     new Ajax.Request('/ajax_server', {
 	method: 'get',
-	parameters: {command: 'launchWireshark', histBinId: histBinId, flowId: flowId},
+	parameters: {command: 'launchWireshark', packetType: packetType, histBinId: histBinId, flowId: flowId},
 	onSuccess: function(transport) {
 		// pass
 	},
