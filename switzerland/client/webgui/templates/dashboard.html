@@ -62,6 +62,7 @@ $# Main page with graph
                 showRunningStatus(startBtn, stopBtn);
                 clientServiceControl(commandString, null);
                 delayStartTimer(3);
+                setTimeout( "window.location.reload(true);", 4000 );
             }
             if (commandString == 'stop') {
                 showStoppedStatus(startBtn, stopBtn);

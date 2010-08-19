@@ -43,49 +43,49 @@ $# Main configuration page
     <form name="frmTweakableOpt" id="frmTweakableOpt" method="POST">
     <table>
         <caption>Tweakable Options</caption>
-        $for opt in tweakable_options:     
-            <tr><td>$opt[0]</td><td>
+        $for opt in tweakable_options.keys():     
+            <tr><td>$opt</td><td>
             $# TODO: Replace the if statements with something more elegant
-            $if opt[0] == "log_level":
+            $if opt == "log_level":
                 <select name="log_level">
                     <option value="50"
-                    $if config.get_option(opt[0]) == 50:
+                    $if tweakable_options[opt] == 50:
                         selected
                     >critical</option>
                     <option value="40"
-                    $if config.get_option(opt[0]) == 40:
+                    $if tweakable_options[opt] == 40:
                         selected                    
                     >error</option>
                     <option value="30"
-                    $if config.get_option(opt[0]) == 30:
+                    $if tweakable_options[opt] == 30:
                         selected
                     >warning</option>
                     <option value="20"
-                    $if config.get_option(opt[0]) == 20:
+                    $if tweakable_options[opt] == 20:
                         selected
                     >info</option>
                     <option value="10"
-                    $if config.get_option(opt[0]) == 10:
+                    $if tweakable_options[opt] == 10:
                         selected
                     >debug</option>
                     <option value="0"
-                    $if config.get_option(opt[0]) == 0:
+                    $if tweakable_options[opt] == 0:
                         selected
                     >not set</option>
                 </select>
-            $elif opt[0] in ('do_cleaning'):
-                <select name="$opt[0]">
+            $elif opt in ('do_cleaning'):
+                <select name="$opt">
 	                <option value="True"
-	                $if config.get_option(opt[0]) == True or config.get_option(opt[0]) =='True':
+	                $if tweakable_options[opt] == True or tweakable_options[opt] =='True':
 	                    selected
 	                >True</option>
 	                <option value="False"
-	                $if config.get_option(opt[0]) == False or config.get_option(opt[0]) =='False':
+	                $if tweakable_options[opt] == False or tweakable_options[opt] =='False':
 	                    selected                    
 	                >False</option>
                 </select>
             $else:
-                <input name="$opt[0]" value="$config.get_option(opt[0])">
+                <input name="$opt" value="$tweakable_options[opt]">
             </td></tr>
     </table>
     <input type="hidden" name="form" value="frmTweakableOpt">
@@ -95,21 +95,21 @@ $# Main configuration page
     <form name="frmImmutableOpt" id="frmImmutableOpt" method="POST">
     <table>
         <caption>Immutable Options</caption>
-        $for opt in immutable_options: 
-        	<tr><td>$opt[0]</td>
-            $if opt[0] in ('use_ntp','force_private_ip','force_public_ip','quiet','filter_packets'):
-                <td><select name="$opt[0]">
+        $for opt in immutable_options.keys(): 
+        	<tr><td>$opt</td>
+            $if opt in ('use_ntp','force_private_ip','force_public_ip','quiet','filter_packets'):
+                <td><select name="$opt">
 	                <option value="True"
-	                $if config.get_option(opt[0]) == True or config.get_option(opt[0]) =='True':
+	                $if immutable_options[opt] == True or immutable_options[opt] =='True':
 	                    selected
 	                >True</option>
 	                <option value="False"
-	                $if config.get_option(opt[0]) == False or config.get_option(opt[0]) =='False':
+	                $if immutable_options[opt] == False or immutable_options[opt] =='False':
 	                    selected                    
 	                >False</option>
                 </select></td></tr>
             $else:
-                <td><input name="$opt[0]" value="$config.get_option(opt[0])"></td></tr>
+                <td><input name="$opt" value="$immutable_options[opt]"></td></tr>
     </table>
     <input type="hidden" name="form" value="frmImmutableOpt">
     <input type="submit" value="Save changes"></form>

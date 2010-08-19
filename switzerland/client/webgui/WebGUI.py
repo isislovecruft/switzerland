@@ -155,8 +155,8 @@ class line_graph:
         except:
             # Prints right to console
             # TODO: use logging consistent with switzerland-client (?)
-            print "Something is wrong with the incoming packet data."
-            print "Check to make sure that the packet_list is not None."
+            print "WARNING: Something is wrong with the incoming packet data."
+            print "WARNING: Check to make sure that the packet_list is not None."
             
         # Return histogram
         return histogram
@@ -324,6 +324,8 @@ class line_graph:
             
     # Legend for the graph         
     def make_legend(self):
+        if singleton_webgui.client_status != 'running':
+            return "The Switzerland client is stopped."
         i = 0
         entries = list()
         for flow_name in singleton_webgui.packet_data.active_flows:
@@ -342,6 +344,8 @@ class line_graph:
     
         # Update data and active flows
         # singleton_webgui object persists between calls to the web application
+        if singleton_webgui.client_status != 'running':
+            return "The Switzerland client is stopped."
         singleton_webgui.packet_data.update_active_flows()        
         singleton_webgui.packet_data.update_packet_data()
         self.get_min_max_time()
@@ -578,11 +582,17 @@ class index:
         graph = line_graph() 
         # Call make_graph FIRST to load data into structures
         graph_html = graph.make_graph() 
-        singleton_webgui.packet_data.current_graph = graph
-        client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
-        server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
-        active_flows = render.flow_list(singleton_webgui.packet_data.active_flows)      
-        active_peers = render.peer_list(singleton_webgui.packet_data.active_peers)      
+        if singleton_webgui.client_status == 'running':
+            singleton_webgui.packet_data.current_graph = graph
+            client_info = render.client_info(singleton_webgui.x_alice.get_client_info())
+            server_info = render.server_info(singleton_webgui.x_alice.get_server_info())
+            active_flows = render.flow_list(singleton_webgui.packet_data.active_flows)      
+            active_peers = render.peer_list(singleton_webgui.packet_data.active_peers)      
+        else:
+            client_info = "<p>The Switzerland client service is stopped.</p>"
+            server_info = client_info
+            active_flows = client_info
+            active_peers = client_info
         legend = graph.make_legend()
         return render.dashboard(
             singleton_webgui.client_status,
@@ -604,12 +614,7 @@ class config:
         
     def POST(self):  
         webin = web.input()
-        
-        temp_immutables = dict()
-        
-        for (option_name, option_type) in singleton_webgui.x_alice_config.immutable_options():
-            temp_immutables[option_name] = str(singleton_webgui.x_alice_config.get_option(option_name))
-        
+                
         message = ""
         if webin.form == "frmApplicationOpt":
             # Edit web application variables
@@ -623,7 +628,6 @@ class config:
             except:
                 message = "The refresh interval must be a number of seconds."
             try: 
-                print singleton_webgui.web_app_config['allow_wireshark']  
                 singleton_webgui.web_app_config['allow_wireshark'][0]=str2bool(webin.allow_wireshark)
             except:
                 message = "Failed to set the Wireshark variable."
@@ -634,37 +638,38 @@ class config:
             for key in webin.keys():
                   post_value = webin.get(key)
                   if len(post_value) > 0 and key != 'form':
-                      temp_immutables[key] = str(post_value)
+                      singleton_webgui.next_immutable_config[key] = str(post_value)
                       print "Setting " + key + " to " + post_value
         else:
             # Edit tweakable variables
             message = "Changes saved."
-            try:
-                #lvl =  self.LOG_LEVELS.get(webin.log_level, logging.NOTSET)
-                singleton_webgui.x_alice_config.set_option("log_level", int(webin.log_level))
-            except:
-                message = "The log_level must be a valid python logging log level (e.g. logging.DEBUG)"
-            try:
-                singleton_webgui.x_alice_config.set_option("seriousness",  int(webin.seriousness))
-            except:
-                message = "Seriousness must be an integer."
-            try:
-                singleton_webgui.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
-            except:
-                message = "Do cleaning format is invalid."
-        
-        singleton_webgui.save_config(temp_immutables, config_filename)
+            if singleton_webgui.client_status == 'running' and singleton_webgui.x_alice_config is not None:
+                try:
+                    #lvl =  self.LOG_LEVELS.get(webin.log_level, logging.NOTSET)
+                    singleton_webgui.x_alice_config.set_option("log_level", int(webin.log_level))
+                except:
+                    message = "The log_level must be a valid python logging log level (e.g. logging.DEBUG)"
+                try:
+                    singleton_webgui.x_alice_config.set_option("seriousness",  int(webin.seriousness))
+                except:
+                    message = "Seriousness must be an integer."
+                try:
+                    singleton_webgui.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
+                except:
+                    message = "Do cleaning format is invalid."
+            singleton_webgui.next_tweakable_config["log_level"] = int(webin.log_level)
+            singleton_webgui.next_tweakable_config["seriousness"] =  int(webin.seriousness)
+            singleton_webgui.next_tweakable_config["do_cleaning"] = bool(webin.do_cleaning)     
+        singleton_webgui.save_config(config_filename)
         return self.main(message)
     
     def main(self, message=""):
         render = web.template.render('templates', globals={'logging': logging})
         menu = render.menu("config")
-        tweakable_options = singleton_webgui.x_alice_config.tweakable_options()
-        immutable_options = singleton_webgui.x_alice_config.immutable_options()
         return render.config(menu, 
             singleton_webgui.x_alice_config, 
-            tweakable_options,
-            immutable_options,
+            singleton_webgui.next_tweakable_config,
+            singleton_webgui.next_immutable_config,
             singleton_webgui.web_app_config,
             message)
 
@@ -802,7 +807,7 @@ def make_element(dom, tag, contents):
     new_element = dom.createElement(tag)
     if contents is None or contents == 'None':
         contents = ""
-    new_element.appendChild(dom.createTextNode(contents))
+    new_element.appendChild(dom.createTextNode(str(contents)))
     return new_element
     
 # Turn a flow tuple into a suitable hash key (replace . and : with _)    
@@ -841,6 +846,15 @@ class WebGUI():
             '/ajax_server/', 'ajax_server',
             '/config', 'config')
         self.client_status = 'stopped'
+        self.next_immutable_config = dict()
+        self.next_tweakable_config = dict()
+        for opt, info in alice_options.items():
+            default, type, mutable, visible = info
+            if visible:
+                if mutable:
+                    self.next_tweakable_config[opt] = default
+                else:
+                    self.next_immutable_config[opt] = default
         
         
     def startService(self):
@@ -907,14 +921,9 @@ class WebGUI():
             for key in self.web_app_config.keys():
                 temp = getText(config_dom.getElementsByTagName(key)[0].childNodes).strip()
                 print "Setting " + key + ": " + temp
-                if temp is not None and len(temp) > 0:
-                    if option_type == int:
-                        temp = int(temp)
-                    if option_type == float:
-                        temp = float(temp)
-                    if option_type == bool:
-                        temp = str2bool(temp)
-                    self.web_app_config[key][0] = int(temp)
+                if key in ('allow_wireshark'):
+                    temp = str2bool(temp)               
+                self.web_app_config[key][0] = int(temp)
         
             # optlist, args = getopt.gnu_getopt(sys.argv[1:], short_opt_list, 
             #    long_opt_list)
@@ -957,27 +966,39 @@ class WebGUI():
         else:
             print "No configuration file.  Using default values."
                 
-    def save_config(self, temp_immutables, filename):
+    def save_config(self, filename):
         impl = getDOMImplementation()
         new_config = impl.createDocument(None, "configuration", None)
         top_element = new_config.documentElement
-        for (option_name, type) in self.x_alice_config.tweakable_options():
-            val = str(singleton_webgui.x_alice_config.get_option(option_name))
+        
+        new_section = make_element(new_config, 
+                              "tweakable_options", "")
+        top_element.appendChild(new_section)
+        for option_name in singleton_webgui.next_tweakable_config.keys():
             new_child = make_element(new_config, 
                                   option_name ,
-                                  val)
-            top_element.appendChild(new_child)
-        for option_name in temp_immutables.keys():
+                                  singleton_webgui.next_tweakable_config[option_name])
+            new_section.appendChild(new_child)
+            
+        new_section = make_element(new_config, 
+                              "immutable_options", "")
+        top_element.appendChild(new_section)
+        for option_name in singleton_webgui.next_immutable_config.keys():
             new_child = make_element(new_config, 
                                   option_name ,
-                                  temp_immutables[option_name])
-            top_element.appendChild(new_child)
+                                  singleton_webgui.next_immutable_config[option_name])
+            new_section.appendChild(new_child)
+            
+        new_section = make_element(new_config, 
+                              "web_application", "")
+        top_element.appendChild(new_section)  
         for option_name in self.web_app_config.keys():
             config_value = self.web_app_config.get(option_name)
             config_value = config_value[0]
-            top_element.appendChild(make_element(new_config, 
+            new_section.appendChild(make_element(new_config, 
                                   option_name ,
                                   str(config_value)))
+            
         out_file = open(filename,"w")
         new_config.writexml(out_file, '', '    ', "\n", "ISO-8859-1")
 
