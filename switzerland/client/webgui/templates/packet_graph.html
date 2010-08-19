@@ -1,0 +1,56 @@
+$def with (graph_opts, graph_data_html, graph_data_array)
+$# The graph is built on this page
+
+<canvas id="$graph_opts['canvas_id']" width="$graph_opts['width']" height="$graph_opts['height']'" style="position:relative;">       
+    Canvas is not supported.
+    You need Safari or Firefox 1.5+ to see this graph.
+</canvas>
+<script type="text/javascript">
+    /* Graph functions are given names unique to the graph, in case we want to support
+       multiple graphs per page. */
+    var $graph_opts['canvas_context'];
+
+    $ graph_name = 'graph' + graph_opts['canvas_id'].capitalize() 
+    $ graph_name_draw = graph_name + ".Draw();"
+    $ graph_name_active_flows = graph_name + ".activeFlows = activeFlows;"
+    var canvas_element = document.getElementById("$graph_opts['canvas_id']")
+
+    
+    if (canvas_element.getContext) {            
+        $graph_opts['canvas_context'] = 
+            canvas_element.getContext('2d');
+            
+    }
+    else {
+        alert('You need Safari or Firefox 1.5+ to see this graph.');
+    }
+            
+    /* The data points for the packets vs time */ 
+    $:graph_data_html        
+
+    /* Object representing the graph and its data */
+    
+    $graph_name = new FlowGraph(
+                   $graph_opts['canvas_context'],
+                   canvas_element,
+                   '$graph_opts["canvas_id"]',
+                   $graph_data_array, 
+                   $graph_opts['x_margin'],
+                   $graph_opts['y_margin'],
+                   $graph_opts['x_axis_margin'],
+                   $graph_opts['y_axis_margin'],
+                   $graph_opts['width'],
+                   $graph_opts['height'],
+                   $graph_opts['graph_xbins_actual'],
+                   $graph_opts['graph_ybins'],
+                   $graph_opts['x_bin_pixels'],
+                   $graph_opts['x_bin_size'],
+                   $graph_opts['y_bin_pixels'],
+                   $graph_opts['y_bin_size'],
+                   $graph_opts['min_timestamp']
+    );
+    
+    $graph_name_active_flows
+    $graph_name_draw
+
+</script>

@@ -15,6 +15,7 @@ from switzerland.client.AliceLink import AliceLink
 from switzerland.client.FlowManager import FlowManager
 from switzerland.client.AliceConfig import AliceConfig
 from switzerland.client.TimeManager import TimeManager, UncertainTimeError
+from switzerland.client.Tracerouter import Tracerouter
 from switzerland.common.PcapLogger import PcapLogger
 
 #logging.basicConfig(level=logging.DEBUG,
@@ -60,13 +61,17 @@ class Alice:
         self.fm = FlowManager(config, parent=self)
         self.quit_event = threading.Event()
         self.cleaner = Cleaner.Cleaner(self)
+        
         self.listener = PacketListener.PacketListener(self)
         self.link = linkobj(self.quit_event, self, config)
         self.reporter = Reporter.Reporter(self)
+        self.tr = Tracerouter()
+    
         self.cleaner.setDaemon(True)
         self.listener.setDaemon(True)
         self.reporter.setDaemon(True)
         self.link.setDaemon(True)
+        self.tr.setDaemon(True)
 
         # XXX we need a privacy setting to disable this, since it might in some
         # cases create link between separate client sessions at separate IPs.
@@ -78,6 +83,7 @@ class Alice:
         
         log.debug("Starting AliceLink...")
         self.link.start()
+        self.tr.start() # do something while we wait
         self.link.ready.wait(20.0)
         if self.link.quit_event.isSet():
           # error during handshake
@@ -146,6 +152,7 @@ class Alice:
                 #log.warn("NTP is not working:\n"+traceback.format_exc())
                 log.warn("but allow_uncertain_time is set so we're defaulting the clock error to %f" % self.config.manual_clock_error)
                 self.root_dispersion = self.config.manual_clock_error
+                self.time_manager.method = "blind faith"
         self.params["clock dispersion"] = self.root_dispersion
 
     def shutdown(self):

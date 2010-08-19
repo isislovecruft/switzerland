@@ -1,0 +1,109 @@
+$def with (client_status, menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds)
+$# Main page with graph
+<!DOCTYPE HTML>
+
+<html>
+    <head>
+        <title>Switzerland</title>
+        <script type="text/javascript">
+            var graphCid;
+            var activeFlows = new Array();
+            var tid;
+
+            function updatePage() {
+                updateGraph('graph');
+                updateLegend('legend');
+            }
+
+            $# toggleFlow and toggleAll are called from packet_graph_legend.html,
+            $# but they are defined here with the other references to tid
+
+            function toggleFlow(formName){
+                clearInterval(tid);
+                updateFlow(formName, graphCid, activeFlows);
+                startTimer();
+            }
+
+            function toggleAll(formName, checked) {
+                clearInterval(tid);
+                checkLegend(formName, checked, graphCid, activeFlows);
+                startTimer();
+            }
+            function delayStartTimer(delaySeconds) {
+                setTimeout(function(){tid = setInterval ( "updatePage();", $reload_seconds * 1000 );},
+                        delaySeconds * 1000);
+            }
+
+            function startTimer() {
+                tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
+            }
+
+
+            delayStartTimer(3);
+        </script>
+        <script type="text/javascript" src="/static/js/prototype.js"></script>
+        <script type="text/javascript" src="/static/js/ajax_client.js"></script>
+        <script type="text/javascript" src="/static/js/graph_functions.js"></script>
+        <script type="text/javascript" src="/static/js/flow_data_object.js"></script>
+        <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    </head>
+    <body>
+    <div id="menu" class="top_menu">
+    $:menu
+    </div>
+    <div id="clientcontrol">
+    <input type="button" id="startButton" name="startButton" value="Start Switzerland Client Service"
+    onClick="controlClient('start', $reload_seconds, 'startButton','stopButton');" />
+    <input type="button" id="stopButton" name="stopButton" value="Stop Switzerland Client Service"
+    onClick="controlClient('stop', $reload_seconds, 'startButton','stopButton');"/>
+    <script type="text/javascript">
+        function controlClient(commandString, seconds, startBtn, stopBtn) {
+            if (commandString == 'start') {
+                showRunningStatus(startBtn, stopBtn);
+                clientServiceControl(commandString, null);
+                delayStartTimer(3);
+            }
+            if (commandString == 'stop') {
+                showStoppedStatus(startBtn, stopBtn);
+                clearInterval(tid);
+                setTimeout(function(){clientServiceControl(commandString, null)},
+                        2000);
+            }
+        }
+
+    $if client_status == 'running':
+        showRunningStatus('startButton','stopButton');
+    $else:
+        showStoppedStatus('startButton','stopButton');
+    </script>
+    </div>
+    <div id="clientinfo" class="page_section" style="clear:left;">
+    $:client_info
+    </div>
+    <div id="serverinfo" class="page_section" >
+    $:server_info
+    </div>
+    $# Uncomment for active flow list (redundant to graph legend)
+    $# <div id="activeflows" class="page_section" >
+    $# $:active_flows
+    $# </div>
+
+    <div id="activepeers" class="page_section" >
+    $:active_peers
+    </div>
+    <div id="graph" class="page_section" style="clear:left;">
+    $:graph
+    </div>
+    <div id="legend" class="page_section" style="clear:left;">
+    $:legend
+    </div>
+    <div id="graphcontextmenu">
+    <div class="contextmenuitem"><a href="#detail" onClick="openDetailWindow();">Show packet details</a></div>
+    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('dropped');">Show dropped packets in Wireshark</a></div>
+    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('injected');">Show injected packets in Wireshark</a></div>
+    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('modified');">Show modified packets in Wireshark</a></div>
+    </div>
+    <script type="text/javascript" src="/static/js/graph_context_menu.js"></script>
+    </body>
+</html>
+

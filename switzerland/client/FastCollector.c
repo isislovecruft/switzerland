@@ -25,6 +25,9 @@ buffersize is measured in number of packets
 #ifdef WIN32
 # define _CRT_SECURE_NO_WARNINGS
 #endif
+/* To compile:
+gcc FastCollector.c -lpcap -oFastCollector
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -360,7 +363,7 @@ void cleanup() {
 
 int main(int argc,char *argv[])
 {
-  assert(sizeof(PacketEntry) == 1616 &&
+  assert(sizeof(PacketEntry) == (MAX_PACKET_SIZE + 16) &&
       "Your compiler didn't pack struct packet_entry like we foolishly expected, bailing");
   get_args(argc, argv);
   open_buffer();

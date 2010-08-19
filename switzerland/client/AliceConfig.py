@@ -18,52 +18,53 @@ else:
     default_pcap_logdir = "c:\switzerland\pcaplogs"
     default_logfile = "c:\switzerland\clientlog"
 
-class AliceConfig:
-    def __init__(self,
-        use_localhost_ip=False,
-        host=None,
-        port=7778,
-        interface=None,
-        skew=0.0,
-        log_level=logging.DEBUG,
-        seriousness=0,
-        do_cleaning=True,
-        use_ntp=True,
-        filter_packets=True,
-        keep_archives=False,
-        ignore_nonlocal_packets=True,
-        getopt=False,
-        force_public_ip=False,
-        force_private_ip=False,
-        pcap_playback=None,
-        pcap_datalink=1,
-        logfile=default_logfile,
-        pcap_logdir=default_pcap_logdir
-        ):
-        self.host = host
-        self.port = port
-        self.interface = interface
+# These might turn into functions?
+hostname = "hostname"
+path = "path"
+string = "string"
+ip = "ip"
 
-        self.use_localhost_ip = use_localhost_ip
-        self.skew = skew
-        self.seriousness = seriousness
-        self.log_level = log_level
-        self.do_cleaning = do_cleaning
-        self.use_ntp = use_ntp
-        self.filter_packets = filter_packets
-        self.keep_archives = keep_archives
-        self.ignore_nonlocal_packets = ignore_nonlocal_packets
-        self.force_public_ip = force_public_ip
-        self.force_private_ip = force_private_ip
+# This is a list of all the AliceConfig options:
+# "name" -> {default, type, mutable, guiable}
+alice_options = {\
+"use_localhost_ip" : (False,                 bool,     False, False),\
+"host"             : ("switzerland.eff.org", hostname, False, True),\
+"port"             : (7778,                  int,      False, True),\
+"interface"        : (None,                string,   False, True),\
+"skew"             : (0.0,                   float,    False, True),\
+"log_level"        : (logging.DEBUG,         int,      True,  True),\
+"seriousness"      : (0,                     int,      True,  True),\
+"do_cleaning"      : (True,                  bool,     True,  True),\
+"use_ntp"          : (True,                  bool,     False, True),\
+"filter_packets"   : (True,                  bool,     False, True),\
+"keep_archives"    : (False,                 bool,     False, False),\
+"ignore_nonlocal_packets" : (True,           bool,     False, False),\
+"force_public_ip"  : (False,                 ip,       False, True),\
+"force_private_ip" : (False,                 ip,       False, True),\
+"pcap_playback"    : (False,                 bool,     False, False),\
+"pcap_datalink"    : (1,                     int,      False, False),\
+"logfile"          : (default_logfile,       path,     False, False),\
+"pcap_logdir"      : (default_pcap_logdir,   path,     False, False),\
+"allow_uncertain_time": (False,              bool,     False, False),\
+"packet_buffer_size":(25000,                 int,      False, True),\
+"quiet"            : (False,                 bool,     False, True),\
+"debug_monotonicity":(True,                  bool,     False, False)\
+}
+
+class AliceConfig:
+    def __init__(self, getopt=False, **keywords):
+
+        # all of the variables above become attributes of AliceConfig;
+        # we pick the value passed to this function (if there was one)
+        # or the default value otherwise
+
         self.private_ip = None
-        self.pcap_playback = pcap_playback
-        self.pcap_datalink = pcap_datalink
-        self.allow_uncertain_time = False
-        self.debug_monotonicity = True
-        self.pcap_logdir = pcap_logdir
-        self.logfile = logfile
-        self.quiet = False
-        self.packet_buffer_size = 25000
+
+        for variable in alice_options.keys():
+            if variable in keywords:
+                self.__dict__[variable] = keywords[variable]
+            else:
+                self.__dict__[variable] = alice_options[variable][0]
 
         if getopt:
             self.get_options()
@@ -73,7 +74,7 @@ class AliceConfig:
             self.interface = local_ip.get_interface()
             log.info("interface is now %s", self.interface)
 
-        if force_private_ip and self.private_ip == None: # could have been set by getopt?
+        if self.force_private_ip and self.private_ip == None: # could have been set by getopt?
             self.private_ip = force_private_ip
         if self.private_ip == None:
             self.private_ip = local_ip.get_local_ip(self.interface)
@@ -166,6 +167,13 @@ class AliceConfig:
         print '                             packets will be written. "-" for none.'
         print "                             (defaults to " + default_pcap_logdir + ")"
         print "  -q, --quiet                Do not print output"
+        if sys.argv[0].endswith('WebGUI.py'):
+            print "  -a, --webaddr              Sets the ip address to run the Switzerland client"
+            print "                             web server (defaults to 0.0.0.0)"
+            print "  -w, --webport              Sets the port to run the Switzerland client"
+            print "                             web server (defaults to 8080)"
+            print "  -F, --fake                 Runs WebGUI in an off-network demonstration mode"
+            print "                             with fake data"   
         print
         if exit: sys.exit(0)
 
@@ -220,4 +228,4 @@ class AliceConfig:
                 log.error('Use "-P -" for no logging')
                 sys.exit(1)
 
-#vim: et ts=4
+#vim: et ts=4 sw=4

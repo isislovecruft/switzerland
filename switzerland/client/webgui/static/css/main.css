@@ -1,0 +1,116 @@
+
+body, th, td, p, div {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: small;
+}
+.container {
+    border-style:solid;
+    border-width:1px;
+    border-color:red;
+    position: static;
+}
+
+.page_section {
+    border-style:solid;
+    border-width:1px;
+    border-color:black;
+    margin: 4px;
+    padding: 2px;
+    float: left;
+}
+
+#message {
+	border-style:solid;
+    border-width:1px;
+    border-color:red;
+	clear:both
+}
+
+#clientcontrol {
+	margin: 4px;
+    padding: 2px;
+	clear: both;
+}
+
+#clientinfo {
+	width: 250px;
+}
+#serverinfo { 
+	width: 250px;
+}
+#activeflows {
+	
+}
+#legend {
+    width: 500px;
+}
+#graph {
+	width: 828px;
+}
+#graphdetail {
+
+}
+#graphcontextmenu {
+	background-color: white;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+	display: none; 
+	position: absolute;
+}
+.contextmenuitem {
+    color: black;
+}
+
+.contextmenuitem a,
+.contextmenuitem a:visited,
+.contextmenuitem a:active,
+.contextmenuitem a:link {
+	color: black;
+	text-decoration: none;
+}
+
+.contextmenuitem a:hover {
+	color: blue;
+	text-decoration: none;
+}
+
+.caption {
+    font-weight: bold;
+}
+
+.top_menu {
+    clear: both;
+}
+
+
+
+.menu_item {
+    float: left; 
+    margin: 2px;
+    padding: 4px;
+    width: 120px;
+    text-align: center;
+    background-color:gray;
+    color:white;
+}
+
+.menu_item_selected {
+    float:left ;
+    margin: 2px;
+    padding: 4px;
+    width: 120px;
+    text-align: center;
+    color:white;
+    background-color:red;
+}
+
+.top_menu a {
+    text-decoration:none;
+    color:white;
+}
+
+.menu_item:hover, .top_menu a:hover {
+    background-color:#0000ff
+}
+

@@ -1,0 +1,12 @@
+$def with (cur_page)
+$# Browsing menu
+    $if cur_page == "main":
+        <div class="menu_item_selected">Main</div>
+    $else:
+       <div class="menu_item"><a href="/">Main</a></div>
+    
+    $if cur_page == "config":
+        <div class="menu_item_selected">Configuration</div>
+    $else:
+        <div class="menu_item"><a href="/config">Configuration</a></div>
+    

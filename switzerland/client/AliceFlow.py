@@ -31,6 +31,7 @@ class AliceFlow(Flow):
         self.queue = PacketQueue.PacketQueue()
         self.opening_hash = opening_hash
         self.marked_for_deletion = False
+        self.active = True
 
     def clean(self, now):
         """ clean out packets that have timed out """
