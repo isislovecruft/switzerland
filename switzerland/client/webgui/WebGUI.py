@@ -524,7 +524,7 @@ class ajax_server:
     
     # Attempt to launch wireshark using scapy
     def launch_wireshark(self, webin, packet_type, render):
-        if wireshark_available:
+        if wireshark_available and singleton_webgui.web_app_config['allow_wireshark']:
             flow_name = webin.flowId
             hist_bin = webin.histBinId
             flow_name = flow_name[:-3]  
@@ -547,7 +547,11 @@ class ajax_server:
                 return_value = "Will not launch wireshark for list of 0 packets."
             return return_value
         else:
-            print "WARNING: Wireshark not available through Scapy."
+            if not wireshark_available:
+                print "WARNING: Wireshark not available through Scapy."
+            if not singleton_webgui.web_app_config['allow_wireshark']:
+                print "Wireshark has been disabled in configuration."
+                print "WARNING: received a rogue Wireshark start request."
 
     def client_service_control(self, webin, render):
         commandString = webin.commandString
@@ -589,7 +593,8 @@ class index:
             active_peers,
             legend,
             graph_html,
-            singleton_webgui.web_app_config['refresh_interval'][0])
+            singleton_webgui.web_app_config['refresh_interval'][0],
+            singleton_webgui.web_app_config['allow_wireshark'][0])
 
 # List mutable configuration parameters, allow to change
 # TODO: Options are not serialized between invocations of the client
@@ -617,7 +622,11 @@ class config:
                 singleton_webgui.web_app_config['refresh_interval'][0] = int(webin.refresh_interval)
             except:
                 message = "The refresh interval must be a number of seconds."
-                
+            try: 
+                print singleton_webgui.web_app_config['allow_wireshark']  
+                singleton_webgui.web_app_config['allow_wireshark'][0]=str2bool(webin.allow_wireshark)
+            except:
+                message = "Failed to set the Wireshark variable."
         elif webin.form == "frmImmutableOpt":
             # These can't be changed on the fly, so they are saved to a temporary structure
             # and written to file by save_config
@@ -642,7 +651,7 @@ class config:
             try:
                 singleton_webgui.x_alice_config.set_option("do_cleaning", bool(webin.do_cleaning))
             except:
-                message = "The refresh interval must be a number of seconds."
+                message = "Do cleaning format is invalid."
         
         singleton_webgui.save_config(temp_immutables, config_filename)
         return self.main(message)
@@ -823,6 +832,8 @@ class WebGUI():
             "Save window", "Number of seconds to save"]
         self.web_app_config['refresh_interval'] = [20, 
             "Refresh interval", "Number of seconds between refresh"]
+        self.web_app_config['allow_wireshark'] = [True, 
+            "Allow Wireshark", "Allow the client to launch Wireshark"]
         self.urls = (
             '/', 'index', 
             '', 'index',
@@ -897,6 +908,12 @@ class WebGUI():
                 temp = getText(config_dom.getElementsByTagName(key)[0].childNodes).strip()
                 print "Setting " + key + ": " + temp
                 if temp is not None and len(temp) > 0:
+                    if option_type == int:
+                        temp = int(temp)
+                    if option_type == float:
+                        temp = float(temp)
+                    if option_type == bool:
+                        temp = str2bool(temp)
                     self.web_app_config[key][0] = int(temp)
         
             # optlist, args = getopt.gnu_getopt(sys.argv[1:], short_opt_list, 

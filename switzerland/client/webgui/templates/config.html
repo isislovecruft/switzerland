@@ -16,9 +16,25 @@ $# Main configuration page
     <div id="applicationoptions" class="page_section">
     <form name="frmApplicationOpt" id="frmApplicationOpt" method="POST">
     <table>
-        <caption>Web Application Options</caption>
-        $for opt in application_options: 
-            <tr><td>$application_options[opt][1]</td><td><input name="$opt" value="$application_options[opt][0]"></td></tr>
+		<caption>Web Application Options</caption>
+		$for opt in application_options: 
+			<tr><td>$application_options[opt][1]</td>
+			$if opt in ('allow_wireshark'):
+				<td>
+				<select name="$opt">
+				<option value="True"
+				$if application_options[opt][0] == True or application_options[opt][0] =='True':
+					selected
+				>True</option>
+				<option value="False"
+				$if application_options[opt][0] == False or application_options[opt][0] =='False':
+					selected                    
+				>False</option>
+				</select>
+				</td>
+			$else:
+				<td><input name="$opt" value="$application_options[opt][0]"></td>
+			</tr>
     </table>
     <input type="hidden" name="form" value="frmApplicationOpt">
     <input type="submit" value="Save changes"></form>

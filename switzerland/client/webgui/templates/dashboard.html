@@ -1,4 +1,4 @@
-$def with (client_status, menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds)
+$def with (client_status, menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds, allow_wireshark)
 $# Main page with graph
 <!DOCTYPE HTML>
 
@@ -99,9 +99,10 @@ $# Main page with graph
     </div>
     <div id="graphcontextmenu">
     <div class="contextmenuitem"><a href="#detail" onClick="openDetailWindow();">Show packet details</a></div>
-    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('dropped');">Show dropped packets in Wireshark</a></div>
-    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('injected');">Show injected packets in Wireshark</a></div>
-    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('modified');">Show modified packets in Wireshark</a></div>
+    $if allow_wireshark:
+	    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('dropped');">Show dropped packets in Wireshark</a></div>
+	    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('injected');">Show injected packets in Wireshark</a></div>
+	    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('modified');">Show modified packets in Wireshark</a></div>
     </div>
     <script type="text/javascript" src="/static/js/graph_context_menu.js"></script>
     </body>
