@@ -101,9 +101,10 @@ function openDetailWindow() {
 			graphContextDetailWindow);
 }
 	
-function openWireshark(packetType) {
+// randomKey is a global variable defined in dashboard.html
+function openWireshark(packetType, graphName) {
 	launchWireshark(graphContextMenuFlowName,
-			graphContextMenuBin, packetType);
+			graphContextMenuBin, packetType, randomKey.getKey());
 }
 
 initContextMenu();

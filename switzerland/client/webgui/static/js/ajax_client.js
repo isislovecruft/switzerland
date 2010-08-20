@@ -17,11 +17,13 @@ function getPacketInfo(flowId, histBinId, packetWin) {
     );
 }
 
-function launchWireshark(flowId, histBinId, packetType) {
+// randomKey is used to verify that the request is coming from
+// Firefox.
+function launchWireshark(flowId, histBinId, packetType, randomKey) {
     
     new Ajax.Request('/ajax_server', {
 	method: 'get',
-	parameters: {command: 'launchWireshark', packetType: packetType, histBinId: histBinId, flowId: flowId},
+	parameters: {command: 'launchWireshark', packetType: packetType, histBinId: histBinId, flowId: flowId, randomKey: randomKey},
 	onSuccess: function(transport) {
 		// pass
 	},
@@ -29,6 +31,10 @@ function launchWireshark(flowId, histBinId, packetType) {
 		alert("Something has gone wrong with launching Wireshark.")
 	}}
     );
+    
+    // For debugging
+	//var responseContainer = $('debug_ws');
+	//responseContainer.update("Sending " + randomKey);
 }
 
 // Get new JavaScript defining the graph (returns JavaScript/HTML)
@@ -78,6 +84,28 @@ function clientServiceControl(commandString, container) {
 	},
 	onFailure: function(transport) {
 		alert("Something has gone wrong controlling the client service.")
+	}}
+    );
+}
+
+//Get a random key which allows the user to do 
+//insecure things like run Wireshark
+function getRandomKey(container, randomKey) {
+    var rKey = '';
+    new Ajax.Request('/ajax_server', {
+	method: 'get',
+	parameters: {command: 'getRandomKey'},
+	onSuccess: function(transport) {
+		rKey = transport.responseText;
+		rKey = rKey.replace("<key>","");
+		rKey = rKey.replace("</key>", "");
+		randomKey.setKey(rKey);
+		//For debugging
+		//var responseContainer = $(container);
+		//responseContainer.update("Updating key to " + rKey);
+	},
+	onFailure: function(transport) {
+		alert("Something has gone wrong with updating the random key.")
 	}}
     );
 }

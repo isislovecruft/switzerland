@@ -1,15 +1,18 @@
-$def with (client_status, menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds, allow_wireshark)
+$def with (client_status, menu, client_info, server_info, active_flows, active_peers, legend, graph, reload_seconds, allow_wireshark, random_key)
 $# Main page with graph
 <!DOCTYPE HTML>
 
 <html>
     <head>
         <title>Switzerland</title>
+        <script type="text/javascript" src="/static/js/random_key_object.js"></script>
         <script type="text/javascript">
             var graphCid;
             var activeFlows = new Array();
             var tid;
-
+            var randomTid;
+            var randomKey = new RandomKey('$random_key');
+             
             function updatePage() {
                 updateGraph('graph');
                 updateLegend('legend');
@@ -38,8 +41,17 @@ $# Main page with graph
                 tid = setInterval ( "updatePage();", $reload_seconds * 1000 );
             }
 
+            function updateRandomKey(){
+                var key = getRandomKey('debug_ws', randomKey);
+            }
+            
+            function delayRandomTimer(delaySeconds) {
+                setTimeout(function(){randomTid = setInterval ( "updateRandomKey();", 30 * 1000 );},
+                        delaySeconds * 1000);
+            }
 
             delayStartTimer(3);
+            delayRandomTimer(15);
         </script>
         <script type="text/javascript" src="/static/js/prototype.js"></script>
         <script type="text/javascript" src="/static/js/ajax_client.js"></script>
@@ -76,6 +88,8 @@ $# Main page with graph
         showRunningStatus('startButton','stopButton');
     $else:
         showStoppedStatus('startButton','stopButton');
+
+    
     </script>
     </div>
     <div id="clientinfo" class="page_section" style="clear:left;">
@@ -98,6 +112,7 @@ $# Main page with graph
     <div id="legend" class="page_section" style="clear:left;">
     $:legend
     </div>
+    <!--<div id="debug_ws" class="page_section" style="clear:left;">Debugging Wireshark</div>-->
     <div id="graphcontextmenu">
     <div class="contextmenuitem"><a href="#detail" onClick="openDetailWindow();">Show packet details</a></div>
     $if allow_wireshark:
@@ -105,6 +120,7 @@ $# Main page with graph
 	    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('injected');">Show injected packets in Wireshark</a></div>
 	    <div class="contextmenuitem"><a href="#wireshark" onClick="openWireshark('modified');">Show modified packets in Wireshark</a></div>
     </div>
+    
     <script type="text/javascript" src="/static/js/graph_context_menu.js"></script>
     </body>
 </html>

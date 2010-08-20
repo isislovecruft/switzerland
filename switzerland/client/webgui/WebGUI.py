@@ -10,9 +10,11 @@ import time
 import math
 import sys
 import os
+import random
 import logging
 import getopt
 import socket as s
+import base64
 import switzerland.common.Flow
 
 from switzerland.common.Flow import print_flow_tuple
@@ -468,6 +470,7 @@ class line_graph:
 class ajax_server:
     def GET(self):
         webin = web.input()
+        
         command = webin.command
         print "command", command
         render = web.template.render('templates/ajax_response')
@@ -478,10 +481,11 @@ class ajax_server:
         if command == 'updateLegend':
             return self.update_legend(webin, render)
         if command == 'launchWireshark':
-            packet_type = webin.packetType
-            return self.launch_wireshark(webin, packet_type, render)
+            return self.launch_wireshark(webin, render, web)
         if command == 'clientServiceControl':
             return self.client_service_control(webin, render)
+        if command == 'getRandomKey':
+            return self.get_random_key(webin, render)
         else:
             return("no handler for command " + command)
      
@@ -527,35 +531,52 @@ class ajax_server:
             return None
     
     # Attempt to launch wireshark using scapy
-    def launch_wireshark(self, webin, packet_type, render):
-        if wireshark_available and singleton_webgui.web_app_config['allow_wireshark']:
-            flow_name = webin.flowId
-            hist_bin = webin.histBinId
-            flow_name = flow_name[:-3]  
-            packet_list = list()
+    def launch_wireshark(self, webin, render, web):
+        packet_type = webin.packetType
+        random_key = webin.randomKey
+        #print "  Current key: " + singleton_webgui.random_key
+        #print "Submitted key: " + random_key
         
-            if packet_type == 'dropped':
-                p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
-                packet_list.extend(p_list)
-            if packet_type == 'injected':
-                p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
-                packet_list.extend(p_list)
-            if packet_type == 'modified':
-                p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
-                packet_list.extend(p_list)
-            if len(packet_list) > 0:
-                return_value = wireshark(packet_list)
-                print "Wireshark return value" + str(return_value)
+        #referer = web.ctx.env.get('HTTP_REFERER', 'INVALID')
+        ip_addr = web.ctx.ip
+        #print "Referrer: "   + referer
+        #print "IP: "   + ip_addr
+        if ip_addr == '127.0.0.1':
+            if random_key == singleton_webgui.random_key:
+                if wireshark_available and singleton_webgui.web_app_config['allow_wireshark']:
+                    flow_name = webin.flowId
+                    hist_bin = webin.histBinId
+                    flow_name = flow_name[:-3]  
+                    packet_list = list()
+                
+                    if packet_type == 'dropped':
+                        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['modified'][int(hist_bin)][1]]
+                        packet_list.extend(p_list)
+                    if packet_type == 'injected':
+                        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['injected'][int(hist_bin)][1]]
+                        packet_list.extend(p_list)
+                    if packet_type == 'modified':
+                        p_list = [p.raw_data() for p in singleton_webgui.packet_data.current_histograms[flow_name]['dropped'][int(hist_bin)][1]]
+                        packet_list.extend(p_list)
+                    if len(packet_list) > 0:
+                        return_value = wireshark(packet_list)
+                        print "Wireshark return value: " + str(return_value)
+                    else:
+                        print "Will not launch wireshark for list of 0 packets."
+                        return_value = "Will not launch wireshark for list of 0 packets."
+                    return return_value
+                else:
+                    if not wireshark_available:
+                        print "WARNING: Wireshark not available through Scapy."
+                    if not singleton_webgui.web_app_config['allow_wireshark']:
+                        print "Wireshark has been disabled in configuration."
+                        print "WARNING: received a rogue Wireshark start request."
             else:
-                print "Will not launch wireshark for list of 0 packets."
-                return_value = "Will not launch wireshark for list of 0 packets."
-            return return_value
+                print "WARNING: Random keys do not match.  May be a rogue Wireshark start request."
+                print "If this was a legitimate request, the keys may have been refreshing.  Please try again."
         else:
-            if not wireshark_available:
-                print "WARNING: Wireshark not available through Scapy."
-            if not singleton_webgui.web_app_config['allow_wireshark']:
-                print "Wireshark has been disabled in configuration."
-                print "WARNING: received a rogue Wireshark start request."
+            print "WARNING: A request not originating at localhost was received to launch Wireshark"
+            print "Originating IP: " + ip_addr
 
     def client_service_control(self, webin, render):
         commandString = webin.commandString
@@ -566,6 +587,11 @@ class ajax_server:
             singleton_webgui.startService()
             return "<p>running</p>"
         
+    def get_random_key(self, webin, render):
+        singleton_webgui.random_key = base64.b64encode(os.urandom(64))
+        #print "Returning new key: " + singleton_webgui.random_key
+        return "<key>" + singleton_webgui.random_key + "</key>"
+     
 class index:
     def GET(self):
         return self.main()
@@ -604,7 +630,8 @@ class index:
             legend,
             graph_html,
             singleton_webgui.web_app_config['refresh_interval'][0],
-            singleton_webgui.web_app_config['allow_wireshark'][0])
+            singleton_webgui.web_app_config['allow_wireshark'][0],
+            singleton_webgui.random_key)
 
 # List mutable configuration parameters, allow to change
 # TODO: Options are not serialized between invocations of the client
@@ -832,6 +859,7 @@ def str2bool(s):
 class WebGUI():
                 
     def __init__(self):
+        self.random_key = base64.b64encode(os.urandom(64))
         self.web_app_config = dict()
         self.web_app_config['save_window'] = [60 * 60, 
             "Save window", "Number of seconds to save"]
